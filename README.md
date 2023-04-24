@@ -1,6 +1,8 @@
-# multiplication-accumulation-network
+# manet
 
-Multiplication-accumulation networks are networks consisted by multiply–accumulate operations only, and they are
+"Manet" is a library for multiply-accumulative networks.
+
+Multiply-accumulative networks are networks consisted by multiply–accumulate operations only, and they are
 activation-free and can be used as building blocks for deep neural networks.
 
 Multiply–accumulate operation is a generalization of the perceptron and the linear neuron. But surprisingly,
