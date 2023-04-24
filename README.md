@@ -20,4 +20,9 @@ We demonstrate the performance of multiply–accumulate network on MNIST dataset
 We gradually replace the non-linear activation functions with mac operations, and the performance is almost the same.
 And sometimes, the performance is even better. Please check mnist0.py to mnist3.py for details.
 
-
+```bash
+python -m demo.train -m mnist0
+python -m demo.train -m mnist1
+python -m demo.train -m mnist2
+python -m demo.train -m mnist3
+```
