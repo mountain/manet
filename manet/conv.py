@@ -25,6 +25,8 @@ class Conv2d(nn.Conv2d):
                          bias=False, padding_mode=padding_mode, device=device, dtype=dtype)
         kw, kh = self.kernel_size
         self.kernel = MacUnit(in_channels, out_channels, kw * kh, 1)
+        self.device = device
+        self.dtype = dtype
 
     def _conv_forward(self, input: Tensor, weight: Tensor, bias: Optional[Tensor]):
         b, i, w, h = input.size()
@@ -34,10 +36,10 @@ class Conv2d(nn.Conv2d):
             padded = F.pad(input, (p, p, p, p), 'constant', 0)
         else:
             padded = F.pad(input, (p, p, p, p), self.padding_mode)
-        result = torch.zeros(b, self.out_channels, w, h).to(device)
+        result = torch.zeros(b, self.out_channels, w, h).to(self.device).to(self.dtype)
         for m in range(w):
             for n in range(h):
-                pointer = torch.zeros(1, 1, w, h).to(device)
+                pointer = torch.zeros(1, 1, w, h).to(self.device).to(self.dtype)
                 pointer[0, 0, m, n] = 1
                 piece = padded[:, :, m:m+kw, n:n+kh]
                 piece = piece.reshape(b, self.in_channels, kw * kh)

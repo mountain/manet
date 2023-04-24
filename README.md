@@ -26,3 +26,5 @@ python -m demo.train -m mnist1
 python -m demo.train -m mnist2
 python -m demo.train -m mnist3
 ```
+
+Note: mnist3.py is buggy and conv replacement is still ongoing.

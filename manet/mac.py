@@ -53,7 +53,7 @@ class MacUnit(nn.Module):
             th.rand(num_points)
         )
         self.attention = nn.Parameter(
-            th.rand(1, self.out_channels_factor, self.out_channels, self.out_spatio_factor, self.out_spatio)
+            th.rand(1, self.out_channels_factor, self.out_channels, self.out_spatio_factor, self.out_spatio_dims)
         )
 
         # the learnable parameters which govern the accessor
@@ -86,7 +86,7 @@ class MacUnit(nn.Module):
 
         # the velocity and angels of the accessor
         pos = index - bgn
-        velo = ((1 - pos) * self.velo[bgn] + pos * self.velo[end])
+        velo = ((1 - pos) * self.velocity[bgn] + pos * self.velocity[end])
         angels = ((1 - pos) * self.angles[bgn] + pos * self.angles[end])
 
         # by the flow equation of the arithmetic expression geometry
@@ -96,7 +96,7 @@ class MacUnit(nn.Module):
                 data: Tensor
                 ) -> Tensor:
 
-        data = data.view(-1, self.in_channels, 1, self.in_spatio, 1) * self.ones
+        data = data.view(-1, self.in_channels, 1, self.in_spatio_dims, 1) * self.ones
 
         for ix in range(self.num_steps):
             data = data + self.step(data) / self.num_steps
@@ -104,7 +104,7 @@ class MacUnit(nn.Module):
         return th.sum(
             self.attention * data.view(
                 -1, self.out_channels_factor, self.out_channels,
-                self.out_spatio_factor, self.out_spatio
+                self.out_spatio_factor, self.out_spatio_dims
             ),
             dim=(1, 3)
         )
