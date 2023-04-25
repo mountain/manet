@@ -7,7 +7,7 @@ MAC networks are networks consisted only by [multiply–accumulate operations](h
 Multiply–accumulate operation is a generalization of the perceptron and the linear neuron. But surprisingly,
 it can be the only mechanism to construct deep neural networks. The non-linearity can be eliminated,  we can easily see the point that:
 * exponential functions is pure multiplicative
-* a wide range of non-linear functions can be constructed by using different combinations of multiplications add additions.
+* a wide range of non-linear functions can be constructed by using different combinations of multiplications and additions.
 
 It also owns a beautiful mathematical background from the field of arithmetic expression geometry.
 
