@@ -19,10 +19,10 @@ We gradually replace the non-linear activation functions with MAC operations, an
 Please check mnist0.py to mnist3.py for details.
 
 ```bash
-python -m demo.train -m mnist0
-python -m demo.train -m mnist1
-python -m demo.train -m mnist2
-python -m demo.train -m mnist3
+python -m demo.mnist.train -m mnist0
+python -m demo.mnist.train -m mnist1
+python -m demo.mnist.train -m mnist2
+python -m demo.mnist.train -m mnist3
 ```
 
 Note: mnist3.py is buggy and conv replacement is still ongoing.

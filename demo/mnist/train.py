@@ -46,7 +46,7 @@ if __name__ == '__main__':
 
     import importlib
     print('construct model...')
-    mdl = importlib.import_module('demo.%s' % opt.model, package=None)
+    mdl = importlib.import_module('demo.mnist.%s' % opt.model, package=None)
     model = mdl._model_()
 
     print('training...')
