@@ -48,36 +48,47 @@ class Model(pl.LightningModule):
         words = paragraph.split(' ')
         length = len(words)
         empty = self.word_embedding('')
-        error_rel, error_emb = torch.zeros_like(empty), torch.zeros_like(empty)
-        if length < 7:
-            length = last_length
-        else:
-            ctx = torch.zeros_like(empty)
-            self.q.append(self.word_embedding(words[0]))
-            ctx = (ctx + self.q[-1]) / 2
-            self.q.append(self.word_embedding(words[1]))
-            ctx = (ctx + self.q[-1]) / 2
-            self.q.append(self.word_embedding(words[2]))
-            ctx = (ctx + self.q[-1]) / 2
-            self.p.append(self.word_embedding(words[3]))
-            self.p.append(self.word_embedding(words[4]))
-            for ix in range(5, length):
-                rels = self.solve(ctx, self.q[0], self.q[1], self.q[2])
-                error12 = (self.q[0] + rels[:, 0:1]) * rels[:, 1:2] - self.q[1]
-                error23 = (self.q[1] + rels[:, 2:3]) * rels[:, 3:4] - self.q[2]
+        error_rel, error_emb = None, None
+        ctx = torch.zeros_like(empty)
+        self.q.append(self.word_embedding(''))
+        ctx = (ctx + self.q[-1]) / 2
+        self.q.append(self.word_embedding(''))
+        ctx = (ctx + self.q[-1]) / 2
+        self.q.append(self.word_embedding(''))
+        ctx = (ctx + self.q[-1]) / 2
+        self.p.append(self.word_embedding(''))
+        self.p.append(self.word_embedding(''))
+        for ix in range(length):
+            rels = self.solve(ctx, self.q[0], self.q[1], self.q[2])
+            error12 = (self.q[0] + rels[:, 0:1]) * rels[:, 1:2] - self.q[1]
+            error23 = (self.q[1] + rels[:, 2:3]) * rels[:, 3:4] - self.q[2]
+
+            if error_rel is None:
+                error_rel = error12 * error12 + error23 * error23
+            else:
                 error_rel = error_rel + error12 * error12 + error23 * error23
 
-                pred4, pred5 = self.predict(ctx, self.q[0], self.q[1], self.q[2], rels)
-                error34 = pred4 - self.p[0]
-                error45 = pred5 - self.p[1]
+            pred4, pred5 = self.predict(ctx, self.q[0], self.q[1], self.q[2], rels)
+            error34 = pred4 - self.p[0]
+            error45 = pred5 - self.p[1]
+
+            if error_emb is None:
+                error_emb = error34 * error34 + error45 * error45
+            else:
                 error_emb = error_emb + error34 * error34 + error45 * error45
 
-                self.q.append(self.p.popleft())
-                self.p.append(self.word_embedding(words[ix]))
-                ctx = (ctx + self.q[-1]) / 2
+            self.q.append(self.p.popleft())
+            self.p.append(self.word_embedding(words[ix]))
+            ctx = (ctx + self.q[-1]) / 2
 
         length = last_length + length
-        loss_rel, loss_emb = loss_rel + torch.sum(error_rel), loss_emb + torch.sum(error_emb)
+        if error_rel is None and error_emb is None:
+            loss_rel, loss_emb = loss_rel, loss_emb
+        elif loss_rel is None and loss_emb is None:
+            loss_rel, loss_emb = torch.sum(error_rel), torch.sum(error_emb)
+        else:
+            loss_rel, loss_emb = loss_rel + torch.sum(error_rel), loss_emb + torch.sum(error_emb)
+
         return length, loss_rel, loss_emb
 
     def log_messages(self, key, loss_rel, loss_emb, loss):
@@ -97,8 +108,7 @@ class Model(pl.LightningModule):
         return optimizer
 
     def step(self, key, batch):
-        empty = self.word_embedding('')
-        length, loss_rel, loss_emb = 0, torch.sum(empty.clone()), torch.sum(empty.clone())
+        length, loss_rel, loss_emb = 0, None, None
         for paragraph in batch:
             length, loss_rel, loss_emb = self.learn(length, loss_rel, loss_emb, paragraph)
 
