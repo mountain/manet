@@ -1,4 +1,5 @@
 import numpy as np
+import torch
 import torch as th
 
 from torch import nn
@@ -70,7 +71,6 @@ class MacUnit(nn.Module):
            dtype: Optional[Union[dtype, str]] = ...,
            non_blocking: bool = ...
            ) -> Module:
-        self.ones = self.ones.to(device, dtype, non_blocking)
         return super().to(device, dtype, non_blocking)
 
     def step(self: T,
@@ -96,7 +96,12 @@ class MacUnit(nn.Module):
                 data: Tensor
                 ) -> Tensor:
 
-        data = data.view(-1, self.in_channels, 1, self.in_spatio_dims, 1) * self.ones
+        ones = torch.ones_like(data).view(
+            -1, self.in_channels, 1,  self.in_spatio_dims, 1
+        ).expand(
+            -1, self.in_channels, self.in_channels_factor, self.in_spatio_dims, self.in_spatio_factor
+        )
+        data = data.view(-1, self.in_channels, 1, self.in_spatio_dims, 1) * ones
 
         for ix in range(self.num_steps):
             data = data + self.step(data) / self.num_steps
