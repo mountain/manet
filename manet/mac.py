@@ -44,7 +44,6 @@ class MacUnit(nn.Module):
         # the constant tensors
         self.in_channels_factor, self.out_channels_factor = _exchangeable_multiplier_(in_channels, out_channels)
         self.in_spatio_factor, self.out_spatio_factor = _exchangeable_multiplier_(in_spatio_dims, out_spatio_dims)
-        self.ones = th.ones(1, 1, self.in_channels_factor, 1, self.in_spatio_factor)
 
         # the learnable parameters which govern the MAC unit
         self.angles = nn.Parameter(
