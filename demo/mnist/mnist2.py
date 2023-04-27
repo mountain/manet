@@ -8,8 +8,9 @@ from manet.mac import MLP, Reshape
 
 
 class MNModel2(pl.LightningModule):
-    def __init__(self):
+    def __init__(self, learning_rate=1e-3):
         super().__init__()
+        self.learning_rate = learning_rate
         self.recognizer = nn.Sequential(
             nn.Conv2d(1, 10, kernel_size=5, padding=2),
             nn.MaxPool2d(2),
@@ -36,8 +37,7 @@ class MNModel2(pl.LightningModule):
         return self.recognizer(x)
 
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
-        return optimizer
+        return torch.optim.Adam(self.parameters(), lr=self.learning_rate)
 
     def training_step(self, train_batch, batch_idx):
         x, y = train_batch

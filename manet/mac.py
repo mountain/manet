@@ -3,12 +3,13 @@ import torch
 import torch as th
 
 from torch import nn
-from torch import Tensor, device, dtype
-from typing import Optional, List, Union, TypeVar, Tuple
+from torch import Tensor
+from typing import List, TypeVar, Tuple
 
-from torch.nn import Module
 
 T = TypeVar('T', bound='MacUnit')
+
+epsilon = 1e-2
 
 
 def _exchangeable_multiplier_(factor1: int, factor2: int) -> Tuple[int, int]:
@@ -21,6 +22,14 @@ def _exchangeable_multiplier_(factor1: int, factor2: int) -> Tuple[int, int]:
     return lcm // factor1, lcm // factor2
 
 
+def eta(domain: Tensor,
+        pointer: Tensor
+        ) -> Tensor:
+    difference = domain - pointer
+    eta = th.exp(- difference * difference / epsilon / 2)
+    return eta / np.sqrt(2 * th.pi * epsilon)
+
+
 class MacUnit(nn.Module):
     def __init__(self: T,
                  in_channels: int,
@@ -28,7 +37,7 @@ class MacUnit(nn.Module):
                  in_spatio_dims: int = 1,
                  out_spatio_dims: int = 1,
                  num_steps: int = 3,
-                 num_points: int = 17,
+                 num_points: int = 101,
                  ) -> None:
 
         super().__init__()
@@ -47,46 +56,55 @@ class MacUnit(nn.Module):
 
         # the learnable parameters which govern the MAC unit
         self.angles = nn.Parameter(
-            2 * th.rand(num_points) * th.pi
+            th.linspace(0, 2 * th.pi, num_points).view(1, 1, num_points)
         )
         self.velocity = nn.Parameter(
-            th.rand(num_points)
+            th.linspace(0, 1, num_points).view(1, 1, num_points)
         )
         self.attention = nn.Parameter(
-            th.rand(1, self.out_channels_factor, self.out_channels, self.out_spatio_factor, self.out_spatio_dims)
+            th.normal(0, 1, (self.out_channels_factor, out_channels, self.out_spatio_factor, out_spatio_dims))
         )
 
-        # the learnable parameters which govern the accessor
-        # it is not works so far but will be improved in the future
-        self.coeff = nn.Parameter(
-            2 * th.rand(1) - 1
-        )
-        self.bias = nn.Parameter(
-            2 * th.rand(1) - 1
-        )
+        # the integral domain
+        self.domain = nn.Parameter(th.linspace(-1, 1, num_points).view(1, 1, num_points))
 
-    def to(self: T,
-           device: Optional[Union[int, device]] = ...,
-           dtype: Optional[Union[dtype, str]] = ...,
-           non_blocking: bool = ...
-           ) -> Module:
-        return super().to(device, dtype, non_blocking)
-
-    def step(self: T,
-             data: Tensor
-             ) -> Tensor:
+    def accessor(self: T,
+                 data: Tensor,
+                 ) -> Tuple:
 
         # calculate the index of the accessor
-        index = 1 + th.tanh(data * self.coeff + self.bias) / 2 * self.num_points
+        index = th.sigmoid(data) * self.num_points
         bgn = index.floor().long()
         end = (index + 1).floor().long()
         bgn = bgn * (end < self.num_points) + (bgn - 1) * (end == self.num_points)
         end = end * (end < self.num_points) + (end - 1) * (end == self.num_points)
 
-        # the velocity and angels of the accessor
+        return index, bgn, end
+
+        # dims = self.in_channels * self.in_channels_factor * self.in_spatio_dims * self.in_spatio_factor
+        # return eta(self.domain, th.tanh(data.view(-1, dims, 1)))
+
+    def access(self: T,
+               memory: Tensor,
+               accessor: Tuple
+               ) -> Tensor:
+
+        index, bgn, end = accessor
         pos = index - bgn
-        velo = ((1 - pos) * self.velocity[bgn] + pos * self.velocity[end])
-        angels = ((1 - pos) * self.angles[bgn] + pos * self.angles[end])
+        memory = memory.flatten(0)
+        return (1 - pos) * memory[bgn] + pos * memory[end]
+
+        # return th.sum(memory * accessor, dim=2).view(
+        #     -1, self.in_channels, self.in_channels_factor, self.in_spatio_dims, self.in_spatio_factor
+        # )
+
+    def step(self: T,
+             data: Tensor
+             ) -> Tensor:
+
+        accessor = self.accessor(data)
+        velo = self.access(self.velocity, accessor)
+        angels = self.access(self.angles, accessor)
 
         # by the flow equation of the arithmetic expression geometry
         return velo * th.cos(angels) + data * velo * th.sin(angels)
@@ -95,7 +113,7 @@ class MacUnit(nn.Module):
                 data: Tensor
                 ) -> Tensor:
 
-        ones = torch.ones_like(data).view(
+        ones = th.ones_like(data).view(
             -1, self.in_channels, 1,  self.in_spatio_dims, 1
         ).expand(
             -1, self.in_channels, self.in_channels_factor, self.in_spatio_dims, self.in_spatio_factor
