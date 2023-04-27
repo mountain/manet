@@ -1,15 +1,16 @@
 import numpy as np
-import torch
 import torch as th
+import torch.nn as nn
+import torch.nn.functional as F
 
-from torch import nn
-from torch import Tensor
-from typing import List, TypeVar, Tuple
+from torch import Tensor, device, dtype
+from typing import List, TypeVar, Tuple, Optional, Union
+from torch.nn import Module
 
 
 T = TypeVar('T', bound='MacUnit')
 
-epsilon = 1e-2
+epsilon = 3e-2
 
 
 def _exchangeable_multiplier_(factor1: int, factor2: int) -> Tuple[int, int]:
@@ -22,22 +23,14 @@ def _exchangeable_multiplier_(factor1: int, factor2: int) -> Tuple[int, int]:
     return lcm // factor1, lcm // factor2
 
 
-def eta(domain: Tensor,
-        pointer: Tensor
-        ) -> Tensor:
-    difference = domain - pointer
-    eta = th.exp(- difference * difference / epsilon / 2)
-    return eta / np.sqrt(2 * th.pi * epsilon)
-
-
 class MacUnit(nn.Module):
     def __init__(self: T,
                  in_channels: int,
                  out_channels: int,
                  in_spatio_dims: int = 1,
                  out_spatio_dims: int = 1,
-                 num_steps: int = 3,
-                 num_points: int = 101,
+                 num_steps: int = 2,
+                 num_points: int = 31,
                  ) -> None:
 
         super().__init__()
@@ -53,6 +46,7 @@ class MacUnit(nn.Module):
         # the constant tensors
         self.in_channels_factor, self.out_channels_factor = _exchangeable_multiplier_(in_channels, out_channels)
         self.in_spatio_factor, self.out_spatio_factor = _exchangeable_multiplier_(in_spatio_dims, out_spatio_dims)
+        self.dims = self.in_channels * self.in_channels_factor * self.in_spatio_dims * self.in_spatio_factor
 
         # the learnable parameters which govern the MAC unit
         self.angles = nn.Parameter(
@@ -66,37 +60,46 @@ class MacUnit(nn.Module):
         )
 
         # the integral domain
-        self.domain = nn.Parameter(th.linspace(-1, 1, num_points).view(1, 1, num_points))
+        self.domain = th.linspace(-1, 1, num_points).view(1, 1, num_points)
+        self.alpha = nn.Parameter(th.normal(0, 1, (1, 1, num_points)))
+        self.beta = nn.Parameter(th.normal(0, 1, (1, 1, num_points)))
+
+    def to(self: T, device: Optional[Union[int, device]] = ..., dtype: Optional[Union[dtype, str]] = ...,
+           non_blocking: bool = ...) -> Module:
+        self.domain.to(device, dtype)
+        return super().to(device, dtype)
 
     def accessor(self: T,
                  data: Tensor,
-                 ) -> Tuple:
+                 ) -> Tensor:
 
         # calculate the index of the accessor
-        index = th.sigmoid(data) * self.num_points
-        bgn = index.floor().long()
-        end = (index + 1).floor().long()
-        bgn = bgn * (end < self.num_points) + (bgn - 1) * (end == self.num_points)
-        end = end * (end < self.num_points) + (end - 1) * (end == self.num_points)
+        # index = th.sigmoid(data) * self.num_points
+        # bgn = index.floor().long()
+        # end = (index + 1).floor().long()
+        # bgn = bgn * (end < self.num_points) + (bgn - 1) * (end == self.num_points)
+        # end = end * (end < self.num_points) + (end - 1) * (end == self.num_points)
 
-        return index, bgn, end
+        # return index, bgn, end
 
-        # dims = self.in_channels * self.in_channels_factor * self.in_spatio_dims * self.in_spatio_factor
-        # return eta(self.domain, th.tanh(data.view(-1, dims, 1)))
+        # replace above hard selection with a gumbel softmax
+        data = data.view(-1, self.dims, 1)
+        data = self.alpha * data + self.beta
+        return F.gumbel_softmax(data)
 
     def access(self: T,
                memory: Tensor,
-               accessor: Tuple
+               accessor: Tensor
                ) -> Tensor:
 
-        index, bgn, end = accessor
-        pos = index - bgn
-        memory = memory.flatten(0)
-        return (1 - pos) * memory[bgn] + pos * memory[end]
+        # index, bgn, end = accessor
+        # pos = index - bgn
+        # memory = memory.flatten(0)
+        # return (1 - pos) * memory[bgn] + pos * memory[end]
 
-        # return th.sum(memory * accessor, dim=2).view(
-        #     -1, self.in_channels, self.in_channels_factor, self.in_spatio_dims, self.in_spatio_factor
-        # )
+        return th.sum(memory * accessor, dim=-1).view(
+            -1, self.in_channels, self.in_channels_factor, self.in_spatio_dims, self.in_spatio_factor
+        )
 
     def step(self: T,
              data: Tensor
