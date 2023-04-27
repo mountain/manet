@@ -58,6 +58,9 @@ class Model(pl.LightningModule):
         error23 = (embedding[:, 8:9] + rels[:, 2:3]) * rels[:, 3:4] - embedding[:, 9:10]
         loss_rel = torch.mean(error12 * error12 + error23 * error23)
 
+        ctx = (ctx + embedding[:, 7:8]) / 2
+        ctx = (ctx + embedding[:, 8:9]) / 2
+        ctx = (ctx + embedding[:, 9:10]) / 2
         pred4, pred5 = self.predict(ctx, embedding[:, 7:8], embedding[:, 8:9], embedding[:, 9:10], rels)
         error34 = pred4 - embedding[:, 10:11]
         error45 = pred5 - embedding[:, 11:12]
