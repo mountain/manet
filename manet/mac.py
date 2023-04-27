@@ -10,8 +10,6 @@ from torch.nn import Module
 
 T = TypeVar('T', bound='MacUnit')
 
-epsilon = 3e-2
-
 
 def _exchangeable_multiplier_(factor1: int, factor2: int) -> Tuple[int, int]:
     # this is the normal setting

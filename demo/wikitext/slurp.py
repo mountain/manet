@@ -3,26 +3,28 @@ import lightning as pl
 
 
 class Model(pl.LightningModule):
-    def __init__(self):
+    def __init__(self, fname):
         super().__init__()
         self.line_counter = 0
         self.paragraph_counter = 0
-        self.context = open('datasets/context.txt', 'w')
+        self.context = open('datasets/%s.txt' % fname, 'w')
         self.dedup = set()
 
     def slurp(self, x):
         words = x.split(' ')
         length = len(words)
-        #if length > 5:
-        #    for ix in range(5, length):
-        #        self.context.write('%s\n' % words[ix - 5:ix])
-        #        self.line_counter += 1
         for ix in range(length):
-            wd = words[ix]
-            if wd not in self.dedup:
-                self.context.write('%s\n' %wd)
-                self.line_counter += 1
-                self.dedup.add(wd)
+            if ix < 12:
+                self.context.write('%s\n' % words[:ix])
+            else:
+                self.context.write('%s\n' % words[ix - 12:ix])
+            self.line_counter += 1
+        # for ix in range(length):
+        #     wd = words[ix]
+        #     if wd not in self.dedup:
+        #         self.context.write('%s\n' %wd)
+        #         self.line_counter += 1
+        #         self.dedup.add(wd)
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
@@ -44,10 +46,14 @@ if __name__ == '__main__':
 
     dataset = WikiText2('')
 
-    wiki_test, _, _ = dataset
-    test_loader = DataLoader(wiki_test, batch_size=8)
+    wiki_train, wiki_valid, wiki_test = dataset
+    train_loader = DataLoader(wiki_train, batch_size=1)
+    valid_loader = DataLoader(wiki_valid, batch_size=1)
+    test_loader = DataLoader(wiki_test, batch_size=1)
 
     # training
     print('construct trainer...')
     trainer = pl.Trainer(accelerator='cpu', precision=32, max_epochs=1)
-    trainer.test(Model(), test_loader)
+    trainer.test(Model('context-train'), train_loader)
+    trainer.test(Model('context-valid'), valid_loader)
+    trainer.test(Model('context-test'), test_loader)
