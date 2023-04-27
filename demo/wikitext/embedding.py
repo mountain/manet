@@ -12,28 +12,15 @@ class Model(pl.LightningModule):
     def __init__(self):
         super().__init__()
 
-        self.lookup = {'\n': 0}
-        fname = '%s/vocabulary.txt' % pth.dirname(__file__)
-        with open(fname, mode='r') as f:
-            for ix, wd in enumerate(f):
-                wd = wd.strip()
-                self.lookup[wd] = ix
-        self.word_count = ix + 1
-        self.embedding = nn.Parameter(torch.normal(0, np.sqrt(self.word_count), (1, self.word_count)))
+        vname = '%s/vocabulary.txt' % pth.dirname(__file__)
+        with open(vname) as f:
+            self.vocabulary = list([ln.strip() for ln in f if len(ln.strip()) > 0])
+        self.word_count = len(self.vocabulary)
+
+        self.embedding = nn.Parameter(torch.normal(0, 1, (self.word_count,)))
 
         self.solver = MLP(4, [8, 16, 8, 4])
         self.predictor = MLP(8, [16, 32, 16, 8, 4])
-
-        import collections
-        self.q = collections.deque(maxlen=3)
-        self.p = collections.deque(maxlen=2)
-
-    def word_embedding(self, word):
-        try:
-            ix = self.lookup[word]
-        except KeyError:
-            ix = self.lookup['<unk>']
-        return self.embedding[:, ix:ix+1]
 
     def solve(self, ctx, emb1, emb2, emb3):
         return self.solver(torch.concat((ctx, emb1, emb2, emb3), dim=1))
@@ -43,53 +30,6 @@ class Model(pl.LightningModule):
         pred4 = (emb3 + rels[:, 0:1]) * rels[:, 1:2]
         pred5 = (pred4 + rels[:, 2:3]) * rels[:, 3:4]
         return pred4, pred5
-
-    def learn(self, last_length, loss_rel, loss_emb, paragraph):
-        words = paragraph.split(' ')
-        length = len(words)
-        empty = self.word_embedding('')
-        error_rel, error_emb = None, None
-        ctx = torch.zeros_like(empty)
-        self.q.append(self.word_embedding(''))
-        ctx = (ctx + self.q[-1]) / 2
-        self.q.append(self.word_embedding(''))
-        ctx = (ctx + self.q[-1]) / 2
-        self.q.append(self.word_embedding(''))
-        ctx = (ctx + self.q[-1]) / 2
-        self.p.append(self.word_embedding(''))
-        self.p.append(self.word_embedding(''))
-        for ix in range(length):
-            rels = self.solve(ctx, self.q[0], self.q[1], self.q[2])
-            error12 = (self.q[0] + rels[:, 0:1]) * rels[:, 1:2] - self.q[1]
-            error23 = (self.q[1] + rels[:, 2:3]) * rels[:, 3:4] - self.q[2]
-
-            if error_rel is None:
-                error_rel = error12 * error12 + error23 * error23
-            else:
-                error_rel = error_rel + error12 * error12 + error23 * error23
-
-            pred4, pred5 = self.predict(ctx, self.q[0], self.q[1], self.q[2], rels)
-            error34 = pred4 - self.p[0]
-            error45 = pred5 - self.p[1]
-
-            if error_emb is None:
-                error_emb = error34 * error34 + error45 * error45
-            else:
-                error_emb = error_emb + error34 * error34 + error45 * error45
-
-            self.q.append(self.p.popleft())
-            self.p.append(self.word_embedding(words[ix]))
-            ctx = (ctx + self.q[-1]) / 2
-
-        length = last_length + length
-        if error_rel is None and error_emb is None:
-            loss_rel, loss_emb = loss_rel, loss_emb
-        elif loss_rel is None and loss_emb is None:
-            loss_rel, loss_emb = torch.sum(error_rel), torch.sum(error_emb)
-        else:
-            loss_rel, loss_emb = loss_rel + torch.sum(error_rel), loss_emb + torch.sum(error_emb)
-
-        return length, loss_rel, loss_emb
 
     def log_messages(self, key, loss_rel, loss_emb, loss):
         self.log(key, loss, prog_bar=True, batch_size=1)
@@ -108,18 +48,24 @@ class Model(pl.LightningModule):
         return optimizer
 
     def step(self, key, batch):
-        length, loss_rel, loss_emb = 0, None, None
-        for paragraph in batch:
-            length, loss_rel, loss_emb = self.learn(length, loss_rel, loss_emb, paragraph)
+        embedding = self.embedding[batch]
+        ctx = embedding[:, 0:1]
+        for ix in range(1, 7):
+            ctx = (ctx + embedding[:, ix:ix+1]) / 2
 
-        if length == 0:
-            loss = loss_rel + loss_emb
-        else:
-            loss_rel = loss_rel / length
-            loss_emb = loss_emb / length
-            loss = loss_rel + loss_emb
+        rels = self.solve(ctx, embedding[:, 7:8], embedding[:, 8:9], embedding[:, 9:10])
+        error12 = (embedding[:, 7:8] + rels[:, 0:1]) * rels[:, 1:2] - embedding[:, 8:9]
+        error23 = (embedding[:, 8:9] + rels[:, 2:3]) * rels[:, 3:4] - embedding[:, 9:10]
+        loss_rel = torch.mean(error12 * error12 + error23 * error23)
 
+        pred4, pred5 = self.predict(ctx, embedding[:, 7:8], embedding[:, 8:9], embedding[:, 9:10], rels)
+        error34 = pred4 - embedding[:, 10:11]
+        error45 = pred5 - embedding[:, 11:12]
+        loss_emb = torch.mean(error34 * error34 + error45 * error45)
+
+        loss = loss_rel + loss_emb
         self.log_messages('%s_loss' % key, loss_rel, loss_emb, loss)
+
         return loss
 
     def training_step(self, train_batch, batch_idx):

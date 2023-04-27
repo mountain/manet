@@ -2,3 +2,4 @@ torch
 torchvision
 torchtext
 lightning
+portalocker>=2.0.0

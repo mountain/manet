@@ -1,6 +1,10 @@
 import argparse
 import torch
 import lightning.pytorch as pl
+from torchtext.transforms import ToTensor
+
+from demo.wikitext.dataset import ContextDataset
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-n", "--n_epochs", type=int, default=200, help="number of epochs of training")
@@ -22,14 +26,15 @@ if __name__ == '__main__':
     print('loading data...')
 
     from torch.utils.data import DataLoader
-    from torchtext.datasets import WikiText2
 
-    dataset = WikiText2('')
-
-    wiki_train, wiki_valid, wiki_test = dataset
-    train_loader = DataLoader(wiki_train, batch_size=1)
-    val_loader = DataLoader(wiki_valid, batch_size=1)
-    test_loader = DataLoader(wiki_test, batch_size=1)
+    wiki_train, wiki_valid, wiki_test = (
+        ContextDataset('train', transform=ToTensor()),
+        ContextDataset('valid', transform=ToTensor()),
+        ContextDataset('test', transform=ToTensor())
+    )
+    train_loader = DataLoader(wiki_train, batch_size=64, shuffle=True)
+    val_loader = DataLoader(wiki_valid, batch_size=64)
+    test_loader = DataLoader(wiki_test, batch_size=64)
 
     # training
     print('construct trainer...')

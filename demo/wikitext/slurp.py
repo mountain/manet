@@ -1,5 +1,6 @@
 import torch
 import lightning as pl
+import os.path as pth
 
 
 class Model(pl.LightningModule):
@@ -10,14 +11,32 @@ class Model(pl.LightningModule):
         self.context = open('datasets/%s.txt' % fname, 'w')
         self.dedup = set()
 
+        self.lookup = {'\n': 0}
+        fname = '%s/vocabulary.txt' % pth.dirname(__file__)
+        with open(fname, mode='r') as f:
+            for ix, wd in enumerate(f):
+                wd = wd.strip()
+                self.lookup[wd] = ix
+
+    def txt2ix(self, wd):
+        try:
+            ix = self.lookup[wd]
+        except KeyError:
+            ix = self.lookup['<unk>']
+        return ix
+
+    def padleft(self, xs):
+        xs = list(xs)
+        return [0] * (12 - len(xs)) + xs
+
     def slurp(self, x):
         words = x.split(' ')
         length = len(words)
         for ix in range(length):
             if ix < 12:
-                self.context.write('%s\n' % words[:ix])
+                self.context.write('%s\n' % self.padleft([self.txt2ix(elm) for elm in words[:ix+1]]))
             else:
-                self.context.write('%s\n' % words[ix - 12:ix])
+                self.context.write('%s\n' % self.padleft([self.txt2ix(elm) for elm in words[ix - 12:ix+1]]))
             self.line_counter += 1
         # for ix in range(length):
         #     wd = words[ix]
