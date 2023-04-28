@@ -6,10 +6,10 @@ import os.path as pth
 class Model(pl.LightningModule):
     def __init__(self, fname):
         super().__init__()
+        self.fname = fname
         self.line_counter = 0
         self.occur_counter = 0
         self.paragraph_counter = 0
-        self.context = open('datasets/%s.txt' % fname, 'w')
         self.freq = dict()
         self.q = clct.deque(maxlen=2)
 
@@ -34,7 +34,7 @@ class Model(pl.LightningModule):
         for ix in range(length):
             wd = words[ix]
             self.q.append(wd)
-            gram2 = list(self.q)
+            gram2 = tuple(self.q)
             if gram2 not in self.freq:
                 self.freq[gram2] = 0
                 self.line_counter += 1
@@ -46,8 +46,11 @@ class Model(pl.LightningModule):
             self.slurp(paragraph)
             self.paragraph_counter += 1
         print(self.paragraph_counter, self.line_counter, self.occur_counter)
-        for k, v in sorted(self.freq.items(), key=lambda item: item[1], reverse=True):
-            self.context.write('{%s: %0.7f}' % (k, v / self.occur_counter))
+
+    def on_test_end(self) -> None:
+        with open('datasets/%s.txt' % self.fname, 'w') as f:
+            for k, v in sorted(self.freq.items(), key=lambda item: item[0]):
+                f.write('{%s: %0.7f}\n' % (k, v / self.occur_counter))
 
 
 if __name__ == '__main__':

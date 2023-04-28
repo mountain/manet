@@ -9,7 +9,7 @@ from demo.wikitext.dataset import ContextDataset
 parser = argparse.ArgumentParser()
 parser.add_argument("-n", "--n_epochs", type=int, default=400, help="number of epochs of training")
 parser.add_argument("-b", "--batch", type=int, default=64, help="batch size of training")
-parser.add_argument("-m", "--model", type=str, default='embedding', help="model to execute")
+parser.add_argument("-m", "--model", type=str, default='diffusion', help="model to execute")
 opt = parser.parse_args()
 
 
@@ -42,7 +42,7 @@ if __name__ == '__main__':
 
     import importlib
     print('construct model...')
-    mdl = importlib.import_module('demo.wikitext.%s' % opt.model, package=None)
+    mdl = importlib.import_module('demo.wikitext.emb.%s' % opt.model, package=None)
     model = mdl._model_()
 
     print('training...')
