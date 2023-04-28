@@ -29,16 +29,18 @@ class Model(pl.LightningModule):
         rels = self.predictor(torch.concat((ctx, emb1, emb2, emb3, rels), dim=1))
         pred4 = (emb3 + rels[:, 0:1]) * rels[:, 1:2]
         pred5 = (pred4 + rels[:, 2:3]) * rels[:, 3:4]
-        return pred4, pred5
 
-    def log_messages(self, key, loss_rel, loss_emb, loss):
-        self.log(key, loss, prog_bar=True, batch_size=1)
-        self.log('loss_rel', loss_rel, prog_bar=True, batch_size=1)
-        self.log('loss_emb', loss_emb, prog_bar=True, batch_size=1)
-        self.log('max', self.embedding.max().item(), prog_bar=True, batch_size=1)
-        self.log('min', self.embedding.min().item(), prog_bar=True, batch_size=1)
-        self.log('mean', self.embedding.mean().item(), prog_bar=True, batch_size=1)
-        self.log('std', torch.std(self.embedding).item(), prog_bar=True, batch_size=1)
+        return pred4, pred5, rels
+
+    def log_messages(self, key, loss_rel, loss_emb, loss_amb, loss):
+        self.log(key, loss, prog_bar=True, batch_size=64)
+        self.log('loss_rel', loss_rel, prog_bar=True, batch_size=64)
+        self.log('loss_emb', loss_emb, prog_bar=True, batch_size=64)
+        self.log('loss_amb', loss_amb, prog_bar=True, batch_size=64)
+        self.log('max', self.embedding.max().item(), prog_bar=True, batch_size=64)
+        self.log('min', self.embedding.min().item(), prog_bar=True, batch_size=64)
+        self.log('mean', self.embedding.mean().item(), prog_bar=True, batch_size=64)
+        self.log('std', torch.std(self.embedding).item(), prog_bar=True, batch_size=64)
 
     def forward(self, x):
         pass
@@ -61,13 +63,16 @@ class Model(pl.LightningModule):
         ctx = (ctx + embedding[:, 7:8]) / 2
         ctx = (ctx + embedding[:, 8:9]) / 2
         ctx = (ctx + embedding[:, 9:10]) / 2
-        pred4, pred5 = self.predict(ctx, embedding[:, 7:8], embedding[:, 8:9], embedding[:, 9:10], rels)
+        pred4, pred5, rels = self.predict(ctx, embedding[:, 7:8], embedding[:, 8:9], embedding[:, 9:10], rels)
         error34 = pred4 - embedding[:, 10:11]
         error45 = pred5 - embedding[:, 11:12]
         loss_emb = torch.mean(error34 * error34 + error45 * error45)
 
-        loss = loss_rel + loss_emb
-        self.log_messages('%s_loss' % key, loss_rel, loss_emb, loss)
+        nrels = self.solve(ctx, embedding[:, 9:10], pred4, pred5)
+        loss_amb = torch.mean((rels - nrels) * (rels - nrels))
+
+        loss = loss_rel + loss_emb + loss_amb
+        self.log_messages('%s_loss' % key, loss_rel, loss_emb, loss_amb, loss)
 
         return loss
 

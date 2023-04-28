@@ -45,10 +45,6 @@ class Model(pl.LightningModule):
         #         self.line_counter += 1
         #         self.dedup.add(wd)
 
-    def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
-        return optimizer
-
     def test_step(self, train_batch, batch_idx):
         for pix, paragraph in enumerate(train_batch):
             self.slurp(paragraph)
@@ -73,6 +69,7 @@ if __name__ == '__main__':
     # training
     print('construct trainer...')
     trainer = pl.Trainer(accelerator='cpu', precision=32, max_epochs=1)
+    print('test...')
     trainer.test(Model('context-train'), train_loader)
     trainer.test(Model('context-valid'), valid_loader)
     trainer.test(Model('context-test'), test_loader)
