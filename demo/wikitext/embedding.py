@@ -25,7 +25,7 @@ class Model(pl.LightningModule):
         self.solver = MLP(4, [8, 16, 8, 4])
         self.predictor = MLP(8, [16, 32, 16, 8, 4])
 
-        self.val_loss = None
+        self.labeled_loss = None
 
     def solve(self, ctx, emb1, emb2, emb3):
         return self.solver(torch.concat((ctx, emb1, emb2, emb3), dim=1))
@@ -85,17 +85,17 @@ class Model(pl.LightningModule):
         return self.step('train', train_batch)
 
     def validation_step(self, val_batch, batch_idx):
-        self.val_loss = self.step('valid', val_batch)
+        self.labeled_loss = self.step('valid', val_batch)
 
     def test_step(self, test_batch, batch_idx):
         self.step('test', test_batch)
 
     def on_save_checkpoint(self, checkpoint: Dict[str, Any]) -> None:
-        fname = 'best-%0.7f-%d.ckpt' % (self.val_loss, checkpoint['epoch'])
+        fname = 'best-%0.15f-%d.ckpt' % (self.labeled_loss, checkpoint['epoch'])
         import pickle, glob
         with open(fname, 'bw') as f:
             pickle.dump(checkpoint, f)
-        for ix, ckpt in enumerate(sorted(glob.glob('best-*.ckpt'), reverse=True)):
+        for ix, ckpt in enumerate(sorted(glob.glob('best-*.ckpt'))):
             if ix > 2:
                 os.unlink(ckpt)
 
