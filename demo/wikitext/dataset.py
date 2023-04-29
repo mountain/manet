@@ -2,7 +2,6 @@ import numpy as np
 import torch
 
 from torch.utils.data import Dataset
-from transformers import AutoTokenizer
 
 
 class ContextDataset(Dataset):
@@ -13,7 +12,7 @@ class ContextDataset(Dataset):
             for ln in f:
                 if len(ln.strip()) > 0:
                     elms = eval(ln)
-                    if len(elms) == 12:
+                    if len(elms) == 18:
                         items.append(np.array(elms, dtype=np.int64))
         self.data = torch.LongTensor(np.array(items, dtype=np.int64))
 

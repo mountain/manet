@@ -27,7 +27,7 @@ class MacUnit(nn.Module):
                  out_channels: int,
                  in_spatio_dims: int = 1,
                  out_spatio_dims: int = 1,
-                 num_steps: int = 2,
+                 num_steps: int = 1,
                  num_points: int = 31,
                  ) -> None:
 

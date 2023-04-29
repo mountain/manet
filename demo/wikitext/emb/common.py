@@ -13,7 +13,7 @@ class EmbeddingModel(pl.LightningModule):
     def __init__(self):
         super().__init__()
 
-        vname = 'datasets/vocabulary.txt'
+        vname = 'datasets/vocab.txt'
         with open(vname) as f:
             self.vocabulary = list([ln.strip() for ln in f if len(ln.strip()) > 0])
         with open(vname) as f:
@@ -25,11 +25,8 @@ class EmbeddingModel(pl.LightningModule):
 
         self.labeled_loss = None
 
-    def log_messages(self, key, loss_rel, loss_emb, loss_amb, loss):
+    def log_messages(self, key, loss):
         self.log(key, loss, prog_bar=True, batch_size=64)
-        self.log('loss_rel', loss_rel, prog_bar=True, batch_size=64)
-        self.log('loss_emb', loss_emb, prog_bar=True, batch_size=64)
-        self.log('loss_amb', loss_amb, prog_bar=True, batch_size=64)
         self.log('max', self.embedding.max().item(), prog_bar=True, batch_size=64)
         self.log('min', self.embedding.min().item(), prog_bar=True, batch_size=64)
         self.log('mean', self.embedding.mean().item(), prog_bar=True, batch_size=64)
