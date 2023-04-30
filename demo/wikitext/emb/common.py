@@ -26,7 +26,7 @@ class EmbeddingModel(pl.LightningModule):
         self.labeled_loss = None
         self.lr = None
 
-    def log_messages(self, key, loss, penalty, prog_bar=False, batch_size=64):
+    def log_messages(self, key, loss, penalty, prog_bar=True, batch_size=64):
         self.log(key, loss, prog_bar=prog_bar, batch_size=batch_size)
         self.log('max', self.embedding.max().item(), prog_bar=prog_bar, batch_size=batch_size)
         self.log('min', self.embedding.min().item(), prog_bar=prog_bar, batch_size=batch_size)
