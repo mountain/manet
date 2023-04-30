@@ -3,6 +3,7 @@ import collections
 import torch as th
 import torch.nn.functional as F
 from torch.nn import NLLLoss
+from transformers import AutoTokenizer
 
 from manet.mac import MLP
 from demo.wikitext.emb.common import EmbeddingModel
@@ -21,6 +22,13 @@ class DiffusionModel(EmbeddingModel):
         self.pmemory = collections.deque(maxlen=default_steps // 3)
         self.qmemory = collections.deque(maxlen=default_steps // 3)
         self.rmemory = collections.deque(maxlen=default_steps // 3)
+        self.tokenizer = AutoTokenizer.from_pretrained("bert-base-cased")
+
+    def clear(self, token):
+        for ix in range(default_steps // 3):
+            self.pmemory.append(th.zeros_like(token))
+            self.qmemory.append(th.zeros_like(token))
+            self.rmemory.append(th.zeros_like(token))
 
     def diffuse_step(self, ctx, theta, emb):
         self.pmemory.append(emb)
@@ -41,11 +49,7 @@ class DiffusionModel(EmbeddingModel):
         token = tokens[:, :, 0:1].view(-1, 1, 1)
         theta = th.zeros_like(token)
         ctx = th.zeros_like(token)
-
-        for ix in range(default_steps // 3):
-            self.pmemory.append(th.zeros_like(token))
-            self.qmemory.append(th.zeros_like(token))
-            self.rmemory.append(th.zeros_like(token))
+        self.clear(token)
 
         sequence = []
         for ix in range(default_steps):
@@ -59,6 +63,40 @@ class DiffusionModel(EmbeddingModel):
 
         self.log_messages(key, loss=loss)
         return loss
+
+    def get_embedding(self, word):
+        embedding = self.embedding.view(1, -1, 1)
+        try:
+            ix = self.dictionary[word]
+        except KeyError:
+            ix = 0
+        return embedding[0:1, ix:ix+1, 0:1]
+
+    def generate(self, ctx, theta, emb):
+        embedding = self.embedding.view(1, -1, 1)
+        while True:
+            ctx, theta, emb = self.diffuse_step(ctx, theta, emb)
+            ix = th.argmin((embedding - emb) ** 2, dim=1).item()
+            emb = embedding[0:1, ix:ix+1, 0:1]
+            yield ix
+
+    def complete(self, prompt):
+        ctx = th.zeros(1, 1, 1)
+        theta = th.zeros(1, 1, 1)
+        emb = th.zeros(1, 1, 1)
+        self.clear(emb)
+        tokens = self.tokenizer.tokenize(' '.join(prompt))
+        for token in tokens:
+            emb = self.get_embedding(token)
+            ctx, theta, token = self.diffuse_step(ctx, theta, emb)
+
+        counter = 0
+        ctx, theta, token = self.diffuse_step(ctx, theta, emb)
+        for ix in self.generate(ctx, theta, token):
+            print(self.vocabulary[ix], end=' ')
+            counter += 1
+            if counter > 20:
+                break
 
 
 def _model_():
