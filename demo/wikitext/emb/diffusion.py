@@ -58,9 +58,9 @@ class DiffusionModel(EmbeddingModel):
 
         sequence = th.cat(sequence[default_steps // 3:], dim=2)
         embedding = self.embedding.view(1, -1, 1)
-        pred = F.log_softmax(1 - th.tanh((sequence - embedding) ** 2), dim=1)
+        pred = F.log_softmax(3 * (1 - th.tanh((sequence - embedding) ** 2)), dim=1)
         penalty = (th.std(pred, dim=2).mean() - th.std(tokens[:, default_steps // 3:, :], dim=2).mean()) ** 2
-        loss = nll(pred, batch[:, default_steps // 3:]) + penalty
+        loss = nll(pred, batch[:, default_steps // 3:]) + penalty.mean()
 
         self.log_messages(key, loss=loss, penalty=penalty, batch_size=batch.shape[0])
         return loss
