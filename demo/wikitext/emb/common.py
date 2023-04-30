@@ -26,12 +26,13 @@ class EmbeddingModel(pl.LightningModule):
         self.labeled_loss = None
         self.lr = None
 
-    def log_messages(self, key, loss):
-        self.log(key, loss, prog_bar=True, batch_size=64)
-        self.log('max', self.embedding.max().item(), prog_bar=True, batch_size=64)
-        self.log('min', self.embedding.min().item(), prog_bar=True, batch_size=64)
-        self.log('mean', self.embedding.mean().item(), prog_bar=True, batch_size=64)
-        self.log('std', th.std(self.embedding).item(), prog_bar=True, batch_size=64)
+    def log_messages(self, key, loss, penalty, prog_bar=False, batch_size=64):
+        self.log(key, loss, prog_bar=prog_bar, batch_size=batch_size)
+        self.log('max', self.embedding.max().item(), prog_bar=prog_bar, batch_size=batch_size)
+        self.log('min', self.embedding.min().item(), prog_bar=prog_bar, batch_size=batch_size)
+        self.log('mean', self.embedding.mean().item(), prog_bar=prog_bar, batch_size=batch_size)
+        self.log('std', th.std(self.embedding).item(), prog_bar=prog_bar, batch_size=batch_size)
+        self.log('penalty', penalty.item(), prog_bar=prog_bar, batch_size=batch_size)
 
     def configure_optimizers(self):
         optimizer = th.optim.Adam(self.parameters(), lr=1e-3)
