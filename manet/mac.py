@@ -57,10 +57,13 @@ class MacUnit(nn.Module):
             th.normal(0, 1, (self.out_channels_factor, out_channels, self.out_spatio_factor, out_spatio_dims))
         )
 
+        self.alpha = nn.Parameter(th.normal(0, 1, (1, self.in_channels, self.in_channels_factor, self.in_spatio_dims, self.in_spatio_factor)))
+        self.beta = nn.Parameter(th.normal(0, 1, (1, self.in_channels, self.in_channels_factor, self.in_spatio_dims, self.in_spatio_factor)))
+
         # the integral domain
-        self.domain = th.linspace(-1, 1, num_points).view(1, 1, num_points)
-        self.alpha = nn.Parameter(th.normal(0, 1, (1, 1, num_points)))
-        self.beta = nn.Parameter(th.normal(0, 1, (1, 1, num_points)))
+        # self.domain = th.linspace(-1, 1, num_points).view(1, 1, num_points)
+        # self.alpha = nn.Parameter(th.normal(0, 1, (1, 1, num_points)))
+        # self.beta = nn.Parameter(th.normal(0, 1, (1, 1, num_points)))
 
     def to(self: T, device: Optional[Union[int, device]] = ..., dtype: Optional[Union[dtype, str]] = ...,
            non_blocking: bool = ...) -> Module:
@@ -69,35 +72,35 @@ class MacUnit(nn.Module):
 
     def accessor(self: T,
                  data: Tensor,
-                 ) -> Tensor:
+                 ) -> Tuple[Tensor, Tensor, Tensor]:
 
         # calculate the index of the accessor
-        # index = th.sigmoid(data) * self.num_points
-        # bgn = index.floor().long()
-        # end = (index + 1).floor().long()
-        # bgn = bgn * (end < self.num_points) + (bgn - 1) * (end == self.num_points)
-        # end = end * (end < self.num_points) + (end - 1) * (end == self.num_points)
+        index = th.sigmoid(self.alpha * data + self.beta) * self.num_points
+        bgn = index.floor().long()
+        end = (index + 1).floor().long()
+        bgn = bgn * (end < self.num_points) + (bgn - 1) * (end == self.num_points)
+        end = end * (end < self.num_points) + (end - 1) * (end == self.num_points)
 
-        # return index, bgn, end
+        return index, bgn, end
 
         # replace above hard selection with a gumbel softmax
-        data = data.view(-1, self.dims, 1)
-        data = self.alpha * data + self.beta
-        return F.gumbel_softmax(data)
+        # data = data.view(-1, self.dims, 1)
+        # data = self.alpha * data + self.beta
+        # return F.softmax(data)
 
     def access(self: T,
                memory: Tensor,
-               accessor: Tensor
+               accessor: Tuple[Tensor, Tensor, Tensor]
                ) -> Tensor:
 
-        # index, bgn, end = accessor
-        # pos = index - bgn
-        # memory = memory.flatten(0)
-        # return (1 - pos) * memory[bgn] + pos * memory[end]
+        index, bgn, end = accessor
+        pos = index - bgn
+        memory = memory.flatten(0)
+        return (1 - pos) * memory[bgn] + pos * memory[end]
 
-        return th.sum(memory * accessor, dim=-1).view(
-            -1, self.in_channels, self.in_channels_factor, self.in_spatio_dims, self.in_spatio_factor
-        )
+        # return th.sum(memory * accessor, dim=-1).view(
+        #     -1, self.in_channels, self.in_channels_factor, self.in_spatio_dims, self.in_spatio_factor
+        # )
 
     def step(self: T,
              data: Tensor

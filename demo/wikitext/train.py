@@ -8,7 +8,7 @@ from demo.wikitext.dataset import ContextDataset
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-n", "--n_epochs", type=int, default=400, help="number of epochs of training")
-parser.add_argument("-b", "--batch", type=int, default=32, help="batch size of training")
+parser.add_argument("-b", "--batch", type=int, default=64, help="batch size of training")
 parser.add_argument("-m", "--model", type=str, default='diffusion', help="model to execute")
 opt = parser.parse_args()
 
@@ -32,13 +32,13 @@ if __name__ == '__main__':
         ContextDataset('valid', transform=ToTensor()),
         ContextDataset('test', transform=ToTensor())
     )
-    train_loader = DataLoader(wiki_train, batch_size=64, shuffle=True)
+    train_loader = DataLoader(wiki_train, batch_size=128, shuffle=True)
     val_loader = DataLoader(wiki_valid, batch_size=64)
     test_loader = DataLoader(wiki_test, batch_size=64)
 
     # training
     print('construct trainer...')
-    trainer = pl.Trainer(accelerator=accelerator, precision=32, max_epochs=opt.n_epochs)
+    trainer = pl.Trainer(accelerator=accelerator, precision=64, max_epochs=opt.n_epochs)
 
     import importlib
     print('construct model...')

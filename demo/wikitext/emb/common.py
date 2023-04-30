@@ -24,6 +24,7 @@ class EmbeddingModel(pl.LightningModule):
         self.embedding = nn.Parameter(th.normal(0, 1, (self.word_count,)))
 
         self.labeled_loss = None
+        self.lr = None
 
     def log_messages(self, key, loss):
         self.log(key, loss, prog_bar=True, batch_size=64)
@@ -52,7 +53,7 @@ class EmbeddingModel(pl.LightningModule):
         self.step('test', test_batch)
 
     def on_save_checkpoint(self, checkpoint: Dict[str, Any]) -> None:
-        fname = 'best-%0.15f-%d.ckpt' % (self.labeled_loss, checkpoint['epoch'])
+        fname = ('best-%2.5f-%d.ckpt' % (self.labeled_loss, checkpoint['epoch'])).replace(' ',  '0')
         with open(fname, 'bw') as f:
             pickle.dump(checkpoint, f)
         for ix, ckpt in enumerate(sorted(glob.glob('best-*.ckpt'))):
