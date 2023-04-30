@@ -78,7 +78,7 @@ class MacUnit(nn.Module):
         index = th.sigmoid(self.alpha * data + self.beta) * self.num_points
         bgn = index.floor().long()
         end = (index + 1).floor().long()
-        bgn = bgn * (end < self.num_points) + (bgn - 1) * (end == self.num_points)
+        bgn = bgn * (bgn + 1 < self.num_points) + (bgn - 1) * (bgn + 1 >= self.num_points)
         end = end * (end < self.num_points) + (end - 1) * (end == self.num_points)
 
         return index, bgn, end
