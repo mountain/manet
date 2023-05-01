@@ -1,5 +1,6 @@
 import argparse
 import torch
+import pickle
 import lightning.pytorch as pl
 from torchtext.transforms import ToTensor
 
@@ -44,6 +45,11 @@ if __name__ == '__main__':
     print('construct model...')
     mdl = importlib.import_module('demo.wikitext.emb.%s' % opt.model, package=None)
     model = mdl._model_()
+
+    fname = 'best-7.86316-3.ckpt'
+    with open(fname, 'rb') as f:
+        checkpoint = pickle.load(f)
+        model.load_state_dict(checkpoint['state_dict'], strict=False)
 
     print('training...')
     trainer.fit(model, train_loader, val_loader)
