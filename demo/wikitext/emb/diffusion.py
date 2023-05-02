@@ -17,8 +17,8 @@ default_steps = 18
 class DiffusionModel(EmbeddingModel):
     def __init__(self):
         super().__init__()
-        l = default_steps
-        self.handler = MLP(l, [3 * 4 * l, 3 * 16 * l, 3 * 4 * l, 3])
+        l = default_steps * self.word_dim
+        self.handler = MLP(l, [3 * 4 * l, 3 * 16 * l, 3 * 4 * l, 3 * self.word_dim])
         self.pmemory = collections.deque(maxlen=default_steps // 3)
         self.qmemory = collections.deque(maxlen=default_steps // 3)
         self.rmemory = collections.deque(maxlen=default_steps // 3)
@@ -35,30 +35,33 @@ class DiffusionModel(EmbeddingModel):
         self.qmemory.append(theta)
         self.rmemory.append(ctx)
         memory = th.cat(list(self.pmemory) + list(self.qmemory) + list(self.rmemory), dim=-1)
-        result = self.handler(memory).view(-1, 1, 3)
-        dctx = th.tanh(result[:, :, 0:1])
-        dtheta = th.tanh(result[:, :, 1:2]) * th.pi
-        velocity = th.sigmoid(result[:, :, 2:3])
+        result = self.handler(memory).view(-1, 1, 3, self.word_dim)
+        dctx = th.tanh(result[:, :, 0:1, :])
+        dtheta = th.tanh(result[:, :, 1:2, :]) * th.pi
+        velocity = th.sigmoid(result[:, :, 2:3, :])
         next_ctx = ctx + dctx
         next_theta = theta + dtheta
         next_emb = emb + th.cos(next_theta) * velocity + emb * th.sin(next_theta) * velocity
         return next_ctx, next_theta, next_emb
 
     def step(self, key, batch):
-        tokens = self.embedding[batch].view(-1, 1, default_steps)
-        token = tokens[:, :, 0:1].view(-1, 1, 1)
+        tokens = self.embedding[batch].view(-1, 1, default_steps, self.word_dim)
+        token = tokens[:, :, 0:1, :].view(-1, 1, 1, self.word_dim)
         theta = th.zeros_like(token)
         ctx = th.zeros_like(token)
         self.clear(token)
 
         sequence = []
         for ix in range(default_steps):
-            ctx, theta, token = self.diffuse_step(ctx, theta, token)
+            if ix < default_steps // 3:
+                token = tokens[:, :, ix:ix+1, :]
             sequence.append(token)
+            ctx, theta, token = self.diffuse_step(ctx, theta, token)
 
         sequence = th.cat(sequence[default_steps // 3:], dim=2)
-        embedding = self.embedding.view(1, -1, 1)
-        pred = F.log_softmax(3 * (1 - th.tanh((sequence - embedding) ** 2)), dim=1)
+        embedding = self.embedding.view(1, -1, 1, self.word_dim)
+        dist = th.sum((sequence - embedding) ** 2, dim=-1)
+        pred = F.log_softmax(3 * (1 - th.tanh(dist)), dim=1)
         penalty = (th.std(pred, dim=2).mean() - th.std(tokens[:, :, default_steps // 3:], dim=2).mean()) ** 2
         loss = nll(pred, batch[:, default_steps // 3:]) + penalty
 

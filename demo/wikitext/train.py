@@ -46,10 +46,10 @@ if __name__ == '__main__':
     mdl = importlib.import_module('demo.wikitext.emb.%s' % opt.model, package=None)
     model = mdl._model_()
 
-    fname = 'best-7.86316-3.ckpt'
-    with open(fname, 'rb') as f:
-        checkpoint = pickle.load(f)
-        model.load_state_dict(checkpoint['state_dict'], strict=False)
+    # fname = 'best-7.85390-3.ckpt'
+    # with open(fname, 'rb') as f:
+    #     checkpoint = pickle.load(f)
+    #     model.load_state_dict(checkpoint['state_dict'], strict=False)
 
     print('training...')
     trainer.fit(model, train_loader, val_loader)

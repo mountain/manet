@@ -21,7 +21,8 @@ class EmbeddingModel(pl.LightningModule):
             self.dictionary[''] = 0
         self.word_count = len(self.vocabulary)
 
-        self.embedding = nn.Parameter(th.normal(0, 1, (self.word_count,)))
+        self.word_dim = 1
+        self.embedding = nn.Parameter(th.normal(0, 1, (self.word_dim * self.word_count,)))
 
         self.labeled_loss = None
         self.lr = None
