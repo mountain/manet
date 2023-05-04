@@ -21,7 +21,7 @@ class DiffusionModel(EmbeddingModel):
         self.m = self.l * self.word_dim
         self.encoder = MLP(self.m, [2 * 4 * self.m, 2 * 16 * self.m, 2 * 32 * self.m])
         self.decoder = MLP(2 * 32 * self.m, [2 * 8 * self.m, 2 * 2 * self.m, 2 * self.word_dim])
-        self.context = MLP(6 * 32 * self.m, [4 * 8 * self.m, 4 * 2 * self.m, 2])
+        self.context = MLP(6 * 32 * self.m, [4 * 8 * self.m, 4 * 2 * self.m, 3])
         self.pmemory = collections.deque(maxlen=default_steps // 3)
         self.qmemory = collections.deque(maxlen=default_steps // 3)
         self.tokenizer = AutoTokenizer.from_pretrained("bert-base-cased")
@@ -43,12 +43,12 @@ class DiffusionModel(EmbeddingModel):
         if context is None:
             context = th.zeros_like(inputs)
 
-        for _ in range(6):
+        for _ in range(4):
             judge = th.sigmoid(self.context(th.cat((context, inputs, output), dim=1)))
-            p, q = judge[:, 0:1], judge[:, 1:2]
-            context = (context * inputs + 1) * p + context * (1 - p)
+            p, q, r = judge[:, 0:1], judge[:, 1:2], judge[:, 2:3]
+            context = (context * inputs + r) * (1 - p) + context * p
             context = (context / 2) * p + context * (1 - p)
-            output = (output * inputs + 1) * q + output * (1 - q)
+            output = (output * inputs + r) * (1 - q) + output * q
             output = (output / 2) * q + output * (1 - q)
 
         result = self.decoder(output).view(-1, 1, 2, self.word_dim)
