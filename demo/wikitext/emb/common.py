@@ -9,6 +9,7 @@ import lightning as pl
 from typing import Dict, Any
 
 
+
 class EmbeddingModel(pl.LightningModule):
     def __init__(self):
         super().__init__()
