@@ -55,7 +55,10 @@ class EmbeddingModel(pl.LightningModule):
         self.step('test', test_batch)
 
     def on_save_checkpoint(self, checkpoint: Dict[str, Any]) -> None:
-        fname = ('best-%2.5f-%d.ckpt' % (self.labeled_loss, checkpoint['epoch'])).replace(' ',  '0')
+        record = '%2.5f-%03d.ckpt' % (self.labeled_loss, checkpoint['epoch'])
+        if len(record) < 12:
+            record = '0' * (12 - len(record)) + record
+        fname = 'best-%s' % record
         with open(fname, 'bw') as f:
             pickle.dump(checkpoint, f)
         for ix, ckpt in enumerate(sorted(glob.glob('best-*.ckpt'))):

@@ -24,14 +24,15 @@ class DiffusionModel(EmbeddingModel):
         self.context = MLP(4 * 32 * self.m, [4 * 8 * self.m, 4 * 2 * self.m, 1])
         self.pmemory = collections.deque(maxlen=default_steps // 3)
         self.qmemory = collections.deque(maxlen=default_steps // 3)
-        self.rmemory = collections.deque(maxlen=default_steps // 3)
         self.tokenizer = AutoTokenizer.from_pretrained("bert-base-cased")
+
+    def memory(self):
+        return th.cat(list(self.pmemory) + list(self.qmemory), dim=-1)
 
     def clear(self, token):
         for ix in range(default_steps // 3):
             self.pmemory.append(th.zeros_like(token))
             self.qmemory.append(th.zeros_like(token))
-            self.rmemory.append(th.zeros_like(token))
 
     def diffuse_step(self, context, theta, emb):
         self.pmemory.append(emb)
@@ -55,7 +56,8 @@ class DiffusionModel(EmbeddingModel):
         velocity = th.sigmoid(result[:, :, 1:2, :])
         next_theta = theta + dtheta
         next_emb = emb + th.cos(next_theta) * velocity + emb * th.sin(next_theta) * velocity
-        return next_ctx, next_theta, next_emb
+
+        return context, next_theta, next_emb
 
     def step(self, key, batch):
         batch = batch.view(-1, 1, default_steps, 1)
@@ -65,15 +67,15 @@ class DiffusionModel(EmbeddingModel):
         tokens = self.embedding[batch].view(-1, 1, default_steps, self.word_dim)
         token = tokens[:, :, 0:1, :].view(-1, 1, 1, self.word_dim)
         theta = th.zeros_like(token)
-        ctx = th.zeros_like(token)
         self.clear(token)
 
         sequence = []
+        context = None
         for ix in range(default_steps):
             if ix < default_steps // 3:
                 token = tokens[:, :, ix:ix+1, :]
             sequence.append(token)
-            ctx, theta, token = self.diffuse_step(ctx, theta, token)
+            context, theta, token = self.diffuse_step(context, theta, token)
 
         sequence = th.cat(sequence[default_steps // 3:], dim=2)
         embedding = self.embedding.view(1, -1, 1, self.word_dim)
