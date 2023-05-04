@@ -1,11 +1,9 @@
 import argparse
 import torch as th
-import pickle
-import lightning.pytorch as pl
 from torchtext.transforms import ToTensor
 
 from demo.wikitext.dataset import ContextDataset
-
+from demo.wikitext.emb.diffusion import default_steps
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-n", "--n_epochs", type=int, default=400, help="number of epochs of training")
@@ -25,7 +23,8 @@ print(f"using {device} device...")
 
 def train_loop(dataloader, model, loss_fn, optimizer):
     size = len(dataloader.dataset)
-    for batch, (X, y) in enumerate(dataloader):
+    for batch, X in enumerate(dataloader):
+        y = X[:, default_steps // 3:]
         # Compute prediction and loss
         pred = model(X.to(device)).flatten()
         loss = loss_fn(pred, y * th.ones_like(pred, dtype=th.long))
@@ -46,7 +45,8 @@ def test_loop(dataloader, model, loss_fn):
     test_loss, correct = 0, 0
 
     with th.no_grad():
-        for X, y in dataloader:
+        for X in dataloader:
+            y = X[:, default_steps // 3:]
             pred = model(X.to(device)).flatten()
             test_loss += loss_fn(pred, y * th.ones_like(pred, dtype=th.long)).item()
             correct += (pred.argmax(1) == y).type(th.float).sum().item()
