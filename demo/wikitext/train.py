@@ -39,7 +39,7 @@ if __name__ == '__main__':
 
     # training
     print('construct trainer...')
-    trainer = pl.Trainer(accelerator=accelerator, precision=64, max_epochs=opt.n_epochs)
+    trainer = pl.Trainer(precision=64, max_epochs=opt.n_epochs)
 
     import importlib
     print('construct model...')
