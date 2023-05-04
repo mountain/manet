@@ -1,5 +1,5 @@
 import argparse
-import torch
+import torch as th
 import pickle
 import lightning.pytorch as pl
 from torchtext.transforms import ToTensor
@@ -13,13 +13,47 @@ parser.add_argument("-b", "--batch", type=int, default=128, help="batch size of 
 parser.add_argument("-m", "--model", type=str, default='diffusion', help="model to execute")
 opt = parser.parse_args()
 
+device = (
+    "cuda"
+    if th.cuda.is_available()
+    else "mps"
+    if th.backends.mps.is_available()
+    else "cpu"
+)
+print(f"using {device} device...")
 
-if torch.cuda.is_available():
-    accelerator = 'gpu'
-elif torch.backends.mps.is_available():
-    accelerator = 'cpu'
-else:
-    accelerator = 'cpu'
+
+def train_loop(dataloader, model, loss_fn, optimizer):
+    size = len(dataloader.dataset)
+    for batch, (X, y) in enumerate(dataloader):
+        # Compute prediction and loss
+        pred = model(X.to(device)).flatten()
+        loss = loss_fn(pred, y * th.ones_like(pred, dtype=th.long))
+
+        # Backpropagation
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+        if batch % 100 == 0:
+            loss, current = loss.item(), (batch + 1) * len(X)
+            print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
+
+
+def test_loop(dataloader, model, loss_fn):
+    size = len(dataloader.dataset)
+    num_batches = len(dataloader)
+    test_loss, correct = 0, 0
+
+    with th.no_grad():
+        for X, y in dataloader:
+            pred = model(X.to(device)).flatten()
+            test_loss += loss_fn(pred, y * th.ones_like(pred, dtype=th.long)).item()
+            correct += (pred.argmax(1) == y).type(th.float).sum().item()
+
+    test_loss /= num_batches
+    correct /= size
+    print(f"Test Error: \n Accuracy: {(100*correct):>0.1f}%, Avg loss: {test_loss:>8f} \n")
 
 
 if __name__ == '__main__':
@@ -33,26 +67,29 @@ if __name__ == '__main__':
         ContextDataset('valid', transform=ToTensor()),
         ContextDataset('test', transform=ToTensor())
     )
-    train_loader = DataLoader(wiki_train, batch_size=opt.batch, shuffle=True, num_workers=0)
-    val_loader = DataLoader(wiki_valid, batch_size=opt.batch, num_workers=0)
-    test_loader = DataLoader(wiki_test, batch_size=opt.batch, num_workers=0)
-
-    # training
-    print('construct trainer...')
-    trainer = pl.Trainer(accelerator=accelerator, precision=64, max_epochs=opt.n_epochs)
+    train_loader = DataLoader(wiki_train, batch_size=opt.batch, shuffle=True, num_workers=16)
+    val_loader = DataLoader(wiki_valid, batch_size=opt.batch, num_workers=16)
+    test_loader = DataLoader(wiki_test, batch_size=opt.batch, num_workers=16)
 
     import importlib
     print('construct model...')
     mdl = importlib.import_module('demo.wikitext.emb.%s' % opt.model, package=None)
     model = mdl._model_()
+    model.to(device)
 
     # fname = 'best-8.03624-5.ckpt'
     # with open(fname, 'rb') as f:
     #     checkpoint = pickle.load(f)
     #     model.load_state_dict(checkpoint['state_dict'], strict=False)
 
-    print('training...')
-    trainer.fit(model, train_loader, val_loader)
+    from torch.nn import functional as F
+    loss_fn = F.nll_loss
+    optimizer = th.optim.Adam(model.parameters(), lr=1e-3)
+    epochs = opt.n_epochs
+    for t in range(epochs):
+        print(f"Epoch {t + 1}\n-------------------------------")
+        train_loop(train_loader, model, loss_fn, optimizer)
+        test_loop(val_loader, model, loss_fn)
+    test_loop(test_loader, model, loss_fn)
 
-    print('testing...')
-    trainer.test(model, test_loader)
+    print("Done!")

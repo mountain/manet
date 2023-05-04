@@ -8,8 +8,6 @@ from transformers import AutoTokenizer
 from manet.mac import MLP
 from demo.wikitext.emb.common import EmbeddingModel
 
-nll = NLLLoss()
-
 
 default_steps = 18
 
@@ -59,7 +57,7 @@ class DiffusionModel(EmbeddingModel):
 
         return context, next_theta, next_emb
 
-    def step(self, key, batch):
+    def forward(self, batch):
         batch = batch.view(-1, 1, default_steps, 1)
         re_batch = tuple([self.word_dim * batch + ix for ix in range(self.word_dim)])
         batch = th.cat(re_batch, dim=-1)
@@ -81,11 +79,7 @@ class DiffusionModel(EmbeddingModel):
         embedding = self.embedding.view(1, -1, 1, self.word_dim)
         dist = th.sum((sequence - embedding) ** 2, dim=-1)
         pred = F.log_softmax(3 * (1 - th.tanh(dist)), dim=1)
-        penalty = (th.std(pred, dim=2).mean() - th.std(tokens[:, :, default_steps // 3:], dim=2).mean()) ** 2
-        batch = batch.view(-1, 1, default_steps, self.word_dim)[:, :, :, 0] // self.word_dim
-        loss = nll(pred, batch[:, 0, default_steps // 3:]) + penalty
-        self.log_messages(key, loss=loss, penalty=penalty, batch_size=batch.shape[0])
-        return loss
+        return pred
 
     def get_embedding(self, word):
         embedding = self.embedding.view(1, -1, 1, 1)
