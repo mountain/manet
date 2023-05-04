@@ -1,5 +1,4 @@
 import torch
-import lightning as pl
 
 from torch import nn
 from torch.nn import functional as F
@@ -7,10 +6,9 @@ from torch.nn import functional as F
 from manet.mac import MLP, Reshape
 
 
-class MNModel2(pl.LightningModule):
+class MNModel2(nn.Module):
     def __init__(self, learning_rate=1e-3):
         super().__init__()
-        self.learning_rate = learning_rate
         self.recognizer = nn.Sequential(
             nn.Conv2d(1, 10, kernel_size=5, padding=2),
             nn.MaxPool2d(2),
@@ -35,35 +33,6 @@ class MNModel2(pl.LightningModule):
 
     def forward(self, x):
         return self.recognizer(x)
-
-    def configure_optimizers(self):
-        return torch.optim.Adam(self.parameters(), lr=self.learning_rate)
-
-    def training_step(self, train_batch, batch_idx):
-        x, y = train_batch
-        x = x.view(-1, 1, 28, 28)
-        z = self(x)
-        loss = F.nll_loss(z, y)
-        self.log('train_loss', loss, prog_bar=True)
-        return loss
-
-    def validation_step(self, val_batch, batch_idx):
-        x, y = val_batch
-        x = x.view(-1, 1, 28, 28)
-        z = self(x)
-        loss = F.nll_loss(z, y)
-        self.log('val_loss', loss, prog_bar=True)
-        pred = z.data.max(1, keepdim=True)[1]
-        correct = pred.eq(y.data.view_as(pred)).sum() / y.size()[0]
-        self.log('correct', correct, prog_bar=True)
-
-    def test_step(self, test_batch, batch_idx):
-        x, y = test_batch
-        x = x.view(-1, 1, 28, 28)
-        z = self(x)
-        pred = z.data.max(1, keepdim=True)[1]
-        correct = pred.eq(y.data.view_as(pred)).sum() / y.size()[0]
-        self.log('correct', correct, prog_bar=True)
 
 
 def _model_():
