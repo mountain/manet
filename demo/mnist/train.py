@@ -22,7 +22,7 @@ def train_loop(dataloader, model, loss_fn, optimizer):
     for batch, (X, y) in enumerate(dataloader):
         # Compute prediction and loss
         pred = model(X.to(device))
-        loss = loss_fn(pred, y.to(device))
+        loss = loss_fn(pred, y)
 
         # Backpropagation
         optimizer.zero_grad()
