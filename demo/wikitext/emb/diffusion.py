@@ -59,7 +59,6 @@ class DiffusionModel(EmbeddingModel):
 
         return context, next_theta, next_emb
 
-    @th.compile
     def step(self, key, batch):
         batch = batch.view(-1, 1, default_steps, 1)
         re_batch = tuple([self.word_dim * batch + ix for ix in range(self.word_dim)])

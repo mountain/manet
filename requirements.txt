@@ -1,7 +1,7 @@
 torch
 torchvision
 torchtext
-lightning
+lightning==1.8.5
 portalocker>=2.0.0
 revtok
 transformers
