@@ -27,7 +27,7 @@ def train_loop(dataloader, model, loss_fn, optimizer):
         y = X[:, default_steps // 3:]
         # Compute prediction and loss
         pred = model(X.to(device))
-        loss = loss_fn(pred, y)
+        loss = loss_fn(pred, y.to(device))
 
         # Backpropagation
         optimizer.zero_grad()
@@ -48,7 +48,7 @@ def test_loop(dataloader, model, loss_fn):
         for X in dataloader:
             y = X[:, default_steps // 3:]
             pred = model(X.to(device))
-            test_loss += loss_fn(pred, y).item()
+            test_loss += loss_fn(pred, y.to(device)).item()
             correct += (pred.argmax(1) == y).type(th.float).sum().item()
 
     test_loss /= num_batches
