@@ -1,4 +1,3 @@
-import os.path as pth
 import torch as th
 import pickle
 
@@ -13,7 +12,7 @@ test_loader = DataLoader(wiki_test, batch_size=1)
 
 model = mdl._model_()
 
-fname = 'best-7.86316-3.ckpt'
+fname = 'best-8.03624-5.ckpt'
 with open(fname, 'rb') as f:
     checkpoint = pickle.load(f)
     model.load_state_dict(checkpoint['state_dict'], strict=False)

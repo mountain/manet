@@ -17,8 +17,11 @@ default_steps = 18
 class DiffusionModel(EmbeddingModel):
     def __init__(self):
         super().__init__()
-        l = default_steps * self.word_dim
-        self.handler = MLP(l, [3 * 4 * l, 3 * 16 * l, 3 * 4 * l, 3 * self.word_dim])
+        self.l = default_steps // 3 * 2
+        self.m = self.l * self.word_dim
+        self.encoder = MLP(self.m, [2 * 4 * self.m, 2 * 16 * self.m, 2 * 32 * self.m])
+        self.decoder = MLP(2 * 32 * self.m, [2 * 8 * self.m, 2 * 2 * self.m, 2 * self.word_dim])
+        self.context = MLP(4 * 32 * self.m, [4 * 8 * self.m, 4 * 2 * self.m, 1])
         self.pmemory = collections.deque(maxlen=default_steps // 3)
         self.qmemory = collections.deque(maxlen=default_steps // 3)
         self.rmemory = collections.deque(maxlen=default_steps // 3)
@@ -30,21 +33,35 @@ class DiffusionModel(EmbeddingModel):
             self.qmemory.append(th.zeros_like(token))
             self.rmemory.append(th.zeros_like(token))
 
-    def diffuse_step(self, ctx, theta, emb):
+    def diffuse_step(self, context, theta, emb):
         self.pmemory.append(emb)
         self.qmemory.append(theta)
-        self.rmemory.append(ctx)
-        memory = th.cat(list(self.pmemory) + list(self.qmemory) + list(self.rmemory), dim=-1)
-        result = self.handler(memory).view(-1, 1, 3, self.word_dim)
-        dctx = th.tanh(result[:, :, 0:1, :])
-        dtheta = th.tanh(result[:, :, 1:2, :]) * th.pi
-        velocity = th.sigmoid(result[:, :, 2:3, :])
-        next_ctx = ctx + dctx
+
+        inputs = self.encoder(self.memory())
+        output = th.zeros_like(inputs)
+        if context is None:
+            context = th.zeros_like(inputs)
+
+        for _ in range(2):
+            judge = th.sigmoid(self.context(th.cat((context, output), dim=1)))
+            context = (context * inputs + 1) * judge + context * (1 - judge)
+            context = context / 2 * judge + context * (1 - judge)
+            output = (output * inputs + 1) * judge + output * (1 - judge)
+            output = (output / 2) * judge + output * (1 - judge)
+
+        result = self.decoder(output).view(-1, 1, 2, self.word_dim)
+
+        dtheta = th.tanh(result[:, :, 0:1, :]) * th.pi
+        velocity = th.sigmoid(result[:, :, 1:2, :])
         next_theta = theta + dtheta
         next_emb = emb + th.cos(next_theta) * velocity + emb * th.sin(next_theta) * velocity
         return next_ctx, next_theta, next_emb
 
     def step(self, key, batch):
+        batch = batch.view(-1, 1, default_steps, 1)
+        re_batch = tuple([self.word_dim * batch + ix for ix in range(self.word_dim)])
+        batch = th.cat(re_batch, dim=-1)
+
         tokens = self.embedding[batch].view(-1, 1, default_steps, self.word_dim)
         token = tokens[:, :, 0:1, :].view(-1, 1, 1, self.word_dim)
         theta = th.zeros_like(token)
@@ -63,31 +80,31 @@ class DiffusionModel(EmbeddingModel):
         dist = th.sum((sequence - embedding) ** 2, dim=-1)
         pred = F.log_softmax(3 * (1 - th.tanh(dist)), dim=1)
         penalty = (th.std(pred, dim=2).mean() - th.std(tokens[:, :, default_steps // 3:], dim=2).mean()) ** 2
-        loss = nll(pred, batch[:, default_steps // 3:]) + penalty
-
+        batch = batch.view(-1, 1, default_steps, self.word_dim)[:, :, :, 0] // self.word_dim
+        loss = nll(pred, batch[:, 0, default_steps // 3:]) + penalty
         self.log_messages(key, loss=loss, penalty=penalty, batch_size=batch.shape[0])
         return loss
 
     def get_embedding(self, word):
-        embedding = self.embedding.view(1, -1, 1)
+        embedding = self.embedding.view(1, -1, 1, 1)
         try:
             ix = self.dictionary[word]
         except KeyError:
             ix = 0
-        return embedding[0:1, ix:ix+1, 0:1]
+        return embedding[0:1, ix:ix+1, 0:1, 0:1]
 
     def generate(self, ctx, theta, emb):
-        embedding = self.embedding.view(1, -1, 1)
+        embedding = self.embedding.view(1, -1, 1, 1)
         while True:
             ctx, theta, emb = self.diffuse_step(ctx, theta, emb)
             ix = th.argmin((embedding - emb) ** 2, dim=1).item()
-            emb = embedding[0:1, ix:ix+1, 0:1]
+            emb = embedding[0:1, ix:ix+1, 0:1, 0:1]
             yield ix
 
     def complete(self, prompt):
-        ctx = th.zeros(1, 1, 1)
-        theta = th.zeros(1, 1, 1)
-        emb = th.zeros(1, 1, 1)
+        ctx = th.zeros(1, 1, 1, 1)
+        theta = th.zeros(1, 1, 1, 1)
+        emb = th.zeros(1, 1, 1, 1)
         self.clear(emb)
         tokens = self.tokenizer.tokenize(' '.join(prompt))
         for token in tokens:
