@@ -33,9 +33,9 @@ if __name__ == '__main__':
         ContextDataset('valid', transform=ToTensor()),
         ContextDataset('test', transform=ToTensor())
     )
-    train_loader = DataLoader(wiki_train, batch_size=opt.batch, shuffle=True)
-    val_loader = DataLoader(wiki_valid, batch_size=opt.batch)
-    test_loader = DataLoader(wiki_test, batch_size=opt.batch)
+    train_loader = DataLoader(wiki_train, batch_size=opt.batch, shuffle=True, num_workers=12)
+    val_loader = DataLoader(wiki_valid, batch_size=opt.batch, num_workers=12)
+    test_loader = DataLoader(wiki_test, batch_size=opt.batch, num_workers=12)
 
     # training
     print('construct trainer...')
