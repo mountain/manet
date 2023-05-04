@@ -33,13 +33,13 @@ if __name__ == '__main__':
         ContextDataset('valid', transform=ToTensor()),
         ContextDataset('test', transform=ToTensor())
     )
-    train_loader = DataLoader(wiki_train, batch_size=opt.batch, shuffle=True, num_workers=12)
-    val_loader = DataLoader(wiki_valid, batch_size=opt.batch, num_workers=12)
-    test_loader = DataLoader(wiki_test, batch_size=opt.batch, num_workers=12)
+    train_loader = DataLoader(wiki_train, batch_size=opt.batch, shuffle=True, num_workers=0)
+    val_loader = DataLoader(wiki_valid, batch_size=opt.batch, num_workers=0)
+    test_loader = DataLoader(wiki_test, batch_size=opt.batch, num_workers=0)
 
     # training
     print('construct trainer...')
-    trainer = pl.Trainer(precision=64, max_epochs=opt.n_epochs)
+    trainer = pl.Trainer(accelerator=accelerator, precision=64, max_epochs=opt.n_epochs)
 
     import importlib
     print('construct model...')
