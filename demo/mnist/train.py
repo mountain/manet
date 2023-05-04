@@ -21,7 +21,7 @@ def train_loop(dataloader, model, loss_fn, optimizer):
     size = len(dataloader.dataset)
     for batch, (X, y) in enumerate(dataloader):
         # Compute prediction and loss
-        pred = model(X.to(device))
+        pred = model(X.to(device)).flatten()
         loss = loss_fn(pred, y * th.ones_like(pred))
 
         # Backpropagation
@@ -41,7 +41,7 @@ def test_loop(dataloader, model, loss_fn):
 
     with th.no_grad():
         for X, y in dataloader:
-            pred = model(X.to(device))
+            pred = model(X.to(device)).flatten()
             test_loss += loss_fn(pred, y * th.ones_like(pred)).item()
             correct += (pred.argmax(1) == y).type(th.float).sum().item()
 
