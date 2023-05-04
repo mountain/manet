@@ -21,8 +21,8 @@ def train_loop(dataloader, model, loss_fn, optimizer):
     size = len(dataloader.dataset)
     for batch, (X, y) in enumerate(dataloader):
         # Compute prediction and loss
-        pred = model(X)
-        loss = loss_fn(pred, y)
+        pred = model(X.to(device))
+        loss = loss_fn(pred, y.to(device))
 
         # Backpropagation
         optimizer.zero_grad()
@@ -41,8 +41,8 @@ def test_loop(dataloader, model, loss_fn):
 
     with th.no_grad():
         for X, y in dataloader:
-            pred = model(X)
-            test_loss += loss_fn(pred, y).item()
+            pred = model(X.to(device))
+            test_loss += loss_fn(pred, y.to(device)).item()
             correct += (pred.argmax(1) == y).type(th.float).sum().item()
 
     test_loss /= num_batches
@@ -81,7 +81,6 @@ if __name__ == '__main__':
     model = mdl._model_()
     model.to(device)
 
-    from torch import nn
     from torch.nn import functional as F
     loss_fn = F.nll_loss
     optimizer = th.optim.Adam(model.parameters(), lr=1e-3)
