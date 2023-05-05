@@ -21,7 +21,7 @@ class DiffusionModel(EmbeddingModel):
         self.m = self.l * self.word_dim
         self.encoder = MLP(self.m, [2 * 4 * self.m, 2 * 16 * self.m, 2 * 32 * self.m])
         self.decoder = MLP(2 * 32 * self.m, [2 * 8 * self.m, 2 * 2 * self.m, 2 * self.word_dim])
-        self.context = MLP(6 * 32 * self.m, [4 * 8 * self.m, 4 * 2 * self.m, 3])
+        self.ulearner = MLP(6 * 32 * self.m, [4 * 8 * self.m, 4 * 2 * self.m, 8])
         self.pmemory = collections.deque(maxlen=default_steps // 3)
         self.qmemory = collections.deque(maxlen=default_steps // 3)
         self.tokenizer = AutoTokenizer.from_pretrained("bert-base-cased")
@@ -39,17 +39,27 @@ class DiffusionModel(EmbeddingModel):
         self.qmemory.append(theta)
 
         inputs = self.encoder(self.memory())
-        output = th.zeros_like(inputs)
         if context is None:
             context = th.zeros_like(inputs)
 
-        for _ in range(4):
-            judge = th.sigmoid(self.context(th.cat((context, inputs, output), dim=1)))
-            p, q, r = judge[:, 0:1], judge[:, 1:2], judge[:, 2:3]
-            context = (context * inputs + r) * (1 - p) + context * p
-            context = (context / 2) * p + context * (1 - p)
-            output = (output * inputs + r) * (1 - q) + output * q
-            output = (output / 2) * q + output * (1 - q)
+        lastr, lasts = th.ones_like(context), th.ones_like(context)
+        dc, do = th.clone(context), th.clone(context)
+        context, output = th.zeros_like(context), th.zeros_like(context)
+        for _ in range(3):
+            state = th.sigmoid(self.ulearner(th.cat((context, inputs, output), dim=1)))
+            p, r, t, v = state[:, 0:1], state[:, 1:2], state[:, 2:3], state[:, 3:4]
+            q, s, u, w = state[:, 4:5], state[:, 5:6], state[:, 6:7], state[:, 7:8]
+            p, q = 4 * p, 4 * q
+
+            r, lastr = r * lastr, r
+            s, lasts = s * lasts, s
+
+            dc = th.fmod((1 - dc) * dc * p + inputs, 1) * r + dc * (1 - r)
+            dc = dc * t * (1 - r) + dc * r
+            do = th.fmod((1 - do) * do * q + inputs, 1) * s + do * (1 - s)
+            do = do * r * (1 - s) + do * s
+            context = context + dc
+            output = output + do
 
         result = self.decoder(output).view(-1, 1, 2, self.word_dim)
 
@@ -84,7 +94,7 @@ class DiffusionModel(EmbeddingModel):
         pred = F.log_softmax(3 * (1 - th.tanh(dist)), dim=1)
         penalty = (th.std(pred, dim=2).mean() - th.std(tokens[:, :, default_steps // 3:], dim=2).mean()) ** 2
         batch = batch.view(-1, 1, default_steps, self.word_dim)[:, :, :, 0] // self.word_dim
-        loss = nll(pred, batch[:, 0, default_steps // 3:]) + penalty
+        loss = nll(pred, batch[:, 0, default_steps // 3:])
         self.log_messages(key, loss=loss, penalty=penalty, batch_size=batch.shape[0])
         return loss
 
