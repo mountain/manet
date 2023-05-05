@@ -9,7 +9,7 @@ from demo.wikitext.dataset import ContextDataset
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-n", "--n_epochs", type=int, default=400, help="number of epochs of training")
-parser.add_argument("-b", "--batch", type=int, default=128, help="batch size of training")
+parser.add_argument("-b", "--batch", type=int, default=256, help="batch size of training")
 parser.add_argument("-m", "--model", type=str, default='diffusion', help="model to execute")
 opt = parser.parse_args()
 

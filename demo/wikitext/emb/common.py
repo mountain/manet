@@ -21,19 +21,18 @@ class EmbeddingModel(pl.LightningModule):
             self.dictionary[''] = 0
         self.word_count = len(self.vocabulary)
 
-        self.word_dim = 3
-        self.embedding = nn.Parameter(th.normal(0, 1, (self.word_dim * self.word_count,)))
+        self.word_dim = 1
+        self.embedding = nn.Parameter(th.normal(0, 1, (self.word_count * self.word_dim,)))
 
         self.labeled_loss = None
         self.lr = None
 
-    def log_messages(self, key, loss, penalty, prog_bar=True, batch_size=64):
+    def log_messages(self, key, loss, prog_bar=True, batch_size=64):
         self.log(key, loss, prog_bar=prog_bar, batch_size=batch_size)
         self.log('max', self.embedding.max().item(), prog_bar=prog_bar, batch_size=batch_size)
         self.log('min', self.embedding.min().item(), prog_bar=prog_bar, batch_size=batch_size)
         self.log('mean', self.embedding.mean().item(), prog_bar=prog_bar, batch_size=batch_size)
         self.log('std', th.std(self.embedding).item(), prog_bar=prog_bar, batch_size=batch_size)
-        self.log('penalty', penalty.item(), prog_bar=prog_bar, batch_size=batch_size)
 
     def configure_optimizers(self):
         optimizer = th.optim.Adam(self.parameters(), lr=1e-3)
@@ -57,7 +56,7 @@ class EmbeddingModel(pl.LightningModule):
     def on_save_checkpoint(self, checkpoint: Dict[str, Any]) -> None:
         record = '%2.5f-%03d.ckpt' % (self.labeled_loss, checkpoint['epoch'])
         if len(record) < 12:
-            record = '0' * (12 - len(record)) + record
+            record = '%s%s' % ('0' * (12 - len(record)), record)
         fname = 'best-%s' % record
         with open(fname, 'bw') as f:
             pickle.dump(checkpoint, f)

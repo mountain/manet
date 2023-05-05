@@ -140,12 +140,14 @@ class MLP(nn.Sequential):
     def __init__(
         self,
         in_channels: int,
-        hidden_channels: List[int]
+        hidden_channels: List[int],
+        spatio_dims: int  = 1
     ):
         layers = []
         in_dim = in_channels
         for hidden_dim in hidden_channels:
-            layers.append(MacUnit(in_dim, hidden_dim))
+            layers.append(MacUnit(in_dim, hidden_dim,
+                in_spatio_dims=spatio_dims, out_spatio_dims=spatio_dims))
             in_dim = hidden_dim
         layers.append(nn.Flatten())
         super().__init__(*layers)

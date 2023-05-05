@@ -2,13 +2,15 @@ import collections
 
 import torch as th
 import torch.nn.functional as F
-from torch.nn import NLLLoss
+from torch.nn import NLLLoss, LogSoftmax
 from transformers import AutoTokenizer
 
 from manet.mac import MLP
 from demo.wikitext.emb.common import EmbeddingModel
 
+
 nll = NLLLoss()
+log_softmax = LogSoftmax(dim=2)
 
 
 default_steps = 18
@@ -18,37 +20,46 @@ class DiffusionModel(EmbeddingModel):
     def __init__(self):
         super().__init__()
         self.l = default_steps // 3 * 2
-        self.m = self.l * self.word_dim
-        self.encoder = MLP(self.m, [2 * 4 * self.m, 2 * 16 * self.m, 2 * 32 * self.m])
-        self.decoder = MLP(2 * 32 * self.m, [2 * 8 * self.m, 2 * 2 * self.m, 2 * self.word_dim])
-        self.ulearner = MLP(6 * 32 * self.m, [4 * 8 * self.m, 4 * 2 * self.m, 8])
+        self.c = self.l
+        self.encoder = MLP(self.l, [2 * self.l, 4 * self.l, self.c], spatio_dims=self.word_dim)
+        self.decoder = MLP(self.c, [2 * self.l, 4 * self.l, 2], spatio_dims=self.word_dim)
+        self.ulearner = MLP(3 * self.c, [8 * self.c, 4 * self.c, 8 * self.c], spatio_dims=self.word_dim)
         self.pmemory = collections.deque(maxlen=default_steps // 3)
         self.qmemory = collections.deque(maxlen=default_steps // 3)
         self.tokenizer = AutoTokenizer.from_pretrained("bert-base-cased")
 
     def memory(self):
-        return th.cat(list(self.pmemory) + list(self.qmemory), dim=-1)
+        return th.cat(list(self.pmemory) + list(self.qmemory), dim=1)
 
     def clear(self, token):
+        token = token.view(-1, 1, self.word_dim)
         for ix in range(default_steps // 3):
             self.pmemory.append(th.zeros_like(token))
             self.qmemory.append(th.zeros_like(token))
 
     def diffuse_step(self, context, theta, emb):
+        emb = emb.view(-1, 1, self.word_dim)
+        theta = theta.view(-1, 1, self.word_dim)
+
+
         self.pmemory.append(emb)
         self.qmemory.append(theta)
 
         inputs = self.encoder(self.memory())
         if context is None:
             context = th.zeros_like(inputs)
+        context = context.view(-1, self.c, self.word_dim)
+        inputs = inputs.view(-1, self.c, self.word_dim)
+
 
         lastr, lasts = th.ones_like(context), th.ones_like(context)
         dc, do = th.clone(context), th.clone(context)
         context, output = th.zeros_like(context), th.zeros_like(context)
         for _ in range(3):
             state = th.sigmoid(self.ulearner(th.cat((context, inputs, output), dim=1)))
-            p, r, t, v = state[:, 0:1], state[:, 1:2], state[:, 2:3], state[:, 3:4]
-            q, s, u, w = state[:, 4:5], state[:, 5:6], state[:, 6:7], state[:, 7:8]
+            state = state.view(-1, 8, self.c, self.word_dim)
+            p, r, t, v = state[:, 0], state[:, 1], state[:, 2], state[:, 3]
+            q, s, u, w = state[:, 4], state[:, 5], state[:, 6], state[:, 7]
             p, q = 4 * p, 4 * q
 
             r, lastr = r * lastr, r
@@ -61,19 +72,21 @@ class DiffusionModel(EmbeddingModel):
             context = context + dc
             output = output + do
 
-        result = self.decoder(output).view(-1, 1, 2, self.word_dim)
 
-        dtheta = th.tanh(result[:, :, 0:1, :]) * th.pi
-        velocity = th.sigmoid(result[:, :, 1:2, :])
+        result = self.decoder(output).view(-1, 2, self.word_dim)
+
+        dtheta = th.tanh(result[:, 0:1, :]) * th.pi
+        velocity = th.sigmoid(result[:, 1:2, :])
         next_theta = theta + dtheta
         next_emb = emb + th.cos(next_theta) * velocity + emb * th.sin(next_theta) * velocity
 
-        return context, next_theta, next_emb
+        return context.view(-1, self.c, 1, self.word_dim), next_theta.view(-1, 1, 1, self.word_dim), next_emb.view(-1, 1, 1, self.word_dim)
 
     def step(self, key, batch):
-        batch = batch.view(-1, 1, default_steps, 1)
-        re_batch = tuple([self.word_dim * batch + ix for ix in range(self.word_dim)])
-        batch = th.cat(re_batch, dim=-1)
+        batch = batch.view(-1, default_steps)
+        rebatch = (batch * self.word_dim).view(-1, default_steps, 1)
+        batch = th.cat([rebatch + ix for ix in range(self.word_dim)], dim=2)
+        batch = batch.view(-1, default_steps * self.word_dim)
 
         tokens = self.embedding[batch].view(-1, 1, default_steps, self.word_dim)
         token = tokens[:, :, 0:1, :].view(-1, 1, 1, self.word_dim)
@@ -90,21 +103,21 @@ class DiffusionModel(EmbeddingModel):
 
         sequence = th.cat(sequence[default_steps // 3:], dim=2)
         embedding = self.embedding.view(1, -1, 1, self.word_dim)
-        dist = th.sum((sequence - embedding) ** 2, dim=-1)
-        pred = F.log_softmax(3 * (1 - th.tanh(dist)), dim=1)
-        penalty = (th.std(pred, dim=2).mean() - th.std(tokens[:, :, default_steps // 3:], dim=2).mean()) ** 2
-        batch = batch.view(-1, 1, default_steps, self.word_dim)[:, :, :, 0] // self.word_dim
-        loss = nll(pred, batch[:, 0, default_steps // 3:])
-        self.log_messages(key, loss=loss, penalty=penalty, batch_size=batch.shape[0])
+        dist = th.sum((sequence - embedding) ** 2, dim=3)
+        pred = F.log_softmax(3 * (1 - th.tanh(dist)))
+        batch = batch.view(-1, default_steps, self.word_dim)[:, :, 0] // self.word_dim
+        loss = nll(pred, batch[:, default_steps // 3:])
+
+        self.log_messages(key, loss=loss, batch_size=batch.size()[0])
         return loss
 
     def get_embedding(self, word):
-        embedding = self.embedding.view(1, -1, 1, 1)
+        embedding = self.embedding.view(1, 1, -1, 1)
         try:
             ix = self.dictionary[word]
         except KeyError:
             ix = 0
-        return embedding[0:1, ix:ix+1, 0:1, 0:1]
+        return embedding[0:1, 0:1, ix:ix+1, 0:1]
 
     def generate(self, ctx, theta, emb):
         embedding = self.embedding.view(1, -1, 1, 1)
