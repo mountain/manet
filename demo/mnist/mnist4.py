@@ -56,7 +56,7 @@ class MNModel4(pl.LightningModule):
             do = do * t * (1 - r) + do * r
             output = output + do
 
-            dc = th.fmod((1 - dc) * dc * q + inputs * v, 1) * s + dc * (1 - s)
+            dc = th.fmod((1 - dc) * dc * q + inputs * w, 1) * s + dc * (1 - s)
             dc = dc * t * (1 - s) + dc * s
             context = context + dc
 
