@@ -37,7 +37,7 @@ class MNModel4(pl.LightningModule):
         )
         self.learner = MLP(80 * 2, [320, 640, 1280, 2560, 1280, 80 * 8], spatio_dims=3)
         self.decoder = nn.Sequential(
-            MLP(80 * 6, [960, 240, 60, 10]),
+            MLP(80 * 6 * 3, [960 * 3, 240 * 3, 60 * 3, 10]),
             nn.LogSoftmax(dim=1)
         )
 
