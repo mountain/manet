@@ -29,11 +29,11 @@ class MNModel4(pl.LightningModule):
             Reshape(1, 1),
             MLP(1, [1]),
             Reshape(40, 3, 3),
-            nn.Conv2d(40, 80, kernel_size=3, padding=1),
+            nn.Conv2d(40, 240, kernel_size=3, padding=1),
             nn.MaxPool2d(2),
             Reshape(1, 1),
             MLP(1, [1]),
-            Reshape(80, 1),
+            Reshape(80, 3),
         )
         self.learner = MLP(80 * 2, [320, 640, 1280, 2560, 1280, 80 * 8], spatio_dims=3)
         self.decoder = nn.Sequential(
@@ -64,7 +64,6 @@ class MNModel4(pl.LightningModule):
 
     def forward(self, x):
         inputs = self.encoder(x)
-        inputs = th.cat((inputs, inputs, inputs), dim=-1)
         output = self.ulearn(self.learner, inputs).flatten(1)
         return self.decoder(output)
 
