@@ -15,11 +15,11 @@ class MNModel4(pl.LightningModule):
         self.learning_rate = learning_rate
         self.encoder = nn.Sequential(
             Reshape(28 * 28),
-            MLP(28 * 28, [49]),
+            MLP(28 * 28, [49 * 30]),
         )
-        self.learner = MLP(49 * 2, [49 * 8])
+        self.learner = MLP(49 * 30 * 2, [49 * 30 * 8])
         self.decoder = nn.Sequential(
-            MLP(49 * 2, [10]),
+            MLP(49 * 30 * 2, [10]),
             nn.LogSoftmax(dim=1)
         )
 
@@ -33,10 +33,6 @@ class MNModel4(pl.LightningModule):
             p, r, t, v = state[:, 0], state[:, 1], state[:, 2], state[:, 3]
             q, s, u, w = state[:, 4], state[:, 5], state[:, 6], state[:, 7]
             p, q = 4 * p, 4 * q
-            self.log('pmax', p.max().item(), prog_bar=True)
-            self.log('qmax', q.max().item(), prog_bar=True)
-            self.log('pmean', p.mean().item(), prog_bar=True)
-            self.log('qmean', q.mean().item(), prog_bar=True)
 
             do = th.fmod((1 - do) * do * p + inputs * v, 1) * r + do * (1 - r)
             do = do * t * (1 - r) + do * r
