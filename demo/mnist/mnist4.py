@@ -42,7 +42,6 @@ class MNModel4(pl.LightningModule):
     def forward(self, x):
         inputs = self.encoder(x)
 
-        lastr = th.ones_like(inputs)
         output = th.zeros_like(inputs)
 
         do = th.zeros_like(inputs)
@@ -50,8 +49,6 @@ class MNModel4(pl.LightningModule):
             state = th.sigmoid(self.ulearner(inputs)).view(-1, 3, 80)
             p, r, t = state[:, 0], state[:, 1], state[:, 2]
             p = 4 * p
-
-            r, lastr = r * lastr, r
 
             do = th.fmod((1 - do) * do * p + inputs, 1) * r + do * (1 - r)
             do = do * t * (1 - r) + do * r
