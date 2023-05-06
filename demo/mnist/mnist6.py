@@ -14,11 +14,10 @@ class MNModel4(pl.LightningModule):
         self.learning_rate = learning_rate
         self.encoder = nn.Sequential(
             Reshape(28 * 28),
-            MLP(28 * 28, [240]),
         )
-        self.learner = MLP(80 * 2 * 3, [320 * 3, 640 * 3, 1280 * 3, 2560 * 3, 1280 * 3, 80 * 8 * 3])
+        self.learner = MLP(28 * 28 * 2, [196 * 8])
         self.decoder = nn.Sequential(
-            MLP(80 * 6, [10]),
+            MLP(28 * 28 * 2, [10]),
             nn.LogSoftmax(dim=1)
         )
 
@@ -28,7 +27,7 @@ class MNModel4(pl.LightningModule):
         dc = th.zeros_like(inputs)
         do = th.zeros_like(inputs)
         for _ in range(3):
-            state = th.sigmoid(learner(th.cat((context, inputs), dim=1))).view(-1, 8, 240)
+            state = th.sigmoid(learner(th.cat((context, inputs), dim=1))).view(-1, 8, 98)
             p, r, t, v = state[:, 0], state[:, 1], state[:, 2], state[:, 3]
             q, s, u, w = state[:, 4], state[:, 5], state[:, 6], state[:, 7]
             p, q = 4 * p, 4 * q
