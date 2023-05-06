@@ -16,7 +16,7 @@ class MNModel4(pl.LightningModule):
         self.encoder = nn.Sequential(
             Reshape(28 * 28),
         )
-        self.learner = MLP(28 * 28 * 2, [49])
+        self.learner = MLP(28 * 28 * 2, [49 * 16])
         self.decoder = nn.Sequential(
             MLP(49 * 2, [10]),
             nn.LogSoftmax(dim=1)
