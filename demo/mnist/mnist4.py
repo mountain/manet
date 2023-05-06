@@ -33,7 +33,7 @@ class MNModel4(pl.LightningModule):
             Reshape(80, 1, 1),
             nn.Flatten(),
         )
-        self.ulearner = MLP(80, [160, 40, 80 * 4])
+        self.ulearner = MLP(80 * 2, [160, 40, 80 * 8])
         self.decoder = nn.Sequential(
             MLP(80, [40, 20, 10]),
             nn.LogSoftmax(dim=1)
@@ -43,16 +43,22 @@ class MNModel4(pl.LightningModule):
         inputs = self.encoder(x)
 
         output = th.zeros_like(inputs)
-
+        context = th.zeros_like(inputs)
+        dc = th.zeros_like(inputs)
         do = th.zeros_like(inputs)
         for _ in range(6):
-            state = th.sigmoid(self.ulearner(inputs)).view(-1, 4, 80)
+            state = th.sigmoid(self.ulearner(th.cat(context, inputs), dim=1)).view(-1, 8, 80)
             p, r, t, v = state[:, 0], state[:, 1], state[:, 2], state[:, 3]
-            p = 4 * p
+            q, s, u, w = state[:, 4], state[:, 5], state[:, 6], state[:, 7]
+            p, q = 4 * p, 4 * q
 
             do = th.fmod((1 - do) * do * p + inputs * v, 1) * r + do * (1 - r)
             do = do * t * (1 - r) + do * r
             output = output + do
+
+            dc = th.fmod((1 - dc) * dc * q + inputs * v, 1) * s + dc * (1 - s)
+            dc = dc * t * (1 - s) + dc * s
+            context = context + dc
 
         return self.decoder(output)
 
