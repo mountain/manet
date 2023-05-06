@@ -33,7 +33,7 @@ class MNModel4(pl.LightningModule):
             Reshape(80, 1, 1),
             nn.Flatten(),
         )
-        self.ulearner = MLP(80, [160, 40, 80 * 3])
+        self.ulearner = MLP(80, [160, 40, 80 * 4])
         self.decoder = nn.Sequential(
             MLP(80, [40, 20, 10]),
             nn.LogSoftmax(dim=1)
@@ -46,11 +46,11 @@ class MNModel4(pl.LightningModule):
 
         do = th.zeros_like(inputs)
         for _ in range(6):
-            state = th.sigmoid(self.ulearner(inputs)).view(-1, 3, 80)
-            p, r, t = state[:, 0], state[:, 1], state[:, 2]
+            state = th.sigmoid(self.ulearner(inputs)).view(-1, 4, 80)
+            p, r, t, v = state[:, 0], state[:, 1], state[:, 2], state[:, 3]
             p = 4 * p
 
-            do = th.fmod((1 - do) * do * p + inputs, 1) * r + do * (1 - r)
+            do = th.fmod((1 - do) * do * p + inputs * v, 1) * r + do * (1 - r)
             do = do * t * (1 - r) + do * r
             output = output + do
 
