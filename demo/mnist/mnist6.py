@@ -14,6 +14,7 @@ class MNModel4(pl.LightningModule):
         super().__init__()
         self.learning_rate = learning_rate
         self.encoder = nn.Sequential(
+            Reshape(28 * 28),
             MLP(28 * 28, [49]),
         )
         self.learner = MLP(49 * 2, [49 * 8])
