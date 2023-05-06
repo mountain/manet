@@ -89,4 +89,4 @@ class MNModel4(pl.LightningModule):
 
 
 def _model_():
-    return MNModel2()
+    return MNModel4()
