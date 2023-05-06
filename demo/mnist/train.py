@@ -37,9 +37,9 @@ if __name__ == '__main__':
                                  ]))
 
     mnist_train, mnist_val = random_split(dataset, [55000, 5000])
-    train_loader = DataLoader(mnist_train, shuffle=True, batch_size=opt.batch)
-    val_loader = DataLoader(mnist_val, batch_size=opt.batch)
-    test_loader = DataLoader(mnist_val, batch_size=opt.batch)
+    train_loader = DataLoader(mnist_train, shuffle=True, batch_size=opt.batch, num_workers=64)
+    val_loader = DataLoader(mnist_val, batch_size=opt.batch, num_workers=64)
+    test_loader = DataLoader(mnist_val, batch_size=opt.batch, num_workers=64)
 
     # training
     print('construct trainer...')
