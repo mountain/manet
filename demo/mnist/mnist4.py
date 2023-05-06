@@ -16,20 +16,20 @@ class MNModel4(pl.LightningModule):
         self.encoder = nn.Sequential(
             nn.Conv2d(1, 30, kernel_size=5, padding=2),
             nn.MaxPool2d(2),
-            Reshape(1, 3),
+            Reshape(1, 1),
             MLP(1, [1]),
-            Reshape(10, 14, 14),
-            nn.Conv2d(10, 20, kernel_size=5, padding=2),
+            Reshape(30, 14, 14),
+            nn.Conv2d(30, 60, kernel_size=5, padding=2),
             nn.MaxPool2d(2),
             Reshape(1, 1),
             MLP(1, [1]),
-            Reshape(20, 7, 7),
-            nn.Conv2d(20, 40, kernel_size=5, padding=2),
+            Reshape(60, 7, 7),
+            nn.Conv2d(60, 120, kernel_size=5, padding=2),
             nn.MaxPool2d(2),
             Reshape(1, 1),
             MLP(1, [1]),
-            Reshape(40, 3, 3),
-            nn.Conv2d(40, 240, kernel_size=3, padding=1),
+            Reshape(120, 3, 3),
+            nn.Conv2d(120, 240, kernel_size=3, padding=1),
             nn.MaxPool2d(2),
             Reshape(1, 1),
             MLP(1, [1]),
@@ -37,7 +37,7 @@ class MNModel4(pl.LightningModule):
         )
         self.learner = MLP(80 * 2, [320, 640, 1280, 2560, 1280, 80 * 8], spatio_dims=3)
         self.decoder = nn.Sequential(
-            MLP(80 * 6 * 3, [960 * 3, 240 * 3, 60 * 3, 10]),
+            MLP(80 * 6, [960, 240, 60, 10]),
             nn.LogSoftmax(dim=1)
         )
 
