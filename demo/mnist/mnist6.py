@@ -75,6 +75,7 @@ class MNModel4(pl.LightningModule):
         correct = pred.eq(y.data.view_as(pred)).sum() / y.size()[0]
         self.log('correct', correct, prog_bar=True)
         self.labeled_loss = loss.item()
+        self.labeled_correct = correct.item()
 
     def test_step(self, test_batch, batch_idx):
         x, y = test_batch
@@ -87,9 +88,7 @@ class MNModel4(pl.LightningModule):
     def on_save_checkpoint(self, checkpoint) -> None:
         import pickle, glob, os
 
-        record = '%2.5f-%03d.ckpt' % (self.labeled_loss, checkpoint['epoch'])
-        if len(record) < 12:
-            record = '%s%s' % ('0' * (12 - len(record)), record)
+        record = '%2.5f-%03d-%1.5f.ckpt' % (self.labeled_loss, checkpoint['epoch'], self.labeled_correct)
         fname = 'best-%s' % record
         with open(fname, 'bw') as f:
             pickle.dump(checkpoint, f)
