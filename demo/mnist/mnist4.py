@@ -4,10 +4,12 @@ import lightning as pl
 from torch import nn
 from torch.nn import functional as F
 
-from manet.mac import MLP, Reshape
+from manet.mac import Reshape
+# from manet.mac import MLP
+from torchvision.ops import MLP
 
 
-class MNModel2(pl.LightningModule):
+class MNModel4(pl.LightningModule):
     def __init__(self, learning_rate=1e-3):
         super().__init__()
         self.learning_rate = learning_rate
