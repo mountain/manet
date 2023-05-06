@@ -63,7 +63,7 @@ class MNModel4(pl.LightningModule):
             dc = dc * t * (1 - s) + dc * s
             context = context + dc
 
-        return self.decoder(output)
+        return self.decoder(th.cat((context, inputs), dim=1))
 
     def configure_optimizers(self):
         return th.optim.Adam(self.parameters(), lr=self.learning_rate)
