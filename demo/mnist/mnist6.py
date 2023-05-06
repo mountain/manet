@@ -5,8 +5,8 @@ from torch import nn
 from torch.nn import functional as F
 
 from manet.mac import Reshape
-from torchvision.ops import MLP
-# from manet.mac import MLP
+# from torchvision.ops import MLP
+from manet.mac import MLP
 
 
 class MNModel4(pl.LightningModule):
