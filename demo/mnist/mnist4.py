@@ -46,7 +46,7 @@ class MNModel4(pl.LightningModule):
         context = th.zeros_like(inputs)
         dc = th.zeros_like(inputs)
         do = th.zeros_like(inputs)
-        for _ in range(6):
+        for _ in range(24):
             state = th.sigmoid(self.ulearner(th.cat((context, inputs), dim=1))).view(-1, 8, 80)
             p, r, t, v = state[:, 0], state[:, 1], state[:, 2], state[:, 3]
             q, s, u, w = state[:, 4], state[:, 5], state[:, 6], state[:, 7]
