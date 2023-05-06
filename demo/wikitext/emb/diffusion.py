@@ -20,10 +20,10 @@ class DiffusionModel(EmbeddingModel):
     def __init__(self):
         super().__init__()
         self.l = default_steps // 3 * 2
-        self.c = self.l
+        self.c = self.l * 2
         self.encoder = MLP(self.l, [2 * self.l, 4 * self.l, self.c], spatio_dims=self.word_dim)
-        self.decoder = MLP(self.c, [2 * self.l, 4 * self.l, 2], spatio_dims=self.word_dim)
-        self.ulearner = MLP(3 * self.c, [8 * self.c, 4 * self.c, 8 * self.c], spatio_dims=self.word_dim)
+        self.decoder = MLP(self.c, [16 * self.l, 4 * self.l, 2], spatio_dims=self.word_dim)
+        self.ulearner = MLP(3 * self.c, [8 * self.c, 6 * self.c, 8 * self.c], spatio_dims=self.word_dim)
         self.pmemory = collections.deque(maxlen=default_steps // 3)
         self.qmemory = collections.deque(maxlen=default_steps // 3)
         self.tokenizer = AutoTokenizer.from_pretrained("bert-base-cased")
@@ -112,25 +112,25 @@ class DiffusionModel(EmbeddingModel):
         return loss
 
     def get_embedding(self, word):
-        embedding = self.embedding.view(1, 1, -1, 1)
+        embedding = self.embedding.view(1, -1, 1, self.word_dim)
         try:
             ix = self.dictionary[word]
         except KeyError:
             ix = 0
-        return embedding[0:1, 0:1, ix:ix+1, 0:1]
+        return embedding[0:1, ix:ix+1, 0:1, :]
 
     def generate(self, ctx, theta, emb):
-        embedding = self.embedding.view(1, -1, 1, 1)
+        embedding = self.embedding.view(1, -1, 1, self.word_dim)
         while True:
             ctx, theta, emb = self.diffuse_step(ctx, theta, emb)
-            ix = th.argmin((embedding - emb) ** 2, dim=1).item()
-            emb = embedding[0:1, ix:ix+1, 0:1, 0:1]
+            ix = th.argmin(th.sum((embedding - emb) ** 2, dim=-1), dim=1).item()
+            emb = embedding[0:1, ix:ix+1, 0:1, :]
             yield ix
 
     def complete(self, prompt):
-        ctx = th.zeros(1, 1, 1, 1)
-        theta = th.zeros(1, 1, 1, 1)
-        emb = th.zeros(1, 1, 1, 1)
+        ctx = th.zeros(1, self.c, 1, self.word_dim)
+        theta = th.zeros(1, 1, 1, self.word_dim)
+        emb = th.zeros(1, 1, 1, self.word_dim)
         self.clear(emb)
         tokens = self.tokenizer.tokenize(' '.join(prompt))
         for token in tokens:

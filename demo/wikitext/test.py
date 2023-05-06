@@ -12,7 +12,7 @@ test_loader = DataLoader(wiki_test, batch_size=1)
 
 model = mdl._model_()
 
-fname = 'best-8.03624-5.ckpt'
+fname = 'best-5.39372-002.ckpt'
 with open(fname, 'rb') as f:
     checkpoint = pickle.load(f)
     model.load_state_dict(checkpoint['state_dict'], strict=False)
