@@ -16,19 +16,27 @@ class MNModel4(pl.LightningModule):
         self.encoder = nn.Sequential(
             nn.Conv2d(1, 10, kernel_size=5, padding=2),
             nn.MaxPool2d(2),
+            Reshape(1, 1),
+            MLP(1, [1]),
             Reshape(10, 14, 14),
-            nn.Conv2d(10, 40, kernel_size=5, padding=2),
+            nn.Conv2d(10, 20, kernel_size=5, padding=2),
             nn.MaxPool2d(2),
-            Reshape(40, 7, 7),
-            nn.Conv2d(40, 160, kernel_size=5, padding=2),
+            Reshape(1, 1),
+            MLP(1, [1]),
+            Reshape(20, 7, 7),
+            nn.Conv2d(20, 40, kernel_size=5, padding=2),
             nn.MaxPool2d(2),
-            Reshape(160, 3, 3),
-            nn.Conv2d(160, 640, kernel_size=3, padding=1),
+            Reshape(1, 1),
+            MLP(1, [1]),
+            Reshape(40, 3, 3),
+            nn.Conv2d(40, 80, kernel_size=3, padding=1),
             nn.MaxPool2d(2),
-            Reshape(640, 1, 1),
+            Reshape(1, 1),
+            MLP(1, [1]),
+            Reshape(80, 1, 1),
             nn.Flatten(),
         )
-        self.ulearner = MLP(640 * 2, [2560, 5120, 10240, 640 * 8])
+        self.ulearner = MLP(80 * 2, [320, 640, 1280, 2560, 1280, 80 * 8])
         self.decoder = nn.Sequential(
             MLP(640, [1280, 320, 80, 20, 10]),
             nn.LogSoftmax(dim=1)
@@ -41,7 +49,7 @@ class MNModel4(pl.LightningModule):
         context = th.zeros_like(inputs)
         dc = th.zeros_like(inputs)
         do = th.zeros_like(inputs)
-        for _ in range(6):
+        for _ in range(16):
             state = th.sigmoid(self.ulearner(th.cat((context, inputs), dim=1))).view(-1, 8, 640)
             p, r, t, v = state[:, 0], state[:, 1], state[:, 2], state[:, 3]
             q, s, u, w = state[:, 4], state[:, 5], state[:, 6], state[:, 7]
