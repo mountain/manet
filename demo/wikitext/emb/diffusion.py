@@ -54,7 +54,6 @@ class DiffusionModel(EmbeddingModel):
         emb = emb.view(-1, 1, self.word_dim)
         theta = theta.view(-1, 1, self.word_dim)
 
-
         self.pmemory.append(emb)
         self.qmemory.append(theta)
 
@@ -64,7 +63,6 @@ class DiffusionModel(EmbeddingModel):
             context = th.zeros_like(inputs)
         context = context.view(-1, self.c, self.word_dim)
         inputs = inputs.view(-1, self.c, self.word_dim)
-
 
         lastr, lasts = th.ones_like(context), th.ones_like(context)
         dc, do = th.clone(context), th.clone(context)
@@ -86,7 +84,6 @@ class DiffusionModel(EmbeddingModel):
             do = do * r * (1 - s) + do * s
             context = context + dc
             output = output + do
-
 
         # result = self.decoder(output).view(-1, 2, self.word_dim)
         result = self.decoder(output.flatten(1)).view(-1, 2, self.word_dim)
