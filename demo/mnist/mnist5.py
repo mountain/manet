@@ -52,8 +52,6 @@ class MNModel4(pl.LightningModule):
             p, q = 4 * p, 4 * q
             self.log('pmax', p.max().item(), prog_bar=True)
             self.log('qmax', q.max().item(), prog_bar=True)
-            self.log('pmin', p.min().item(), prog_bar=True)
-            self.log('qmin', q.min().item(), prog_bar=True)
             self.log('pmean', p.mean().item(), prog_bar=True)
             self.log('qmean', q.mean().item(), prog_bar=True)
 
