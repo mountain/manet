@@ -33,7 +33,7 @@ class MNModel4(pl.LightningModule):
             Reshape(80, 1, 1),
             nn.Flatten(),
         )
-        self.ulearner = MLP(80 * 2, [320, 640, 640, 80 * 8])
+        self.ulearner = MLP(80 * 2, [320, 640, 1280, 2560, 80 * 8])
         self.decoder = nn.Sequential(
             MLP(80, [40, 20, 10]),
             nn.LogSoftmax(dim=1)
