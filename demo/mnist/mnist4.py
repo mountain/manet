@@ -14,9 +14,9 @@ class MNModel4(pl.LightningModule):
         super().__init__()
         self.learning_rate = learning_rate
         self.encoder = nn.Sequential(
-            nn.Conv2d(1, 10, kernel_size=5, padding=2),
+            nn.Conv2d(1, 30, kernel_size=5, padding=2),
             nn.MaxPool2d(2),
-            Reshape(1, 1),
+            Reshape(1, 3),
             MLP(1, [1]),
             Reshape(10, 14, 14),
             nn.Conv2d(10, 20, kernel_size=5, padding=2),
@@ -33,14 +33,11 @@ class MNModel4(pl.LightningModule):
             nn.MaxPool2d(2),
             Reshape(1, 1),
             MLP(1, [1]),
-            Reshape(80, 1, 1),
-            nn.Flatten(),
+            Reshape(80, 1),
         )
-        self.ulearner0 = MLP(80 * 2, [320, 640, 1280, 2560, 1280, 80 * 8])
-        self.ulearner1 = MLP(80 * 2, [320, 640, 1280, 2560, 1280, 80 * 8])
-        self.ulearner2 = MLP(80 * 2, [320, 640, 1280, 2560, 1280, 80 * 8])
+        self.learner = MLP(80 * 2, [320, 640, 1280, 2560, 1280, 80 * 8], spatio_dims=3)
         self.decoder = nn.Sequential(
-            MLP(80 * 6, [320, 80, 20, 10]),
+            MLP(80 * 6, [960, 240, 60, 10]),
             nn.LogSoftmax(dim=1)
         )
 
@@ -67,12 +64,9 @@ class MNModel4(pl.LightningModule):
 
     def forward(self, x):
         inputs = self.encoder(x)
-        result = th.cat((
-            self.ulearn(self.ulearner0, inputs),
-            self.ulearn(self.ulearner1, inputs),
-            self.ulearn(self.ulearner2, inputs),
-        ), dim=1)
-        return self.decoder(result)
+        inputs = th.cat((inputs, inputs, inputs), dim=1)
+        output = self.ulearn(self.learner, inputs).flatten(1)
+        return self.decoder(output)
 
     def configure_optimizers(self):
         return th.optim.Adam(self.parameters(), lr=self.learning_rate)
