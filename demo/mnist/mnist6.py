@@ -93,7 +93,7 @@ class MNModel4(pl.LightningModule):
         with open(fname, 'bw') as f:
             pickle.dump(checkpoint, f)
         for ix, ckpt in enumerate(sorted(glob.glob('best-*.ckpt'))):
-            if ix > 2:
+            if ix > 5:
                 os.unlink(ckpt)
 
 
