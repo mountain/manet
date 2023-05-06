@@ -50,6 +50,8 @@ class MNModel4(pl.LightningModule):
             p, r, t, v = state[:, 0], state[:, 1], state[:, 2], state[:, 3]
             q, s, u, w = state[:, 4], state[:, 5], state[:, 6], state[:, 7]
             p, q = 4 * p, 4 * q
+            self.log('pmax', p.max().item(), prog_bar=True)
+            self.log('qmax', q.max().item(), prog_bar=True)
 
             do = th.fmod((1 - do) * do * p + inputs * v, 1) * r + do * (1 - r)
             do = do * t * (1 - r) + do * r
