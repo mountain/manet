@@ -5,7 +5,9 @@ import torch.nn.functional as F
 from torch.nn import NLLLoss, LogSoftmax
 from transformers import AutoTokenizer
 
-from manet.mac import MLP
+# from manet.mac import MLP
+from torchvision.ops import MLP
+
 from demo.wikitext.emb.common import EmbeddingModel
 
 
@@ -19,11 +21,22 @@ default_steps = 18
 class DiffusionModel(EmbeddingModel):
     def __init__(self):
         super().__init__()
+
+        # self.l = default_steps // 3 * 2
+        # self.c = self.l * 2
+        # self.encoder = MLP(self.l, [2 * self.l, 4 * self.l, self.c], spatio_dims=self.word_dim)
+        # self.decoder = MLP(self.c, [16 * self.l, 4 * self.l, 2], spatio_dims=self.word_dim)
+        # self.ulearner = MLP(3 * self.c, [8 * self.c, 6 * self.c, 8 * self.c], spatio_dims=self.word_dim)
+
         self.l = default_steps // 3 * 2
         self.c = self.l * 2
-        self.encoder = MLP(self.l, [2 * self.l, 4 * self.l, self.c], spatio_dims=self.word_dim)
-        self.decoder = MLP(self.c, [16 * self.l, 4 * self.l, 2], spatio_dims=self.word_dim)
-        self.ulearner = MLP(3 * self.c, [8 * self.c, 6 * self.c, 8 * self.c], spatio_dims=self.word_dim)
+        l = self.l * self.word_dim
+        c = self.c * self.word_dim
+        o = 2 * self.word_dim
+        self.encoder = MLP(l, [2 * l, 4 * l, c])
+        self.decoder = MLP(c, [16 * l, 4 * l, o])
+        self.ulearner = MLP(3 * c, [8 * c, 6 * c, 8 * c])
+
         self.pmemory = collections.deque(maxlen=default_steps // 3)
         self.qmemory = collections.deque(maxlen=default_steps // 3)
         self.tokenizer = AutoTokenizer.from_pretrained("bert-base-cased")
@@ -45,7 +58,8 @@ class DiffusionModel(EmbeddingModel):
         self.pmemory.append(emb)
         self.qmemory.append(theta)
 
-        inputs = self.encoder(self.memory())
+        # inputs = self.encoder(self.memory())
+        inputs = self.encoder(self.memory().flatten(1))
         if context is None:
             context = th.zeros_like(inputs)
         context = context.view(-1, self.c, self.word_dim)
@@ -55,8 +69,9 @@ class DiffusionModel(EmbeddingModel):
         lastr, lasts = th.ones_like(context), th.ones_like(context)
         dc, do = th.clone(context), th.clone(context)
         context, output = th.zeros_like(context), th.zeros_like(context)
-        for _ in range(3):
-            state = th.sigmoid(self.ulearner(th.cat((context, inputs, output), dim=1)))
+        for _ in range(6):
+            # state = th.sigmoid(self.ulearner(th.cat((context, inputs, output), dim=1)))
+            state = th.sigmoid(self.ulearner(th.cat((context, inputs, output), dim=1).flatten(1)))
             state = state.view(-1, 8, self.c, self.word_dim)
             p, r, t, v = state[:, 0], state[:, 1], state[:, 2], state[:, 3]
             q, s, u, w = state[:, 4], state[:, 5], state[:, 6], state[:, 7]
@@ -73,7 +88,8 @@ class DiffusionModel(EmbeddingModel):
             output = output + do
 
 
-        result = self.decoder(output).view(-1, 2, self.word_dim)
+        # result = self.decoder(output).view(-1, 2, self.word_dim)
+        result = self.decoder(output.flatten(1)).view(-1, 2, self.word_dim)
 
         dtheta = th.tanh(result[:, 0:1, :]) * th.pi
         velocity = th.sigmoid(result[:, 1:2, :])
