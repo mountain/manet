@@ -16,9 +16,9 @@ class MNModel4(pl.LightningModule):
         self.encoder = nn.Sequential(
             Reshape(28 * 28),
         )
-        self.learner = MLP(28 * 28 * 2, [196 * 8])
+        self.learner = MLP(28 * 28 * 2, [196])
         self.decoder = nn.Sequential(
-            MLP(28 * 28, [10]),
+            MLP(49, [10]),
             nn.LogSoftmax(dim=1)
         )
 
@@ -49,8 +49,8 @@ class MNModel4(pl.LightningModule):
 
     def forward(self, x):
         inputs = self.encoder(x)
-        # output = self.ulearn(self.learner, inputs).flatten(1)
-        output = inputs
+        output = self.ulearn(self.learner, inputs).flatten(1)
+        # output = inputs
         return self.decoder(output)
 
     def configure_optimizers(self):
