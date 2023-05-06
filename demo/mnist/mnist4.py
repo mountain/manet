@@ -36,21 +36,21 @@ class MNModel4(pl.LightningModule):
             Reshape(80, 1, 1),
             nn.Flatten(),
         )
-        self.ulearner = MLP(80 * 2, [320, 640, 1280, 2560, 1280, 80 * 8])
+        self.ulearner0 = MLP(80 * 2, [320, 640, 1280, 2560, 1280, 80 * 8])
+        self.ulearner1 = MLP(80 * 2, [320, 640, 1280, 2560, 1280, 80 * 8])
+        self.ulearner2 = MLP(80 * 2, [320, 640, 1280, 2560, 1280, 80 * 8])
         self.decoder = nn.Sequential(
-            MLP(80 * 2, [320, 80, 20, 10]),
+            MLP(80 * 6, [320, 80, 20, 10]),
             nn.LogSoftmax(dim=1)
         )
 
-    def forward(self, x):
-        inputs = self.encoder(x)
-
+    def ulearn(self, learner, inputs):
         output = th.zeros_like(inputs)
         context = th.zeros_like(inputs)
         dc = th.zeros_like(inputs)
         do = th.zeros_like(inputs)
-        for _ in range(10):
-            state = th.sigmoid(self.ulearner(th.cat((context, inputs), dim=1))).view(-1, 8, 80)
+        for _ in range(6):
+            state = th.sigmoid(learner(th.cat((context, inputs), dim=1))).view(-1, 8, 80)
             p, r, t, v = state[:, 0], state[:, 1], state[:, 2], state[:, 3]
             q, s, u, w = state[:, 4], state[:, 5], state[:, 6], state[:, 7]
             p, q = 4 * p, 4 * q
@@ -63,7 +63,16 @@ class MNModel4(pl.LightningModule):
             dc = dc * t * (1 - s) + dc * s
             context = context + dc
 
-        return self.decoder(th.cat((context, inputs), dim=1))
+        return th.cat((output, context), dim=1)
+
+    def forward(self, x):
+        inputs = self.encoder(x)
+        result = th.cat((
+            self.ulearn(self.ulearner0, inputs),
+            self.ulearn(self.ulearner1, inputs),
+            self.ulearn(self.ulearner2, inputs),
+        ), dim=1)
+        return self.decoder(result)
 
     def configure_optimizers(self):
         return th.optim.Adam(self.parameters(), lr=self.learning_rate)
