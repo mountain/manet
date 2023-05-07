@@ -14,7 +14,7 @@ mnist_test = MNIST('datasets', train=False, download=True, transform=transforms.
         (0.1307,), (0.3081,))
 ]))
 
-test_loader = DataLoader(mnist_test, batch_size=opt.batch, num_workers=64)
+test_loader = DataLoader(mnist_test, batch_size=64, num_workers=64)
 
 model = mdl._model_()
 
