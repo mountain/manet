@@ -20,7 +20,7 @@ model = mdl._model_()
 
 trainer = pl.Trainer(accelerator='cpu', precision=32, max_epochs=1, log_every_n_steps=10)
 
-fname = 'best-0.91261-383-0.30069.ckpt'
+fname = 'best-0.92699-390-0.28378.ckpt'
 with open(fname, 'rb') as f:
     checkpoint = pickle.load(f)
     model.load_state_dict(checkpoint['state_dict'], strict=False)
