@@ -86,11 +86,11 @@ class MNModel4(pl.LightningModule):
     def on_save_checkpoint(self, checkpoint) -> None:
         import pickle, glob, os
 
-        record = '%2.5f-%03d-%1.5f.ckpt' % (self.labeled_loss, checkpoint['epoch'], self.labeled_correct)
+        record = '%2.5f-%03d-%1.5f.ckpt' % (self.labeled_correct, checkpoint['epoch'], self.labeled_loss)
         fname = 'best-%s' % record
         with open(fname, 'bw') as f:
             pickle.dump(checkpoint, f)
-        for ix, ckpt in enumerate(sorted(glob.glob('best-*.ckpt'))):
+        for ix, ckpt in enumerate(sorted(glob.glob('best-*.ckpt'), reverse=True)):
             if ix > 5:
                 os.unlink(ckpt)
 
