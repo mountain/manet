@@ -69,11 +69,19 @@ class MacUnit(nn.Module):
     def expansion(self: T, data: Tensor) -> Tensor:
         data = data.view(-1, self.in_channels, 1, self.in_spatio_dims, 1)
         data = data * self.in_weight.view(1, 1, self.in_channels_factor, 1, self.in_spatio_factor)
-        return data.view(-1, self.channel_dims, self.spatio_dims) + self.in_bias
+        data = data + self.in_bias.view(1, 1, self.in_channels_factor, 1, self.in_spatio_factor)
+        return data.view(-1, self.channel_dims, self.spatio_dims)
+
+    def nonlinear(self: T, data: Tensor) -> Tensor:
+        data = data.view(-1, self.channel_dims, self.spatio_dims)
+        for ix in range(self.num_steps):
+            data = data + self.step(data) / self.num_steps
+        return data
 
     def attention(self: T, data: Tensor) -> Tensor:
         data = data.view(-1, self.out_channels_factor, self.out_channels, self.out_spatio_factor, self.out_spatio_dims)
-        data = data * self.out_weight + self.out_bias
+        data = data * self.out_weight.view(1, self.out_channels_factor, 1, self.out_spatio_factor, 1)
+        data = data + self.out_bias.view(1, self.out_channels_factor, 1, self.out_spatio_factor, 1)
         return th.sigmoid(data).view(-1, self.channel_dims, self.spatio_dims)
 
     def reduction(self: T, data: Tensor) -> Tensor:
@@ -119,8 +127,7 @@ class MacUnit(nn.Module):
                 ) -> Tensor:
 
         data = self.expansion(data)
-        for ix in range(self.num_steps):
-            data = data + self.step(data) / self.num_steps
+        data = self.nonlinear(data)
         data = data * self.attention(data)
 
         return self.reduction(data)
