@@ -56,19 +56,19 @@ class MacUnit(nn.Module):
         self.weight = nn.Parameter(
             th.normal(0, 1, (1, self.channel_dims, self.spatio_dims))
         )
+        self.bias = nn.Parameter(
+            th.normal(0, 1, (1, self.channel_dims, self.spatio_dims))
+        )
         self.attention = nn.Parameter(
             th.normal(0, 1, (1, self.channel_dims, self.spatio_dims))
         )
-
-        self.alpha = nn.Parameter(th.normal(0, 1, (1, self.channel_dims, self.spatio_dims)))
-        self.beta = nn.Parameter(th.normal(0, 1, (1, self.channel_dims, self.spatio_dims)))
 
     def accessor(self: T,
                  data: Tensor,
                  ) -> Tuple[Tensor, Tensor, Tensor]:
 
         # calculate the index of the accessor
-        index = th.sigmoid(data * self.alpha + self.beta) * self.num_points
+        index = th.sigmoid(data) * self.num_points
         bgn = index.floor().long()
         end = (index + 1).floor().long()
         bgn = (bgn * (bgn + 1 < self.num_points) + (bgn - 1) * (bgn + 1 >= self.num_points)) * (bgn >= 0)
@@ -106,7 +106,7 @@ class MacUnit(nn.Module):
             self.in_channels, self.in_channels_factor,
             self.in_spatio_dims, self.in_spatio_factor
         )
-        data = data.view(-1, self.channel_dims, self.spatio_dims)
+        data = data.view(-1, self.channel_dims, self.spatio_dims) + self.bias
         for ix in range(self.num_steps):
             data = data + self.step(data) / self.num_steps
         data = data * self.attention
