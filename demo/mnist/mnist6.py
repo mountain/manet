@@ -18,9 +18,9 @@ class MNModel4(pl.LightningModule):
             Reshape(28 * 28),
             MLP(28 * 28, [self.hidden]),
         )
-        # self.learner = MLP(self.hidden * 2, [self.hidden * 8])
+        self.learner = MLP(self.hidden * 2, [self.hidden * 8])
         self.decoder = nn.Sequential(
-            MLP(self.hidden, [10]),
+            MLP(self.hidden * 2, [10]),
             nn.LogSoftmax(dim=1)
         )
 
@@ -35,12 +35,12 @@ class MNModel4(pl.LightningModule):
             q, s, u, w = state[:, 4], state[:, 5], state[:, 6], state[:, 7]
             p, q = 4 * p, 4 * q
 
-            do = th.fmod((1 - do) * do * p + inputs * v, 1) * r + do * (1 - r)
-            do = do * t * (1 - r) + do * r
+            do = th.fmod((1 - do) * do * p + inputs * v, 1) * (r > 0.5) + do * (r <= 0.5)
+            do = do * t * (r <= 0.5) + do * (r > 0.5)
             output = output + do
 
-            dc = th.fmod((1 - dc) * dc * q + inputs * w, 1) * s + dc * (1 - s)
-            dc = dc * u * (1 - s) + dc * s
+            dc = th.fmod((1 - dc) * dc * q + inputs * w, 1) * (s > 0.5) + dc * (s <= 0.5)
+            dc = dc * u * (s <= 0.5) + dc * (s > 0.5)
             context = context + dc
 
         return th.cat((output, context), dim=1)
