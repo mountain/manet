@@ -11,14 +11,14 @@ from torch.nn import Module
 T = TypeVar('T', bound='MacUnit')
 
 
-def _exchangeable_multiplier_(factor1: int, factor2: int) -> Tuple[int, int]:
+def _exchangeable_multiplier_(factor1: int, factor2: int) -> Tuple[int, int, int]:
     # this is the normal setting
     # return factor2, factor1
 
     # in this setting, the size of parameters can be reduced dramatically
     # but the performance may be worse, need to be tested more
     lcm = np.lcm(factor1, factor2)
-    return lcm // factor1, lcm // factor2
+    return lcm, lcm // factor1, lcm // factor2
 
 
 class MacUnit(nn.Module):
@@ -42,9 +42,9 @@ class MacUnit(nn.Module):
         self.out_spatio_dims = out_spatio_dims
 
         # the constant tensors
-        self.in_channels_factor, self.out_channels_factor = _exchangeable_multiplier_(in_channels, out_channels)
-        self.in_spatio_factor, self.out_spatio_factor = _exchangeable_multiplier_(in_spatio_dims, out_spatio_dims)
-        self.dims = self.in_channels * self.in_channels_factor * self.in_spatio_dims * self.in_spatio_factor
+        channel_dims, self.in_channels_factor, self.out_channels_factor = _exchangeable_multiplier_(in_channels, out_channels)
+        spatio_dims, self.in_spatio_factor, self.out_spatio_factor = _exchangeable_multiplier_(in_spatio_dims, out_spatio_dims)
+        self.dims = channel_dims * spatio_dims
 
         # the learnable parameters which govern the MAC unit
         self.angles = nn.Parameter(
@@ -54,11 +54,11 @@ class MacUnit(nn.Module):
             th.linspace(0, 1, num_points).view(1, 1, num_points)
         )
         self.attention = nn.Parameter(
-            th.normal(0, 1, (1, self.out_channels_factor * out_channels, self.out_spatio_factor * out_spatio_dims))
+            th.normal(0, 1, (1, channel_dims, spatio_dims))
         )
 
-        self.alpha = nn.Parameter(th.normal(0, 1, (1, self.in_channels * self.in_channels_factor, self.in_spatio_dims * self.in_spatio_factor)))
-        self.beta = nn.Parameter(th.normal(0, 1, (1, self.in_channels * self.in_channels_factor, self.in_spatio_dims * self.in_spatio_factor)))
+        self.alpha = nn.Parameter(th.normal(0, 1, (1, spatio_dims, spatio_dims)))
+        self.beta = nn.Parameter(th.normal(0, 1, (1, spatio_dims, spatio_dims)))
 
         # the integral domain
         # self.domain = th.linspace(-1, 1, num_points).view(1, 1, num_points)
@@ -75,7 +75,7 @@ class MacUnit(nn.Module):
                  ) -> Tuple[Tensor, Tensor, Tensor]:
 
         # calculate the index of the accessor
-        index = th.sigmoid(self.alpha * data + self.beta) * self.num_points
+        index = th.sigmoid(data * self.alpha + self.beta) * self.num_points
         bgn = index.floor().long()
         end = (index + 1).floor().long()
         bgn = (bgn * (bgn + 1 < self.num_points) + (bgn - 1) * (bgn + 1 >= self.num_points)) * (bgn >= 0)
@@ -119,7 +119,7 @@ class MacUnit(nn.Module):
 
         for ix in range(self.num_steps):
             data = data + self.step(data) / self.num_steps
-        data = data.view(-1, self.in_channels, self.in_spatio_dims) * self.attention
+        data = data * self.attention
         data = data.view(-1, self.out_channels_factor, self.out_channels, self.out_spatio_factor, self.out_spatio_dims)
         return th.sum(data, dim=(1, 3))
 
