@@ -78,11 +78,11 @@ class MacUnit(nn.Module):
             data = data + self.step(data) / self.num_steps
         return data
 
-    def attention(self: T, data: Tensor) -> Tensor:
+    def output(self: T, data: Tensor) -> Tensor:
         data = data.view(-1, self.channel_dims, self.spatio_dims)
         data = data * self.out_weight
         data = data + self.out_bias
-        return th.sigmoid(data)
+        return data
 
     def reduction(self: T, data: Tensor) -> Tensor:
         data = data.view(-1, self.out_channels_factor, self.out_channels, self.out_spatio_factor, self.out_spatio_dims)
@@ -128,7 +128,7 @@ class MacUnit(nn.Module):
 
         data = self.expansion(data)
         data = self.nonlinear(data)
-        data = data * self.attention(data)
+        data = self.output(data)
 
         return self.reduction(data)
 
