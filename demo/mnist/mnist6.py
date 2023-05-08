@@ -5,8 +5,8 @@ from torch import nn
 from torch.nn import functional as F
 
 from manet.mac import Reshape
-# from torchvision.ops import MLP
-from manet.mac import MLP
+from torchvision.ops import MLP
+# from manet.mac import MLP
 
 
 class MNModel4(pl.LightningModule):
@@ -18,7 +18,7 @@ class MNModel4(pl.LightningModule):
             Reshape(28 * 28),
             MLP(28 * 28, [self.hidden]),
         )
-        self.learner = MLP(self.hidden * 2, [self.hidden * 8])
+        self.learner = MLP(self.hidden, [self.hidden * 8])
         self.decoder = nn.Sequential(
             MLP(self.hidden * 2, [10]),
             nn.LogSoftmax(dim=1)
@@ -49,7 +49,7 @@ class MNModel4(pl.LightningModule):
         inputs = self.encoder(x)
         output = self.ulearn(self.learner, inputs).flatten(1)
         # output = th.cat((inputs, inputs), dim=1)
-        # output = inputs
+        output = inputs
         return self.decoder(output)
 
     def configure_optimizers(self):
