@@ -54,22 +54,22 @@ class MacUnit(nn.Module):
             th.linspace(0, 1, num_points).view(1, 1, num_points)
         )
         self.in_weight = nn.Parameter(
-            th.normal(0, 1, (1, self.in_channels_factor, self.in_spatio_factor))
+            th.normal(0, 1, (1, self.channels_dims, self.spatio_dims))
         )
         self.in_bias = nn.Parameter(
-            th.normal(0, 1, (1, self.in_channels_factor, self.in_spatio_factor))
+            th.normal(0, 1, (1, self.channels_dims, self.spatio_dims))
         )
         self.out_weight = nn.Parameter(
-            th.normal(0, 1, (1, self.out_channels_factor, self.out_spatio_factor))
+            th.normal(0, 1, (1, self.channels_dims, self.spatio_dims))
         )
         self.out_bias = nn.Parameter(
-            th.normal(0, 1, (1, self.out_channels_factor, self.out_spatio_factor))
+            th.normal(0, 1, (1, self.channels_dims, self.spatio_dims))
         )
 
     def expansion(self: T, data: Tensor) -> Tensor:
         data = data.view(-1, self.in_channels, 1, self.in_spatio_dims, 1)
-        data = data * self.in_weight.view(1, 1, self.in_channels_factor, 1, self.in_spatio_factor)
-        data = data + self.in_bias.view(1, 1, self.in_channels_factor, 1, self.in_spatio_factor)
+        data = data * self.in_weight.view(1, self.in_channels, self.in_channels_factor, self.in_spatio_dims, self.in_spatio_factor)
+        data = data + self.in_bias.view(1, self.in_channels, self.in_channels_factor, self.in_spatio_dims, self.in_spatio_factor)
         return data.view(-1, self.channel_dims, self.spatio_dims)
 
     def nonlinear(self: T, data: Tensor) -> Tensor:
@@ -79,10 +79,10 @@ class MacUnit(nn.Module):
         return data
 
     def attention(self: T, data: Tensor) -> Tensor:
-        data = data.view(-1, self.out_channels_factor, self.out_channels, self.out_spatio_factor, self.out_spatio_dims)
-        data = data * self.out_weight.view(1, self.out_channels_factor, 1, self.out_spatio_factor, 1)
-        data = data + self.out_bias.view(1, self.out_channels_factor, 1, self.out_spatio_factor, 1)
-        return th.sigmoid(data).view(-1, self.channel_dims, self.spatio_dims)
+        data = data.view(-1, self.channel_dims, self.spatio_dims)
+        data = data * self.out_weight
+        data = data + self.out_bias
+        return th.sigmoid(data)
 
     def reduction(self: T, data: Tensor) -> Tensor:
         data = data.view(-1, self.out_channels_factor, self.out_channels, self.out_spatio_factor, self.out_spatio_dims)
