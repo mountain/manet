@@ -101,7 +101,11 @@ class MacUnit(nn.Module):
                 data: Tensor
                 ) -> Tensor:
 
-        data = data.view(-1, self.in_channels, self.in_spatio_dims) * self.weight
+        data = data.view(-1, self.in_channels, 1, self.in_spatio_dims, 1)
+        data = data * self.weight.view(1,
+            self.in_channels, self.in_channels_factor,
+            self.in_spatio_dims, self.in_spatio_factor
+        )
         for ix in range(self.num_steps):
             data = data + self.step(data) / self.num_steps
         data = data * self.attention
