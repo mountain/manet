@@ -28,7 +28,7 @@ class MacUnit(nn.Module):
                  in_spatio_dims: int = 1,
                  out_spatio_dims: int = 1,
                  num_steps: int = 5,
-                 num_points: int = 3,
+                 num_points: int = 2,
                  ) -> None:
 
         super().__init__()
