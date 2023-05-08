@@ -54,16 +54,16 @@ class MacUnit(nn.Module):
             th.linspace(0, 1, num_points).view(1, 1, num_points)
         )
         self.in_weight = nn.Parameter(
-            th.normal(0, 1, (1, self.channels_dims, self.spatio_dims))
+            th.normal(0, 1, (1, self.channel_dims, self.spatio_dims))
         )
         self.in_bias = nn.Parameter(
-            th.normal(0, 1, (1, self.channels_dims, self.spatio_dims))
+            th.normal(0, 1, (1, self.channel_dims, self.spatio_dims))
         )
         self.out_weight = nn.Parameter(
-            th.normal(0, 1, (1, self.channels_dims, self.spatio_dims))
+            th.normal(0, 1, (1, self.channel_dims, self.spatio_dims))
         )
         self.out_bias = nn.Parameter(
-            th.normal(0, 1, (1, self.channels_dims, self.spatio_dims))
+            th.normal(0, 1, (1, self.channel_dims, self.spatio_dims))
         )
 
     def expansion(self: T, data: Tensor) -> Tensor:
