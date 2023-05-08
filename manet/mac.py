@@ -57,8 +57,8 @@ class MacUnit(nn.Module):
             th.normal(0, 1, (1, channel_dims, spatio_dims))
         )
 
-        self.alpha = nn.Parameter(th.normal(0, 1, (1, spatio_dims, spatio_dims)))
-        self.beta = nn.Parameter(th.normal(0, 1, (1, spatio_dims, spatio_dims)))
+        self.alpha = nn.Parameter(th.normal(0, 1, (1, channel_dims, spatio_dims)))
+        self.beta = nn.Parameter(th.normal(0, 1, (1, channel_dims, spatio_dims)))
 
         # the integral domain
         # self.domain = th.linspace(-1, 1, num_points).view(1, 1, num_points)
