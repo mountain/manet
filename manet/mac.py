@@ -28,7 +28,7 @@ class MacUnit(nn.Module):
                  in_spatio_dims: int = 1,
                  out_spatio_dims: int = 1,
                  num_steps: int = 5,
-                 num_points: int = 5,
+                 num_points: int = 3,
                  ) -> None:
 
         super().__init__()
@@ -78,11 +78,10 @@ class MacUnit(nn.Module):
             data = data + self.step(data) / self.num_steps
         return data
 
-    def output(self: T, data: Tensor) -> Tensor:
+    def attention(self: T, data: Tensor) -> Tensor:
         data = data.view(-1, self.channel_dims, self.spatio_dims)
-        data = data * self.out_weight
-        data = data + self.out_bias
-        return data
+        data = data * self.out_weight + self.out_bias
+        return th.sigmoid(data)
 
     def reduction(self: T, data: Tensor) -> Tensor:
         data = data.view(-1, self.out_channels_factor, self.out_channels, self.out_spatio_factor, self.out_spatio_dims)
@@ -128,7 +127,7 @@ class MacUnit(nn.Module):
 
         data = self.expansion(data)
         data = self.nonlinear(data)
-        data = self.output(data)
+        data = data * self.attention(data)
 
         return self.reduction(data)
 
@@ -138,7 +137,7 @@ class MLP(nn.Sequential):
         self,
         in_channels: int,
         hidden_channels: List[int],
-        spatio_dims: int  = 1
+        spatio_dims: int = 1
     ):
         layers = []
         in_dim = in_channels
