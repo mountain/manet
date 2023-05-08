@@ -117,23 +117,11 @@ class MacUnit(nn.Module):
                 data: Tensor
                 ) -> Tensor:
 
-        ones = th.ones_like(data).view(
-            -1, self.in_channels, 1,  self.in_spatio_dims, 1
-        ).expand(
-            -1, self.in_channels, self.in_channels_factor, self.in_spatio_dims, self.in_spatio_factor
-        )
-        data = data.view(-1, self.in_channels, 1, self.in_spatio_dims, 1) * ones
-
         for ix in range(self.num_steps):
             data = data + self.step(data) / self.num_steps
+        data = data.view(-1, self.in_channels, 1, self.in_spatio_dims, 1) * self.attention
 
-        return th.sum(
-            self.attention * data.view(
-                -1, self.out_channels_factor, self.out_channels,
-                self.out_spatio_factor, self.out_spatio_dims
-            ),
-            dim=(1, 3)
-        )
+        return th.sum(data, dim=(1, 3))
 
 
 class MLP(nn.Sequential):
