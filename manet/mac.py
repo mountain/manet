@@ -54,7 +54,7 @@ class MacUnit(nn.Module):
             th.linspace(0, 1, num_points).view(1, 1, num_points)
         )
         self.attention = nn.Parameter(
-            th.normal(0, 1, (self.out_channels_factor, out_channels, self.out_spatio_factor, out_spatio_dims))
+            th.normal(0, 1, (1, self.out_channels_factor * out_channels, self.out_spatio_factor * out_spatio_dims))
         )
 
         self.alpha = nn.Parameter(th.normal(0, 1, (1, self.in_channels, self.in_channels_factor, self.in_spatio_dims, self.in_spatio_factor)))
@@ -119,8 +119,8 @@ class MacUnit(nn.Module):
 
         for ix in range(self.num_steps):
             data = data + self.step(data) / self.num_steps
-        data = data.view(-1, self.in_channels, 1, self.in_spatio_dims, 1) * self.attention
-
+        data = data.view(-1, self.in_channels, self.in_spatio_dims) * self.attention
+        data = data.view(-1, self.out_channels_factor, self.out_channels, self.out_spatio_factor, self.out_spatio_dims)
         return th.sum(data, dim=(1, 3))
 
 
