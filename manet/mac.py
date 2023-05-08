@@ -42,9 +42,9 @@ class MacUnit(nn.Module):
         self.out_spatio_dims = out_spatio_dims
 
         # the constant tensors
-        channel_dims, self.in_channels_factor, self.out_channels_factor = _exchangeable_multiplier_(in_channels, out_channels)
-        spatio_dims, self.in_spatio_factor, self.out_spatio_factor = _exchangeable_multiplier_(in_spatio_dims, out_spatio_dims)
-        self.dims = channel_dims * spatio_dims
+        self.channel_dims, self.in_channels_factor, self.out_channels_factor = _exchangeable_multiplier_(in_channels, out_channels)
+        self.spatio_dims, self.in_spatio_factor, self.out_spatio_factor = _exchangeable_multiplier_(in_spatio_dims, out_spatio_dims)
+        self.dims = self.channel_dims * self.spatio_dims
 
         # the learnable parameters which govern the MAC unit
         self.angles = nn.Parameter(
@@ -54,14 +54,14 @@ class MacUnit(nn.Module):
             th.linspace(0, 1, num_points).view(1, 1, num_points)
         )
         self.weight = nn.Parameter(
-            th.normal(0, 1, (1, channel_dims, spatio_dims))
+            th.normal(0, 1, (1, self.channel_dims, self.spatio_dims))
         )
         self.attention = nn.Parameter(
-            th.normal(0, 1, (1, channel_dims, spatio_dims))
+            th.normal(0, 1, (1, self.channel_dims, self.spatio_dims))
         )
 
-        self.alpha = nn.Parameter(th.normal(0, 1, (1, channel_dims, spatio_dims)))
-        self.beta = nn.Parameter(th.normal(0, 1, (1, channel_dims, spatio_dims)))
+        self.alpha = nn.Parameter(th.normal(0, 1, (1, self.channel_dims, self.spatio_dims)))
+        self.beta = nn.Parameter(th.normal(0, 1, (1, self.channel_dims, self.spatio_dims)))
 
     def accessor(self: T,
                  data: Tensor,
@@ -106,6 +106,7 @@ class MacUnit(nn.Module):
             self.in_channels, self.in_channels_factor,
             self.in_spatio_dims, self.in_spatio_factor
         )
+        data = data.view(-1, self.channel_dims, self.spatio_dims)
         for ix in range(self.num_steps):
             data = data + self.step(data) / self.num_steps
         data = data * self.attention
