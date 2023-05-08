@@ -18,9 +18,9 @@ class MNModel4(pl.LightningModule):
             Reshape(28 * 28),
             MLP(28 * 28, [self.hidden]),
         )
-        self.learner = MLP(self.hidden, [self.hidden * 8])
+        #self.learner = MLP(self.hidden * 2, [self.hidden * 8])
         self.decoder = nn.Sequential(
-            MLP(self.hidden * 2, [10]),
+            MLP(self.hidden, [10]),
             nn.LogSoftmax(dim=1)
         )
 
