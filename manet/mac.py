@@ -53,22 +53,15 @@ class MacUnit(nn.Module):
         self.velocity = nn.Parameter(
             th.linspace(0, 1, num_points).view(1, 1, num_points)
         )
+        self.weight = nn.Parameter(
+            th.normal(0, 1, (1, channel_dims, spatio_dims))
+        )
         self.attention = nn.Parameter(
             th.normal(0, 1, (1, channel_dims, spatio_dims))
         )
 
         self.alpha = nn.Parameter(th.normal(0, 1, (1, channel_dims, spatio_dims)))
         self.beta = nn.Parameter(th.normal(0, 1, (1, channel_dims, spatio_dims)))
-
-        # the integral domain
-        # self.domain = th.linspace(-1, 1, num_points).view(1, 1, num_points)
-        # self.alpha = nn.Parameter(th.normal(0, 1, (1, 1, num_points)))
-        # self.beta = nn.Parameter(th.normal(0, 1, (1, 1, num_points)))
-
-    def to(self: T, device: Optional[Union[int, device]] = ..., dtype: Optional[Union[dtype, str]] = ...,
-           non_blocking: bool = ...) -> Module:
-        self.domain.to(device, dtype)
-        return super().to(device, dtype)
 
     def accessor(self: T,
                  data: Tensor,
@@ -83,11 +76,6 @@ class MacUnit(nn.Module):
 
         return index, bgn, end
 
-        # replace above hard selection with a gumbel softmax
-        # data = data.view(-1, self.dims, 1)
-        # data = self.alpha * data + self.beta
-        # return F.softmax(data)
-
     def access(self: T,
                memory: Tensor,
                accessor: Tuple[Tensor, Tensor, Tensor]
@@ -97,10 +85,6 @@ class MacUnit(nn.Module):
         pos = index - bgn
         memory = memory.flatten(0)
         return (1 - pos) * memory[bgn] + pos * memory[end]
-
-        # return th.sum(memory * accessor, dim=-1).view(
-        #     -1, self.in_channels, self.in_channels_factor, self.in_spatio_dims, self.in_spatio_factor
-        # )
 
     def step(self: T,
              data: Tensor
@@ -117,6 +101,7 @@ class MacUnit(nn.Module):
                 data: Tensor
                 ) -> Tensor:
 
+        data = data * self.weight
         for ix in range(self.num_steps):
             data = data + self.step(data) / self.num_steps
         data = data * self.attention
