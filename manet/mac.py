@@ -53,15 +53,32 @@ class MacUnit(nn.Module):
         self.velocity = nn.Parameter(
             th.linspace(0, 1, num_points).view(1, 1, num_points)
         )
-        self.weight = nn.Parameter(
-            th.normal(0, 1, (1, self.channel_dims, self.spatio_dims))
+        self.in_weight = nn.Parameter(
+            th.normal(0, 1, (1, self.in_channels_factor, self.in_spatio_factor))
         )
-        self.bias = nn.Parameter(
-            th.normal(0, 1, (1, self.channel_dims, self.spatio_dims))
+        self.in_bias = nn.Parameter(
+            th.normal(0, 1, (1, self.in_channels_factor, self.in_spatio_factor))
         )
-        self.attention = nn.Parameter(
-            th.normal(0, 1, (1, self.channel_dims, self.spatio_dims))
+        self.out_weight = nn.Parameter(
+            th.normal(0, 1, (1, self.out_channels_factor, self.out_spatio_factor))
         )
+        self.out_bias = nn.Parameter(
+            th.normal(0, 1, (1, self.out_channels_factor, self.out_spatio_factor))
+        )
+
+    def expansion(self: T, data: Tensor) -> Tensor:
+        data = data.view(-1, self.in_channels, 1, self.in_spatio_dims, 1)
+        data = data * self.in_weight.view(1, 1, self.in_channels_factor, 1, self.in_spatio_factor)
+        return data.view(-1, self.channel_dims, self.spatio_dims) + self.in_bias
+
+    def attention(self: T, data: Tensor) -> Tensor:
+        data = data.view(-1, self.out_channels_factor, self.out_channels, self.out_spatio_factor, self.out_spatio_dims)
+        data = data * self.out_weight + self.out_bias
+        return th.sigmoid(data).view(-1, self.channel_dims, self.spatio_dims)
+
+    def reduction(self: T, data: Tensor) -> Tensor:
+        data = data.view(-1, self.out_channels_factor, self.out_channels, self.out_spatio_factor, self.out_spatio_dims)
+        return th.sum(data, dim=(1, 3))
 
     def accessor(self: T,
                  data: Tensor,
@@ -101,17 +118,12 @@ class MacUnit(nn.Module):
                 data: Tensor
                 ) -> Tensor:
 
-        data = data.view(-1, self.in_channels, 1, self.in_spatio_dims, 1)
-        data = data * self.weight.view(1,
-            self.in_channels, self.in_channels_factor,
-            self.in_spatio_dims, self.in_spatio_factor
-        )
-        data = data.view(-1, self.channel_dims, self.spatio_dims) + self.bias
+        data = self.expansion(data)
         for ix in range(self.num_steps):
             data = data + self.step(data) / self.num_steps
-        data = data * self.attention
-        data = data.view(-1, self.out_channels_factor, self.out_channels, self.out_spatio_factor, self.out_spatio_dims)
-        return th.sum(data, dim=(1, 3))
+        data = data * self.attention(data)
+
+        return self.reduction(data)
 
 
 class MLP(nn.Sequential):
