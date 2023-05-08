@@ -47,9 +47,9 @@ class MNModel4(pl.LightningModule):
 
     def forward(self, x):
         inputs = self.encoder(x)
-        # output = self.ulearn(self.learner, inputs).flatten(1)
+        output = self.ulearn(self.learner, inputs).flatten(1)
         # output = th.cat((inputs, inputs), dim=1)
-        output = inputs
+        # output = inputs
         return self.decoder(output)
 
     def configure_optimizers(self):
