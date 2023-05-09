@@ -4,7 +4,7 @@ import lightning.pytorch as pl
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-n", "--n_epochs", type=int, default=400, help="number of epochs of training")
-parser.add_argument("-b", "--batch", type=int, default=1024, help="batch size of training")
+parser.add_argument("-b", "--batch", type=int, default=64, help="batch size of training")
 parser.add_argument("-m", "--model", type=str, default='mnist6', help="model to execute")
 opt = parser.parse_args()
 

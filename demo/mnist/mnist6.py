@@ -5,8 +5,8 @@ from torch import nn
 from torch.nn import functional as F
 
 from manet.mac import Reshape
-from torchvision.ops import MLP
-# from manet.mac import MLP
+# from torchvision.ops import MLP
+from manet.mac import MLP, MacMatrixUnit
 
 
 class MNModel4(pl.LightningModule):
@@ -16,7 +16,7 @@ class MNModel4(pl.LightningModule):
         self.hidden = 49
         self.encoder = nn.Sequential(
             Reshape(28 * 28),
-            MLP(28 * 28, [self.hidden]),
+            MLP(28 * 28, [self.hidden], mac_unit=MacMatrixUnit),
         )
         #self.learner = MLP(self.hidden * 2, [self.hidden * 8])
         self.decoder = nn.Sequential(
