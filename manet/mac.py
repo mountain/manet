@@ -1,14 +1,14 @@
 import numpy as np
 import torch as th
 import torch.nn as nn
-import torch.nn.functional as F
 
-from torch import Tensor, device, dtype
-from typing import List, TypeVar, Tuple, Optional, Union
-from torch.nn import Module
+from torch import Tensor
+from typing import List, TypeVar, Tuple, Type
 
-
-T = TypeVar('T', bound='MacUnit')
+A = TypeVar('A', bound='AbstractMacUnit')
+T = TypeVar('T', bound='MacTensorUnit')
+M = TypeVar('M', bound='MacMatrixUnit')
+P = TypeVar('P', bound='MLP')
 
 
 def _exchangeable_multiplier_(factor1: int, factor2: int) -> Tuple[int, int, int]:
@@ -21,30 +21,27 @@ def _exchangeable_multiplier_(factor1: int, factor2: int) -> Tuple[int, int, int
     return lcm, lcm // factor1, lcm // factor2
 
 
-class MacUnit(nn.Module):
-    def __init__(self: T,
-                 in_channels: int,
-                 out_channels: int,
-                 in_spatio_dims: int = 1,
-                 out_spatio_dims: int = 1,
-                 num_steps: int = 5,
-                 num_points: int = 2,
+class AbstractMacUnit(nn.Module):
+    def __init__(self: A,
+                 in_channel: int,
+                 out_channel: int,
+                 in_spatio: int = 1,
+                 out_spatio: int = 1,
+                 num_steps: int = 3,
+                 num_points: int = 5,
                  ) -> None:
 
         super().__init__()
 
-        # the hyper-parameters
+        # the hyperparameters
         self.num_steps = num_steps
         self.num_points = num_points
-        self.in_channels = in_channels
-        self.out_channels = out_channels
-        self.in_spatio_dims = in_spatio_dims
-        self.out_spatio_dims = out_spatio_dims
+        self.in_channel = in_channel
+        self.out_channel = out_channel
+        self.in_spatio = in_spatio
+        self.out_spatio = out_spatio
 
-        # the constant tensors
-        self.channel_dims, self.in_channels_factor, self.out_channels_factor = _exchangeable_multiplier_(in_channels, out_channels)
-        self.spatio_dims, self.in_spatio_factor, self.out_spatio_factor = _exchangeable_multiplier_(in_spatio_dims, out_spatio_dims)
-        self.dims = self.channel_dims * self.spatio_dims
+        self.channel_dim, self.spatio_dim = self.calculate()
 
         # the learnable parameters which govern the MAC unit
         self.angles = nn.Parameter(
@@ -53,39 +50,20 @@ class MacUnit(nn.Module):
         self.velocity = nn.Parameter(
             th.linspace(0, 1, num_points).view(1, 1, num_points)
         )
-        self.in_weight = nn.Parameter(
-            th.normal(0, 1, (1, self.channel_dims, self.spatio_dims))
-        )
-        self.in_bias = nn.Parameter(
-            th.normal(0, 1, (1, self.channel_dims, self.spatio_dims))
-        )
-        self.out_weight = nn.Parameter(
-            th.normal(0, 1, (1, self.channel_dims, self.spatio_dims))
-        )
-        self.out_bias = nn.Parameter(
-            th.normal(0, 1, (1, self.channel_dims, self.spatio_dims))
-        )
+
+    def calculate(self: T) -> Tuple[int, int]:
+        raise NotImplemented()
 
     def expansion(self: T, data: Tensor) -> Tensor:
-        data = data.view(-1, self.in_channels, 1, self.in_spatio_dims, 1)
-        data = data * self.in_weight.view(1, self.in_channels, self.in_channels_factor, self.in_spatio_dims, self.in_spatio_factor)
-        data = data + self.in_bias.view(1, self.in_channels, self.in_channels_factor, self.in_spatio_dims, self.in_spatio_factor)
-        return data.view(-1, self.channel_dims, self.spatio_dims)
+        raise NotImplemented()
+
+    def reduction(self: T, data: Tensor) -> Tensor:
+        raise NotImplemented()
 
     def nonlinear(self: T, data: Tensor) -> Tensor:
-        data = data.view(-1, self.channel_dims, self.spatio_dims)
         for ix in range(self.num_steps):
             data = data + self.step(data) / self.num_steps
         return data
-
-    def attention(self: T, data: Tensor) -> Tensor:
-        data = data.view(-1, self.channel_dims, self.spatio_dims)
-        data = data * self.out_weight + self.out_bias
-        return th.sigmoid(data)
-
-    def reduction(self: T, data: Tensor) -> Tensor:
-        data = data.view(-1, self.out_channels_factor, self.out_channels, self.out_spatio_factor, self.out_spatio_dims)
-        return th.sum(data, dim=(1, 3))
 
     def accessor(self: T,
                  data: Tensor,
@@ -127,9 +105,130 @@ class MacUnit(nn.Module):
 
         data = self.expansion(data)
         data = self.nonlinear(data)
+
+        return self.reduction(data)
+
+
+class MacTensorUnit(AbstractMacUnit):
+    def __init__(self: T,
+                 in_channel: int,
+                 out_channel: int,
+                 in_spatio: int = 1,
+                 out_spatio: int = 1,
+                 num_steps: int = 3,
+                 num_points: int = 5,
+                 ) -> None:
+
+        super().__init__(in_channel, out_channel, in_spatio, out_spatio, num_steps, num_points)
+        self.in_channel_factor, self.out_channel_factor = None, None
+        self.in_spatio_factor, self.out_spatio_factor = None, None
+        self.channel_dim, self.spatio_dim = self.calculate()
+
+        self.in_weight = nn.Parameter(
+            th.normal(0, 1, (1, self.channel_dim, self.spatio_dim))
+        )
+        self.in_bias = nn.Parameter(
+            th.normal(0, 1, (1, self.channel_dim, self.spatio_dim))
+        )
+        self.out_weight = nn.Parameter(
+            th.normal(0, 1, (1, self.channel_dim, self.spatio_dim))
+        )
+        self.out_bias = nn.Parameter(
+            th.normal(0, 1, (1, self.channel_dim, self.spatio_dim))
+        )
+
+    def calculate(self: T) -> Tuple[int, int]:
+        channel_dim, self.in_channel_factor, self.out_channel_factor = _exchangeable_multiplier_(
+            self.in_channel, self.out_channel
+        )
+        spatio_dim, self.in_spatio_factor, self.out_spatio_factor = _exchangeable_multiplier_(
+            self.in_spatio, self.out_spatio
+        )
+        return channel_dim, spatio_dim
+
+    def expansion(self: T, data: Tensor) -> Tensor:
+        data = data.view(-1, self.in_channel, 1, self.in_spatio, 1)
+        data = data * self.in_weight.view(1, self.in_channel, self.in_channel_factor, self.in_spatio, self.in_spatio_factor)
+        data = data + self.in_bias.view(1, self.in_channel, self.in_channel_factor, self.in_spatio, self.in_spatio_factor)
+        return data.view(-1, self.channel_dim, self.spatio_dim)
+
+    def attention(self: T, data: Tensor) -> Tensor:
+        data = data.view(-1, self.channel_dim, self.spatio_dim)
+        data = data * self.out_weight + self.out_bias
+        return th.sigmoid(data)
+
+    def reduction(self: T, data: Tensor) -> Tensor:
+        data = data.view(-1, self.out_channel_factor, self.out_channel, self.out_spatio_factor, self.out_spatio)
+        return th.sum(data, dim=(1, 3))
+
+    def forward(self: T,
+                data: Tensor
+                ) -> Tensor:
+
+        data = self.expansion(data)
+        data = self.nonlinear(data)
         data = data * self.attention(data)
 
         return self.reduction(data)
+
+
+class MacMatrixUnit(AbstractMacUnit):
+    def __init__(self: M,
+                 in_channel: int,
+                 out_channel: int,
+                 in_spatio: int = 1,
+                 out_spatio: int = 1,
+                 num_steps: int = 3,
+                 num_points: int = 5,
+                 ) -> None:
+
+        super().__init__(in_channel, out_channel, in_spatio, out_spatio, num_steps, num_points)
+        self.flag = False
+        self.channel_dim, self.spatio_dim = self.calculate()
+
+        self.channel_transform = nn.Parameter(
+            th.normal(0, 1, (1, self.in_channel, self.out_channel))
+        )
+        self.spatio_transform = nn.Parameter(
+            th.normal(0, 1, (1, self.in_spatio, self.out_spatio))
+        )
+
+    def calculate(self: T) -> Tuple[int, int]:
+        channel_dim = self.in_channel * self.out_channel
+        spatio_dim = self.in_spatio * self.out_spatio
+        self.flag = self.in_channel * self.in_spatio > self.out_channel * self.out_spatio
+        return channel_dim, spatio_dim
+
+    def expansion(self: T, data: Tensor) -> Tensor:
+        if not self.flag:
+            data = data.view(-1, self.in_channel, self.in_spatio)
+            data = th.permute(data, [0, 2, 1]).view(-1, self.in_channel)
+            data = th.matmul(data, self.channel_transform)
+            data = data.view(-1, self.in_spatio, self.out_channel)
+            data = th.permute(data, [0, 2, 1]).view(-1, self.in_spatio)
+            data = th.matmul(data, self.spatio_transform)
+            data = data.view(-1, self.out_channel, self.out_spatio)
+            return data
+        else:
+            return data
+
+    def attention(self: T, data: Tensor) -> Tensor:
+        data = data.view(-1, self.channel_dim, self.spatio_dim)
+        data = data * self.out_weight + self.out_bias
+        return th.sigmoid(data)
+
+    def reduction(self: T, data: Tensor) -> Tensor:
+        if not self.flag:
+            return data
+        else:
+            data = data.view(-1, self.in_channel, self.in_spatio)
+            data = th.permute(data, [0, 2, 1]).view(-1, self.in_channel)
+            data = th.matmul(data, self.channel_transform)
+            data = data.view(-1, self.in_spatio, self.out_channel)
+            data = th.permute(data, [0, 2, 1]).view(-1, self.in_spatio)
+            data = th.matmul(data, self.spatio_transform)
+            data = data.view(-1, self.out_channel, self.out_spatio)
+            return data
 
 
 class MLP(nn.Sequential):
@@ -137,20 +236,22 @@ class MLP(nn.Sequential):
         self,
         in_channels: int,
         hidden_channels: List[int],
-        spatio_dims: int = 1
-    ):
+        spatio_dim: int = 1,
+        mac_unit: Type[AbstractMacUnit] = MacTensorUnit
+    ) -> None:
         layers = []
         in_dim = in_channels
         for hidden_dim in hidden_channels:
-            layers.append(MacUnit(in_dim, hidden_dim,
-                in_spatio_dims=spatio_dims, out_spatio_dims=spatio_dims))
+            layers.append(mac_unit(
+                in_dim, hidden_dim, spatio_dim, spatio_dim
+            ))
             in_dim = hidden_dim
         layers.append(nn.Flatten())
         super().__init__(*layers)
 
 
 class Reshape(nn.Module):
-    def __init__(self, *shape):
+    def __init__(self, *shape) -> None:
         super().__init__()
         self.shape = shape
 
