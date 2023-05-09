@@ -21,7 +21,7 @@ model = mdl._model_()
 trainer = pl.Trainer(accelerator='cpu', precision=32, max_epochs=1)
 
 if __name__ == '__main__':
-    fname = 'best-1.00000-010-0.00086.ckpt'
+    fname = 'best-1.00000-049-0.00000.ckpt'
     with open(fname, 'rb') as f:
         checkpoint = pickle.load(f)
         model.load_state_dict(checkpoint['state_dict'], strict=False)
@@ -40,4 +40,5 @@ if __name__ == '__main__':
                     print('')
                 success += correct.item()
                 counter += 1
+        print('')
         print('Accuracy: %2.5f' % (success / counter))
