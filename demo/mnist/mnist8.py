@@ -28,9 +28,7 @@ class MNModel8(pl.LightningModule):
             Reshape(68, 3, 3),
             nn.Conv2d(68, 136, kernel_size=3, padding=1),
             nn.MaxPool2d(2),
-            MLP(1, [1], mac_unit=MacMatrixUnit),
-            Reshape(136, 1, 1),
-            nn.Flatten(),
+            Reshape(136, 1),
             MLP(136, [10], mac_unit=MacMatrixUnit),
             nn.LogSoftmax(dim=1)
         )
