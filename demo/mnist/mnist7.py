@@ -9,7 +9,7 @@ from manet.mac import Reshape
 from manet.mac import MLP, MacMatrixUnit
 
 
-class MNModel4(pl.LightningModule):
+class MNModel7(pl.LightningModule):
     def __init__(self, learning_rate=1e-3):
         super().__init__()
         self.learning_rate = 1e-3
@@ -82,4 +82,4 @@ class MNModel4(pl.LightningModule):
 
 
 def _model_():
-    return MNModel4()
+    return MNModel7()
