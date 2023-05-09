@@ -5,7 +5,6 @@ from torch import nn
 from torch.nn import functional as F
 
 from manet.mac import Reshape
-# from torchvision.ops import MLP
 from manet.mac import MLP, MacMatrixUnit
 
 
@@ -14,22 +13,22 @@ class MNModel8(pl.LightningModule):
         super().__init__()
         self.learning_rate = 1e-3
         self.recognizer = nn.Sequential(
-            nn.Conv2d(1, 17, kernel_size=5, padding=2),
-            nn.MaxPool2d(2),
+            nn.Conv2d(1, 32, kernel_size=7, padding=3),
+            nn.AvgPool2d(2),
             MLP(1, [1], mac_unit=MacMatrixUnit),
-            Reshape(17, 14, 14),
-            nn.Conv2d(17, 34, kernel_size=5, padding=2),
-            nn.MaxPool2d(2),
+            Reshape(32, 14, 14),
+            nn.Conv2d(32, 64, kernel_size=5, padding=2),
+            nn.AvgPool2d(2),
             MLP(1, [1], mac_unit=MacMatrixUnit),
-            Reshape(34, 7, 7),
-            nn.Conv2d(34, 68, kernel_size=5, padding=2),
-            nn.MaxPool2d(2),
+            Reshape(64, 7, 7),
+            nn.Conv2d(64, 128, kernel_size=3, padding=1),
+            nn.AvgPool2d(2),
             MLP(1, [1], mac_unit=MacMatrixUnit),
-            Reshape(68, 3, 3),
-            nn.Conv2d(68, 136, kernel_size=3, padding=1),
-            nn.MaxPool2d(2),
-            Reshape(136, 1),
-            MLP(136, [10], mac_unit=MacMatrixUnit),
+            Reshape(128, 3, 3),
+            nn.Conv2d(128, 256, kernel_size=1, padding=0),
+            nn.AvgPool2d(2),
+            Reshape(256, 1),
+            MLP(256, [10], mac_unit=MacMatrixUnit),
             nn.LogSoftmax(dim=1)
         )
 
@@ -74,9 +73,9 @@ class MNModel8(pl.LightningModule):
         fname = 'best-%s' % record
         with open(fname, 'bw') as f:
             pickle.dump(checkpoint, f)
-        for ix, ckpt in enumerate(sorted(glob.glob('best-*.ckpt'), reverse=True)):
-            if ix > 5:
-                os.unlink(ckpt)
+        # for ix, ckpt in enumerate(sorted(glob.glob('best-*.ckpt'), reverse=True)):
+        #     if ix > 5:
+        #         os.unlink(ckpt)
 
 
 def _model_():
