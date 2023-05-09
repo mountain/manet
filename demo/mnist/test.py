@@ -18,6 +18,8 @@ test_loader = DataLoader(mnist_test, batch_size=1, num_workers=1)
 
 model = mdl._model_()
 
+trainer = pl.Trainer(accelerator='cpu', precision=32, max_epochs=1)
+
 if __name__ == '__main__':
     fname = 'best-1.00000-010-0.00086.ckpt'
     with open(fname, 'rb') as f:
