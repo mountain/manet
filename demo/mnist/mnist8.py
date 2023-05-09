@@ -14,24 +14,24 @@ class MNModel8(pl.LightningModule):
         super().__init__()
         self.learning_rate = 1e-3
         self.recognizer = nn.Sequential(
-            nn.Conv2d(1, 10, kernel_size=5, padding=2),
+            nn.Conv2d(1, 15, kernel_size=5, padding=2),
             nn.MaxPool2d(2),
             MLP(1, [1], mac_unit=MacMatrixUnit),
-            Reshape(10, 14, 14),
-            nn.Conv2d(10, 20, kernel_size=5, padding=2),
+            Reshape(15, 14, 14),
+            nn.Conv2d(15, 30, kernel_size=5, padding=2),
             nn.MaxPool2d(2),
             MLP(1, [1], mac_unit=MacMatrixUnit),
-            Reshape(20, 7, 7),
-            nn.Conv2d(20, 40, kernel_size=5, padding=2),
+            Reshape(30, 7, 7),
+            nn.Conv2d(30, 60, kernel_size=5, padding=2),
             nn.MaxPool2d(2),
             MLP(1, [1], mac_unit=MacMatrixUnit),
-            Reshape(40, 3, 3),
-            nn.Conv2d(40, 80, kernel_size=3, padding=1),
+            Reshape(60, 3, 3),
+            nn.Conv2d(60, 120, kernel_size=3, padding=1),
             nn.MaxPool2d(2),
             MLP(1, [1], mac_unit=MacMatrixUnit),
-            Reshape(80, 1, 1),
+            Reshape(120, 1, 1),
             nn.Flatten(),
-            MLP(80, [10], mac_unit=MacMatrixUnit),
+            MLP(120, [10], mac_unit=MacMatrixUnit),
             nn.LogSoftmax(dim=1)
         )
 
