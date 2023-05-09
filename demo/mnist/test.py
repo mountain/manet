@@ -6,7 +6,7 @@ from torch.utils.data import DataLoader
 from torchvision.datasets import MNIST
 from torchvision.transforms import transforms
 
-import demo.mnist.mnist7 as mdl
+import demo.mnist.mnist8 as mdl
 
 mnist_test = MNIST('datasets', train=False, download=True, transform=transforms.Compose([
     transforms.ToTensor(),

@@ -36,7 +36,7 @@ if __name__ == '__main__':
                                      (0.1307,), (0.3081,))
                                  ]))
 
-    mnist_train, mnist_val = random_split(dataset, [59000, 1000])
+    mnist_train, mnist_val = random_split(dataset, [59500, 500])
     train_loader = DataLoader(mnist_train, shuffle=True, batch_size=opt.batch, num_workers=8)
     val_loader = DataLoader(mnist_val, batch_size=opt.batch, num_workers=8)
     test_loader = DataLoader(mnist_val, batch_size=opt.batch, num_workers=8)
