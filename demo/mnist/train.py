@@ -3,15 +3,15 @@ import torch
 import lightning.pytorch as pl
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-n", "--n_epochs", type=int, default=400, help="number of epochs of training")
-parser.add_argument("-b", "--batch", type=int, default=64, help="batch size of training")
+parser.add_argument("-n", "--n_epochs", type=int, default=10, help="number of epochs of training")
+parser.add_argument("-b", "--batch", type=int, default=32, help="batch size of training")
 parser.add_argument("-m", "--model", type=str, default='mnist6', help="model to execute")
 opt = parser.parse_args()
 
 if torch.cuda.is_available():
     accelerator = 'gpu'
 elif torch.backends.mps.is_available():
-    accelerator = 'mps'
+    accelerator = 'cpu'
 else:
     accelerator = 'cpu'
 
@@ -37,9 +37,9 @@ if __name__ == '__main__':
                                  ]))
 
     mnist_train, mnist_val = random_split(dataset, [55000, 5000])
-    train_loader = DataLoader(mnist_train, shuffle=True, batch_size=opt.batch, num_workers=64)
-    val_loader = DataLoader(mnist_val, batch_size=opt.batch, num_workers=64)
-    test_loader = DataLoader(mnist_val, batch_size=opt.batch, num_workers=64)
+    train_loader = DataLoader(mnist_train, shuffle=True, batch_size=opt.batch, num_workers=8)
+    val_loader = DataLoader(mnist_val, batch_size=opt.batch, num_workers=8)
+    test_loader = DataLoader(mnist_val, batch_size=opt.batch, num_workers=8)
 
     # training
     print('construct trainer...')
