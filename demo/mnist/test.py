@@ -6,7 +6,7 @@ from torch.utils.data import DataLoader
 from torchvision.datasets import MNIST
 from torchvision.transforms import transforms
 
-import demo.mnist.mnist8 as mdl
+import demo.mnist.mnist7 as mdl
 
 mnist_test = MNIST('datasets', train=False, download=True, transform=transforms.Compose([
     transforms.ToTensor(),
@@ -21,7 +21,7 @@ model = mdl._model_()
 trainer = pl.Trainer(accelerator='cpu', precision=32, max_epochs=1)
 
 if __name__ == '__main__':
-    fname = 'best-1.00000-045-0.00000.ckpt'
+    fname = '_mnist7-best-0.998540.ckpt'
     with open(fname, 'rb') as f:
         checkpoint = pickle.load(f)
         model.load_state_dict(checkpoint['state_dict'], strict=False)
