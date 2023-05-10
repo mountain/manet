@@ -237,13 +237,15 @@ class MLP(nn.Sequential):
         in_channels: int,
         hidden_channels: List[int],
         spatio_dim: int = 1,
+        mac_steps: int = 3,
+        mac_points: int = 5,
         mac_unit: Type[AbstractMacUnit] = MacTensorUnit
     ) -> None:
         layers = []
         in_dim = in_channels
         for hidden_dim in hidden_channels:
             layers.append(mac_unit(
-                in_dim, hidden_dim, spatio_dim, spatio_dim
+                in_dim, hidden_dim, spatio_dim, spatio_dim, mac_steps, mac_points
             ))
             in_dim = hidden_dim
         layers.append(nn.Flatten())
