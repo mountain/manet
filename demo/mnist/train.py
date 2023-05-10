@@ -2,8 +2,11 @@ import argparse
 import torch
 import lightning.pytorch as pl
 
+from lightning.pytorch.callbacks.early_stopping import EarlyStopping
+
+
 parser = argparse.ArgumentParser()
-parser.add_argument("-n", "--n_epochs", type=int, default=50, help="number of epochs of training")
+parser.add_argument("-n", "--n_epochs", type=int, default=200, help="number of epochs of training")
 parser.add_argument("-b", "--batch", type=int, default=32, help="batch size of training")
 parser.add_argument("-m", "--model", type=str, default='mnist7', help="model to execute")
 opt = parser.parse_args()
@@ -24,7 +27,7 @@ if __name__ == '__main__':
     from torchvision.datasets import MNIST
     from torchvision import transforms
 
-    dataset = MNIST('datasets', train=True, download=True, transform=transforms.Compose([
+    mnist_train = MNIST('datasets', train=True, download=True, transform=transforms.Compose([
                                    transforms.ToTensor(),
                                    transforms.Normalize(
                                      (0.1307,), (0.3081,))
@@ -36,14 +39,14 @@ if __name__ == '__main__':
                                      (0.1307,), (0.3081,))
                                  ]))
 
-    mnist_train, mnist_val = random_split(dataset, [59500, 500])
     train_loader = DataLoader(mnist_train, shuffle=True, batch_size=opt.batch, num_workers=8)
-    val_loader = DataLoader(mnist_val, batch_size=opt.batch, num_workers=8)
-    test_loader = DataLoader(mnist_val, batch_size=opt.batch, num_workers=8)
+    val_loader = DataLoader(mnist_test, batch_size=opt.batch, num_workers=8)
+    test_loader = DataLoader(mnist_test, batch_size=opt.batch, num_workers=8)
 
     # training
     print('construct trainer...')
-    trainer = pl.Trainer(accelerator=accelerator, precision=32, max_epochs=opt.n_epochs, log_every_n_steps=10)
+    trainer = pl.Trainer(accelerator=accelerator, precision=32, max_epochs=opt.n_epochs,
+                         callbacks=[EarlyStopping(monitor="correctness", mode="max", patience=20)])
 
     import importlib
     print('construct model...')

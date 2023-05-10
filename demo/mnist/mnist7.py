@@ -17,24 +17,24 @@ class MNModel7(pl.LightningModule):
         self.labeled_loss = 0
         self.labeled_correct = 0
         self.recognizer = nn.Sequential(
-            nn.Conv2d(1, 3, kernel_size=5, padding=2),
+            nn.Conv2d(1, 5, kernel_size=7, padding=3),
             MLP(1, [1], mac_unit=MacMatrixUnit),
-            Reshape(3, 28, 28),
+            Reshape(5, 28, 28),
             nn.MaxPool2d(2),
-            nn.Conv2d(3, 6, kernel_size=5, padding=2),
+            nn.Conv2d(5, 10, kernel_size=5, padding=2),
             MLP(1, [1], mac_unit=MacMatrixUnit),
-            Reshape(6, 14, 14),
+            Reshape(10, 14, 14),
             nn.MaxPool2d(2),
-            nn.Conv2d(6, 12, kernel_size=5, padding=2),
+            nn.Conv2d(10, 20, kernel_size=3, padding=1),
             MLP(1, [1], mac_unit=MacMatrixUnit),
-            Reshape(12, 7, 7),
+            Reshape(20, 7, 7),
             nn.MaxPool2d(2),
-            nn.Conv2d(12, 24, kernel_size=3, padding=1),
+            nn.Conv2d(20, 40, kernel_size=1, padding=0),
             MLP(1, [1], mac_unit=MacMatrixUnit),
-            Reshape(24, 3, 3),
+            Reshape(40, 3, 3),
             nn.MaxPool2d(2),
-            Reshape(24, 1),
-            MLP(24, [10], mac_unit=MacMatrixUnit, mac_steps=6),
+            Reshape(40, 1),
+            MLP(40, [20, 10], mac_unit=MacMatrixUnit, mac_steps=6),
             nn.LogSoftmax(dim=1)
         )
 
@@ -60,7 +60,7 @@ class MNModel7(pl.LightningModule):
         self.log('val_loss', loss, prog_bar=True)
         pred = z.data.max(1, keepdim=True)[1]
         correct = pred.eq(y.data.view_as(pred)).sum() / y.size()[0]
-        self.log('correct', correct, prog_bar=True)
+        self.log('correctness', correct, prog_bar=True)
         self.labeled_loss += loss.item() * y.size()[0]
         self.labeled_correct += correct.item() * y.size()[0]
         self.counter += y.size()[0]
