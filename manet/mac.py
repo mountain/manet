@@ -109,6 +109,62 @@ class AbstractMacUnit(nn.Module):
         return self.reduction(data)
 
 
+class SplineMacUnit(AbstractMacUnit):
+    def __init__(self: A,
+                 in_channel: int,
+                 out_channel: int,
+                 in_spatio: int = 1,
+                 out_spatio: int = 1,
+                 num_steps: int = 3,
+                 num_points: int = 5,
+                 ) -> None:
+
+        super().__init__(in_channel, out_channel, in_spatio, out_spatio, num_steps, num_points)
+        self.dangles = nn.Parameter(
+            th.ones(num_points).view(1, 1, num_points) * 2 * th.pi / num_points
+        )
+        self.dvelocity = nn.Parameter(
+            th.ones(num_points).view(1, 1, num_points) / num_points
+        )
+
+    def calculate(self: T) -> Tuple[int, int]:
+        raise NotImplemented()
+
+    def expansion(self: T, data: Tensor) -> Tensor:
+        raise NotImplemented()
+
+    def reduction(self: T, data: Tensor) -> Tensor:
+        raise NotImplemented()
+
+    def access2nd(self: T, value: Tensor, derivative: Tensor, accessor: Tuple[Tensor, Tensor, Tensor]) -> Tensor:
+
+        index, bgn, end = accessor
+        value = value.flatten(0)
+        derivative = derivative.flatten(0)
+
+        t = index - bgn
+        p0, p1 = value[bgn], value[end]
+        m0, m1 = derivative[bgn], derivative[end]
+
+        # Cubic Hermite spline
+        term1 = (2 * t ** 3 - 3 * t ** 2 + 1) * p0
+        term2 = (t ** 3 - 2 * t ** 2 + t) * m0
+        term3 = (-2 * t ** 3 + 3 * t ** 2) * p1
+        term4 = (t ** 3 - t ** 2) * m1
+        return term1 + term2 + term3 + term4
+
+    def step(self: T,
+             data: Tensor
+             ) -> Tensor:
+
+        accessor = self.accessor(data)
+        velo = self.access2nd(self.velocity, self.dvelocity, accessor)
+        angels = self.access2nd(self.angles, self.dangles, accessor)
+
+        # by the flow equation of the arithmetic expression geometry
+        return velo * th.cos(angels) + data * velo * th.sin(angels)
+
+
 class MacTensorUnit(AbstractMacUnit):
     def __init__(self: T,
                  in_channel: int,
@@ -173,6 +229,65 @@ class MacTensorUnit(AbstractMacUnit):
 
 
 class MacMatrixUnit(AbstractMacUnit):
+    def __init__(self: M,
+                 in_channel: int,
+                 out_channel: int,
+                 in_spatio: int = 1,
+                 out_spatio: int = 1,
+                 num_steps: int = 3,
+                 num_points: int = 5,
+                 ) -> None:
+
+        super().__init__(in_channel, out_channel, in_spatio, out_spatio, num_steps, num_points)
+        self.flag = False
+        self.channel_dim, self.spatio_dim = self.calculate()
+
+        self.channel_transform = nn.Parameter(
+            th.normal(0, 1, (1, self.in_channel, self.out_channel))
+        )
+        self.spatio_transform = nn.Parameter(
+            th.normal(0, 1, (1, self.in_spatio, self.out_spatio))
+        )
+
+    def calculate(self: T) -> Tuple[int, int]:
+        channel_dim = self.in_channel * self.out_channel
+        spatio_dim = self.in_spatio * self.out_spatio
+        self.flag = self.in_channel * self.in_spatio > self.out_channel * self.out_spatio
+        return channel_dim, spatio_dim
+
+    def expansion(self: T, data: Tensor) -> Tensor:
+        if not self.flag:
+            data = data.view(-1, self.in_channel, self.in_spatio)
+            data = th.permute(data, [0, 2, 1]).view(-1, self.in_channel)
+            data = th.matmul(data, self.channel_transform)
+            data = data.view(-1, self.in_spatio, self.out_channel)
+            data = th.permute(data, [0, 2, 1]).view(-1, self.in_spatio)
+            data = th.matmul(data, self.spatio_transform)
+            data = data.view(-1, self.out_channel, self.out_spatio)
+            return data
+        else:
+            return data
+
+    def attention(self: T, data: Tensor) -> Tensor:
+        data = data.view(-1, self.channel_dim, self.spatio_dim)
+        data = data * self.out_weight + self.out_bias
+        return th.sigmoid(data)
+
+    def reduction(self: T, data: Tensor) -> Tensor:
+        if not self.flag:
+            return data
+        else:
+            data = data.view(-1, self.in_channel, self.in_spatio)
+            data = th.permute(data, [0, 2, 1]).view(-1, self.in_channel)
+            data = th.matmul(data, self.channel_transform)
+            data = data.view(-1, self.in_spatio, self.out_channel)
+            data = th.permute(data, [0, 2, 1]).view(-1, self.in_spatio)
+            data = th.matmul(data, self.spatio_transform)
+            data = data.view(-1, self.out_channel, self.out_spatio)
+            return data
+
+
+class MacSplineUnit(SplineMacUnit):
     def __init__(self: M,
                  in_channel: int,
                  out_channel: int,

@@ -5,8 +5,7 @@ from torch import nn
 from torch.nn import functional as F
 
 from manet.mac import Reshape
-# from torchvision.ops import MLP
-from manet.mac import MLP, MacMatrixUnit
+from manet.mac import MLP, MacSplineUnit
 
 
 class MNModel7(pl.LightningModule):
@@ -18,23 +17,23 @@ class MNModel7(pl.LightningModule):
         self.labeled_correct = 0
         self.recognizer = nn.Sequential(
             nn.Conv2d(1, 5, kernel_size=7, padding=3),
-            MLP(1, [1], mac_unit=MacMatrixUnit),
+            MLP(1, [1], mac_unit=MacSplineUnit, mac_steps=6),
             Reshape(5, 28, 28),
             nn.MaxPool2d(2),
             nn.Conv2d(5, 10, kernel_size=5, padding=2),
-            MLP(1, [1], mac_unit=MacMatrixUnit),
+            MLP(1, [1], mac_unit=MacSplineUnit),
             Reshape(10, 14, 14),
             nn.MaxPool2d(2),
             nn.Conv2d(10, 20, kernel_size=3, padding=1),
-            MLP(1, [1], mac_unit=MacMatrixUnit),
+            MLP(1, [1], mac_unit=MacSplineUnit),
             Reshape(20, 7, 7),
             nn.MaxPool2d(2),
             nn.Conv2d(20, 40, kernel_size=1, padding=0),
-            MLP(1, [1], mac_unit=MacMatrixUnit),
+            MLP(1, [1], mac_unit=MacSplineUnit),
             Reshape(40, 3, 3),
             nn.MaxPool2d(2),
             Reshape(40, 1),
-            MLP(40, [20, 10], mac_unit=MacMatrixUnit, mac_steps=6),
+            MLP(40, [20, 10], mac_unit=MacSplineUnit),
             nn.LogSoftmax(dim=1)
         )
 
