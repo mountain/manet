@@ -17,7 +17,7 @@ class MNModel7(pl.LightningModule):
         self.labeled_correct = 0
         self.recognizer = nn.Sequential(
             nn.Conv2d(1, 5, kernel_size=7, padding=3),
-            MLP(1, [1], mac_unit=MacSplineUnit, mac_steps=6),
+            MLP(1, [1], mac_unit=MacSplineUnit),
             Reshape(5, 28, 28),
             nn.MaxPool2d(2),
             nn.Conv2d(5, 10, kernel_size=5, padding=2),

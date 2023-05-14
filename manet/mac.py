@@ -327,11 +327,6 @@ class MacSplineUnit(SplineMacUnit):
         else:
             return data
 
-    def attention(self: T, data: Tensor) -> Tensor:
-        data = data.view(-1, self.channel_dim, self.spatio_dim)
-        data = data * self.out_weight + self.out_bias
-        return th.sigmoid(data)
-
     def reduction(self: T, data: Tensor) -> Tensor:
         if not self.flag:
             return data

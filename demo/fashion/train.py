@@ -8,7 +8,7 @@ from lightning.pytorch.callbacks.early_stopping import EarlyStopping
 parser = argparse.ArgumentParser()
 parser.add_argument("-n", "--n_epochs", type=int, default=50, help="number of epochs of training")
 parser.add_argument("-b", "--batch", type=int, default=32, help="batch size of training")
-parser.add_argument("-m", "--model", type=str, default='mnist8', help="model to execute")
+parser.add_argument("-m", "--model", type=str, default='fashion1', help="model to execute")
 opt = parser.parse_args()
 
 if torch.cuda.is_available():
@@ -24,19 +24,19 @@ if __name__ == '__main__':
     print('loading data...')
     from torch.utils.data import DataLoader
     from torch.utils.data import random_split
-    from torchvision.datasets import MNIST
+    from torchvision.datasets import FashionMNIST
     from torchvision import transforms
 
-    mnist_train = MNIST('datasets', train=True, download=True, transform=transforms.Compose([
+    mnist_train = FashionMNIST('datasets', train=True, download=True, transform=transforms.Compose([
                                    transforms.ToTensor(),
                                    transforms.Normalize(
-                                     (0.1307,), (0.3081,))
+                                     (0.5,), (0.5,))
                                  ]))
 
-    mnist_test = MNIST('datasets', train=False, download=True, transform=transforms.Compose([
+    mnist_test = FashionMNIST('datasets', train=False, download=True, transform=transforms.Compose([
                                    transforms.ToTensor(),
                                    transforms.Normalize(
-                                     (0.1307,), (0.3081,))
+                                     (0.5,), (0.5,))
                                  ]))
 
     train_loader = DataLoader(mnist_train, shuffle=True, batch_size=opt.batch, num_workers=8)
@@ -50,7 +50,7 @@ if __name__ == '__main__':
 
     import importlib
     print('construct model...')
-    mdl = importlib.import_module('demo.mnist.%s' % opt.model, package=None)
+    mdl = importlib.import_module('demo.fashion.%s' % opt.model, package=None)
     model = mdl._model_()
 
     # fname = 'seed.ckpt'

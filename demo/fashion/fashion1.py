@@ -5,10 +5,10 @@ from torch import nn
 from torch.nn import functional as F
 
 from manet.aeg import ZigzagFunction
-from manet.mac import MLP, MacSplineUnit, Reshape
+from manet.mac import MLP, MacSplineUnit, MacMatrixUnit, Reshape
 
 
-class MNModel8(pl.LightningModule):
+class Fashion1(pl.LightningModule):
     def __init__(self, learning_rate=1e-3):
         super().__init__()
         self.learning_rate = 1e-3
@@ -16,22 +16,22 @@ class MNModel8(pl.LightningModule):
         self.labeled_loss = 0
         self.labeled_correct = 0
         self.recognizer = nn.Sequential(
-            nn.Conv2d(1, 5, kernel_size=5, padding=2),
-            ZigzagFunction(),
-            Reshape(5, 28, 28),
+            nn.Conv2d(1, 24, kernel_size=5, padding=2),
+            MLP(1, [1], mac_unit=MacMatrixUnit),
+            Reshape(24, 28, 28),
             nn.MaxPool2d(2),
-            nn.Conv2d(5, 10, kernel_size=3, padding=1),
-            ZigzagFunction(),
-            Reshape(10, 14, 14),
+            nn.Conv2d(24, 48, kernel_size=3, padding=1),
+            MLP(1, [1], mac_unit=MacMatrixUnit),
+            Reshape(48, 14, 14),
             nn.MaxPool2d(2),
-            nn.Conv2d(10, 20, kernel_size=3, padding=1),
-            ZigzagFunction(),
-            Reshape(20, 7, 7),
+            nn.Conv2d(48, 96, kernel_size=3, padding=1),
+            MLP(1, [1], mac_unit=MacMatrixUnit),
+            Reshape(96, 7, 7),
             nn.MaxPool2d(2),
-            nn.Conv2d(20, 40, kernel_size=1, padding=0),
-            ZigzagFunction(),
-            Reshape(40, 3, 3),
-            MLP(40 * 9, [10], mac_unit=MacSplineUnit),
+            nn.Conv2d(96, 192, kernel_size=1, padding=0),
+            MLP(1, [1], mac_unit=MacMatrixUnit),
+            Reshape(192, 3, 3),
+            MLP(192 * 9, [192 * 3, 10], mac_unit=MacMatrixUnit),
             Reshape(10),
             nn.LogSoftmax(dim=1)
         )
@@ -90,4 +90,4 @@ class MNModel8(pl.LightningModule):
 
 
 def _model_():
-    return MNModel8()
+    return Fashion1()
