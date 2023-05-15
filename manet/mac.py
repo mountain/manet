@@ -28,13 +28,14 @@ class AbstractMacUnit(nn.Module):
                  in_spatio: int = 1,
                  out_spatio: int = 1,
                  num_steps: int = 3,
+                 step_length: float = 0.33333,
                  num_points: int = 5,
                  ) -> None:
-
         super().__init__()
 
         # the hyperparameters
         self.num_steps = num_steps
+        self.step_length = step_length
         self.num_points = num_points
         self.in_channel = in_channel
         self.out_channel = out_channel
@@ -62,7 +63,7 @@ class AbstractMacUnit(nn.Module):
 
     def nonlinear(self: T, data: Tensor) -> Tensor:
         for ix in range(self.num_steps):
-            data = data + self.step(data) / self.num_steps
+            data = data + self.step(data) * self.step_length
         return data
 
     def accessor(self: T,
@@ -116,10 +117,10 @@ class SplineMacUnit(AbstractMacUnit):
                  in_spatio: int = 1,
                  out_spatio: int = 1,
                  num_steps: int = 3,
+                 step_length: float = 0.33333,
                  num_points: int = 5,
                  ) -> None:
-
-        super().__init__(in_channel, out_channel, in_spatio, out_spatio, num_steps, num_points)
+        super().__init__(in_channel, out_channel, in_spatio, out_spatio, num_steps, step_length, num_points)
         self.dangles = nn.Parameter(
             th.ones(num_points).view(1, 1, num_points) * 2 * th.pi / num_points
         )
@@ -172,10 +173,10 @@ class MacTensorUnit(AbstractMacUnit):
                  in_spatio: int = 1,
                  out_spatio: int = 1,
                  num_steps: int = 3,
+                 step_length: float = 0.33333,
                  num_points: int = 5,
                  ) -> None:
-
-        super().__init__(in_channel, out_channel, in_spatio, out_spatio, num_steps, num_points)
+        super().__init__(in_channel, out_channel, in_spatio, out_spatio, num_steps, step_length, num_points)
         self.in_channel_factor, self.out_channel_factor = None, None
         self.in_spatio_factor, self.out_spatio_factor = None, None
         self.channel_dim, self.spatio_dim = self.calculate()
@@ -235,10 +236,11 @@ class MacMatrixUnit(AbstractMacUnit):
                  in_spatio: int = 1,
                  out_spatio: int = 1,
                  num_steps: int = 3,
+                 step_length: float = 0.33333,
                  num_points: int = 5,
                  ) -> None:
 
-        super().__init__(in_channel, out_channel, in_spatio, out_spatio, num_steps, num_points)
+        super().__init__(in_channel, out_channel, in_spatio, out_spatio, num_steps, step_length, num_points)
         self.flag = False
         self.channel_dim, self.spatio_dim = self.calculate()
 
@@ -294,10 +296,11 @@ class MacSplineUnit(SplineMacUnit):
                  in_spatio: int = 1,
                  out_spatio: int = 1,
                  num_steps: int = 3,
+                 step_length: float = 0.33333,
                  num_points: int = 5,
                  ) -> None:
 
-        super().__init__(in_channel, out_channel, in_spatio, out_spatio, num_steps, num_points)
+        super().__init__(in_channel, out_channel, in_spatio, out_spatio, num_steps, step_length, num_points)
         self.flag = False
         self.channel_dim, self.spatio_dim = self.calculate()
 
@@ -348,6 +351,7 @@ class MLP(nn.Sequential):
         hidden_channels: List[int],
         spatio_dim: int = 1,
         mac_steps: int = 3,
+        mac_length: float = 1.0,
         mac_points: int = 5,
         mac_unit: Type[AbstractMacUnit] = MacTensorUnit
     ) -> None:
@@ -355,7 +359,7 @@ class MLP(nn.Sequential):
         in_dim = in_channels
         for hidden_dim in hidden_channels:
             layers.append(mac_unit(
-                in_dim, hidden_dim, spatio_dim, spatio_dim, mac_steps, mac_points
+                in_dim, hidden_dim, spatio_dim, spatio_dim, mac_steps, mac_length / mac_steps, mac_points
             ))
             in_dim = hidden_dim
         layers.append(nn.Flatten())
