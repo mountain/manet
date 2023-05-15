@@ -51,7 +51,7 @@ if __name__ == '__main__':
     print('construct trainer...')
     trainer = pl.Trainer(accelerator=accelerator, precision=32, max_epochs=opt.n_epochs,
                          callbacks=[EarlyStopping(monitor="correctness", mode="max", patience=30)],
-                         devices=[0])
+                         devices=[0, 4, 6])
 
     import importlib
     print('construct model...')
