@@ -3,7 +3,7 @@ import torch
 import lightning.pytorch as pl
 
 from lightning.pytorch.callbacks.early_stopping import EarlyStopping
-
+from lightning.pytorch.strategies import DDPStrategy
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-n", "--n_epochs", type=int, default=500, help="number of epochs of training")
@@ -51,6 +51,7 @@ if __name__ == '__main__':
     print('construct trainer...')
     trainer = pl.Trainer(accelerator=accelerator, precision=32, max_epochs=opt.n_epochs,
                          callbacks=[EarlyStopping(monitor="correctness", mode="max", patience=30)],
+                         strategy=DDPStrategy(find_unused_parameters=True),
                          devices=[0, 4, 6])
 
     import importlib
