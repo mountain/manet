@@ -258,10 +258,10 @@ class MacMatrixUnit(AbstractMacUnit):
     def expansion(self: T, data: Tensor) -> Tensor:
         if not self.flag:
             data = data.view(-1, self.in_channel, self.in_spatio)
-            data = th.permute(data, [0, 2, 1]).view(-1, self.in_channel)
+            data = th.permute(data, [0, 2, 1]).reshape(-1, self.in_channel).contiguous()
             data = th.matmul(data, self.channel_transform)
             data = data.view(-1, self.in_spatio, self.out_channel)
-            data = th.permute(data, [0, 2, 1]).view(-1, self.in_spatio)
+            data = th.permute(data, [0, 2, 1]).reshape(-1, self.in_spatio).contiguous()
             data = th.matmul(data, self.spatio_transform)
             data = data.view(-1, self.out_channel, self.out_spatio)
             return data
