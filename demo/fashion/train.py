@@ -29,16 +29,37 @@ if __name__ == '__main__':
     from torchvision.datasets import FashionMNIST
     from torchvision import transforms
 
+
+    mnist_raw = FashionMNIST('datasets', train=True, download=True, transform=transforms.Compose([
+                                   transforms.ToTensor()
+                                 ]))
+    raw_loader = DataLoader(mnist_raw, shuffle=False, batch_size=opt.batch, num_workers=8)
+    counter, total, vairance = 0, 0, 0
+    for raw_batch in raw_loader:
+        x, y = raw_batch
+        x = x.view(-1, 1, 28, 28)
+        counter += (28 * 28 * x.shape[0])
+        total += x.sum()
+
+    mean = (total / counter).item()
+    for raw_batch in raw_loader:
+        x, y = raw_batch
+        x = x.view(-1, 1, 28, 28)
+        vairance += ((x - mean).pow(2)).sum()
+
+    std = torch.sqrt(vairance / counter).item()
+    print('mean: %f, std: %f' % (mean, std))
+
     mnist_train = FashionMNIST('datasets', train=True, download=True, transform=transforms.Compose([
                                    transforms.ToTensor(),
                                    transforms.Normalize(
-                                     (0.5,), (0.5,))
+                                     (mean,), (std,))
                                  ]))
 
     mnist_test = FashionMNIST('datasets', train=False, download=True, transform=transforms.Compose([
                                    transforms.ToTensor(),
                                    transforms.Normalize(
-                                     (0.5,), (0.5,))
+                                     (mean,), (std,))
                                  ]))
 
 
