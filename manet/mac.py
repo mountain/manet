@@ -98,16 +98,7 @@ class AbstractMacUnit(nn.Module):
         angels = self.access(self.angles, accessor)
 
         # by the flow equation of the arithmetic expression geometry
-        return velo * th.cos(angels) + data * velo * th.sin(angels)
-
-    def forward(self: T,
-                data: Tensor
-                ) -> Tensor:
-        data = data.contiguous()
-        data = self.expansion(data)
-        data = self.nonlinear(data)
-
-        return self.reduction(data)
+        return (velo * th.cos(angels) + data * velo * th.sin(angels)) * self.step_length
 
 
 class SplineMacUnit(AbstractMacUnit):
@@ -257,36 +248,24 @@ class MacMatrixUnit(AbstractMacUnit):
         self.flag = self.in_channel * self.in_spatio > self.out_channel * self.out_spatio
         return channel_dim, spatio_dim
 
-    def expansion(self: T, data: Tensor) -> Tensor:
-        if not self.flag:
-            data = data.view(-1, self.in_channel, self.in_spatio)
-            data = th.permute(data, [0, 2, 1]).reshape(-1, self.in_channel).contiguous()
-            data = th.matmul(data, self.channel_transform)
-            data = data.view(-1, self.in_spatio, self.out_channel)
-            data = th.permute(data, [0, 2, 1]).reshape(-1, self.in_spatio).contiguous()
-            data = th.matmul(data, self.spatio_transform)
-            data = data.view(-1, self.out_channel, self.out_spatio)
-            return data
-        else:
-            return data
+    def forward(self: T,
+                data: Tensor
+                ) -> Tensor:
 
-    def attention(self: T, data: Tensor) -> Tensor:
-        data = data.view(-1, self.channel_dim, self.spatio_dim)
-        data = data * self.out_weight + self.out_bias
-        return th.sigmoid(data)
+        data = data.contiguous()
 
-    def reduction(self: T, data: Tensor) -> Tensor:
-        if not self.flag:
-            return data
-        else:
-            data = data.view(-1, self.in_channel, self.in_spatio)
-            data = th.permute(data, [0, 2, 1]).view(-1, self.in_channel)
-            data = th.matmul(data, self.channel_transform)
-            data = data.view(-1, self.in_spatio, self.out_channel)
-            data = th.permute(data, [0, 2, 1]).view(-1, self.in_spatio)
-            data = th.matmul(data, self.spatio_transform)
-            data = data.view(-1, self.out_channel, self.out_spatio)
-            return data
+        data = data.view(-1, self.in_channel, self.in_spatio)
+        data = th.permute(data, [0, 2, 1]).reshape(-1, self.in_channel)
+        data = th.matmul(data, self.channel_transform)
+        data = data.view(-1, self.in_spatio, self.out_channel)
+
+        data = self.nonlinear(data)
+
+        data = th.permute(data, [0, 2, 1]).reshape(-1, self.in_spatio)
+        data = th.matmul(data, self.spatio_transform)
+        data = data.view(-1, self.out_channel, self.out_spatio)
+
+        return data
 
 
 class MacSplineUnit(SplineMacUnit):
@@ -317,31 +296,25 @@ class MacSplineUnit(SplineMacUnit):
         self.flag = self.in_channel * self.in_spatio > self.out_channel * self.out_spatio
         return channel_dim, spatio_dim
 
-    def expansion(self: T, data: Tensor) -> Tensor:
-        if not self.flag:
-            data = data.view(-1, self.in_channel, self.in_spatio)
-            data = th.permute(data, [0, 2, 1]).view(-1, self.in_channel)
-            data = th.matmul(data, self.channel_transform)
-            data = data.view(-1, self.in_spatio, self.out_channel)
-            data = th.permute(data, [0, 2, 1]).view(-1, self.in_spatio)
-            data = th.matmul(data, self.spatio_transform)
-            data = data.view(-1, self.out_channel, self.out_spatio)
-            return data
-        else:
-            return data
+    def forward(self: T,
+                data: Tensor
+                ) -> Tensor:
 
-    def reduction(self: T, data: Tensor) -> Tensor:
-        if not self.flag:
-            return data
-        else:
-            data = data.view(-1, self.in_channel, self.in_spatio)
-            data = th.permute(data, [0, 2, 1]).view(-1, self.in_channel)
-            data = th.matmul(data, self.channel_transform)
-            data = data.view(-1, self.in_spatio, self.out_channel)
-            data = th.permute(data, [0, 2, 1]).view(-1, self.in_spatio)
-            data = th.matmul(data, self.spatio_transform)
-            data = data.view(-1, self.out_channel, self.out_spatio)
-            return data
+        data = data.contiguous()
+
+        data = data.view(-1, self.in_channel, self.in_spatio)
+        data = th.permute(data, [0, 2, 1]).reshape(-1, self.in_channel)
+        data = th.matmul(data, self.channel_transform)
+        data = data.view(-1, self.in_spatio, self.out_channel)
+
+        data = self.nonlinear(data)
+
+        data = th.permute(data, [0, 2, 1]).reshape(-1, self.in_spatio)
+        data = th.matmul(data, self.spatio_transform)
+        data = data.view(-1, self.out_channel, self.out_spatio)
+
+        return data
+
 
 
 class MLP(nn.Sequential):
