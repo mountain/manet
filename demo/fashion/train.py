@@ -49,7 +49,7 @@ if __name__ == '__main__':
 
     # training
     print('construct trainer...')
-    trainer = pl.Trainer(accelerator=accelerator, precision=32, max_epochs=opt.n_epochs,
+    trainer = pl.Trainer(accelerator=accelerator, precision=32, max_epochs=opt.n_epochs, log_every_n_steps=1,
                          callbacks=[EarlyStopping(monitor="correctness", mode="max", patience=30)],
                          strategy='ddp_find_unused_parameters_true',
                          devices=[0, 4, 5, 6, 7])
