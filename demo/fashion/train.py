@@ -19,6 +19,9 @@ else:
     accelerator = 'cpu'
 
 
+torch.set_float32_matmul_precision('medium')
+
+
 if __name__ == '__main__':
 
     print('loading data...')
@@ -39,6 +42,7 @@ if __name__ == '__main__':
                                      (0.5,), (0.5,))
                                  ]))
 
+
     train_loader = DataLoader(mnist_train, shuffle=True, batch_size=opt.batch, num_workers=8)
     val_loader = DataLoader(mnist_test, batch_size=opt.batch, num_workers=8)
     test_loader = DataLoader(mnist_test, batch_size=opt.batch, num_workers=8)
@@ -46,7 +50,8 @@ if __name__ == '__main__':
     # training
     print('construct trainer...')
     trainer = pl.Trainer(accelerator=accelerator, precision=32, max_epochs=opt.n_epochs,
-                         callbacks=[EarlyStopping(monitor="correctness", mode="max", patience=30)])
+                         callbacks=[EarlyStopping(monitor="correctness", mode="max", patience=30)],
+                         gpus=['0', '4', '6'])
 
     import importlib
     print('construct model...')
