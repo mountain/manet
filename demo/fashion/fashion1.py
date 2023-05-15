@@ -51,7 +51,7 @@ class Fashion1(pl.LightningModule):
         x = x.view(-1, 1, 28, 28)
         z = self(x)
         loss = F.nll_loss(z, y)
-        self.log('train_loss', loss, prog_bar=True)
+        self.log('train_loss', loss, prog_bar=True, sync_dist=True)
         return loss
 
     def validation_step(self, val_batch, batch_idx):
@@ -59,10 +59,10 @@ class Fashion1(pl.LightningModule):
         x = x.view(-1, 1, 28, 28)
         z = self(x)
         loss = F.nll_loss(z, y)
-        self.log('val_loss', loss, prog_bar=True)
+        self.log('val_loss', loss, prog_bar=True, sync_dist=True)
         pred = z.data.max(1, keepdim=True)[1]
         correct = pred.eq(y.data.view_as(pred)).sum() / y.size()[0]
-        self.log('correctness', correct, prog_bar=True)
+        self.log('correctness', correct, prog_bar=True, sync_dist=True)
         self.labeled_loss += loss.item() * y.size()[0]
         self.labeled_correct += correct.item() * y.size()[0]
         self.counter += y.size()[0]
@@ -73,7 +73,7 @@ class Fashion1(pl.LightningModule):
         z = self(x)
         pred = z.data.max(1, keepdim=True)[1]
         correct = pred.eq(y.data.view_as(pred)).sum() / y.size()[0]
-        self.log('correct', correct, prog_bar=True)
+        self.log('correct', correct, prog_bar=True, sync_dist=True)
 
     def on_save_checkpoint(self, checkpoint) -> None:
         import pickle, glob, os
