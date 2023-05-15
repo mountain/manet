@@ -51,7 +51,7 @@ if __name__ == '__main__':
     print('construct trainer...')
     trainer = pl.Trainer(accelerator=accelerator, precision=32, max_epochs=opt.n_epochs,
                          callbacks=[EarlyStopping(monitor="correctness", mode="max", patience=30)],
-                         strategy=DDPStrategy(find_unused_parameters=True),
+                         strategy='ddp_find_unused_parameters_true',
                          devices=[0, 4, 6])
 
     import importlib
