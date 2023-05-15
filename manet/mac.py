@@ -102,7 +102,7 @@ class AbstractMacUnit(nn.Module):
     def forward(self: T,
                 data: Tensor
                 ) -> Tensor:
-
+        data = data.contiguous()
         data = self.expansion(data)
         data = self.nonlinear(data)
 
