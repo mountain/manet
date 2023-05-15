@@ -52,7 +52,7 @@ if __name__ == '__main__':
     trainer = pl.Trainer(accelerator=accelerator, precision=32, max_epochs=opt.n_epochs, log_every_n_steps=1,
                          callbacks=[EarlyStopping(monitor="correctness", mode="max", patience=30)],
                          strategy='ddp_find_unused_parameters_true',
-                         devices=[0, 2, 3, 4, 5, 6, 7])
+                         devices=[0, 2, 4, 5, 6, 7, 8])
 
     import importlib
     print('construct model...')
