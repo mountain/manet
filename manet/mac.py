@@ -354,7 +354,7 @@ class Classification(nn.Module):
         )
 
     def forward(self, x):
-        err = (x - self.values).view(-1, self.num_class, 1)
+        err = (x - self.values).view(-1, self.num_class)
         err = th.matmul(err, self.matrix)
         return err * err
 
