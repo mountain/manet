@@ -354,8 +354,9 @@ class Classification(nn.Module):
         )
 
     def forward(self, x):
-        err = ((x - self.values) ** 2).view(-1, 10)
-        return th.matmul(err, self.matrix)
+        err = x - self.values
+        err = th.matmul(err, self.matrix)
+        return err * err
 
 
 class Reshape(nn.Module):
