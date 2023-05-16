@@ -48,6 +48,7 @@ class Fashion3(pl.LightningModule):
             Reshape(10, 1, 1),
             nn.Conv2d(10, 1, kernel_size=1, padding=0),
             MLP(1, [1], mac_points=5, mac_steps=6, mac_unit=MacSplineUnit),
+            Reshape(1, 1, 1),
             Classification(10, 2.0),
             Reshape(10),
             nn.LogSoftmax(dim=1)
