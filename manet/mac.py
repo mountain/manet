@@ -349,9 +349,13 @@ class Classification(nn.Module):
         theta = th.linspace(0, 2 * th.pi, 2 * num_class + 1)[1::2]
         values = (th.exp(length * th.sin(theta)) - 1) / th.tan(theta)
         self.values = values.view(1, num_class, 1)
+        self.matrix = nn.Parameter(
+            th.normal(0, 1, (1, num_class, num_class))
+        )
 
     def forward(self, x):
-        return (x - self.values) ** 2
+        err = (x - self.values) ** 2
+        return th.matmul(err, self.matrix)
 
 
 class Reshape(nn.Module):
