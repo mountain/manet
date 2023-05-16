@@ -348,7 +348,7 @@ class Classification(nn.Module):
         self.length = length
         theta = th.linspace(0, 2 * th.pi, 2 * num_class + 1)[1::2]
         values = (th.exp(length * th.sin(theta)) - 1) / th.tan(theta)
-        self.values = values.view(1, num_class, 1)
+        self.values = values.view(1, num_class, 1, 1)
         self.matrix = nn.Parameter(
             th.normal(0, 1, (1, num_class, num_class))
         )
