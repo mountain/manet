@@ -346,17 +346,16 @@ class Classification(nn.Module):
         super().__init__()
         self.num_class = num_class
         self.length = length
-        self.values = nn.Parameter(
-            th.normal(0, 1, (1, num_class, 1, 1))
-        ) * np.sinh(length)
+        theta = th.linspace(0, 2 * th.pi, 2 * num_class + 1)[1::2]
+        values = (th.exp(length * th.sin(theta)) - 1) / th.tan(theta)
+        self.values = values.view(1, num_class, 1)
         self.matrix = nn.Parameter(
             th.normal(0, 1, (1, num_class, num_class))
         )
 
     def forward(self, x):
-        err = (x - self.values).view(-1, self.num_class)
-        err = th.matmul(err, self.matrix)
-        return err * err
+        err = ((x - self.values) ** 2).view(-1, 10)
+        return th.matmul(err, self.matrix)
 
 
 class Reshape(nn.Module):
