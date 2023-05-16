@@ -280,8 +280,8 @@ class MacSplineUnit(SplineMacUnit):
                  ) -> None:
 
         super().__init__(in_channel, out_channel, in_spatio, out_spatio, num_steps, step_length, num_points)
-        self.flag = False
         self.channel_dim, self.spatio_dim = self.calculate()
+        self.maxval = num_steps * step_length
 
         self.channel_transform = nn.Parameter(
             th.normal(0, 1, (1, self.in_channel, self.out_channel))
@@ -293,14 +293,13 @@ class MacSplineUnit(SplineMacUnit):
     def calculate(self: T) -> Tuple[int, int]:
         channel_dim = self.in_channel * self.out_channel
         spatio_dim = self.in_spatio * self.out_spatio
-        self.flag = self.in_channel * self.in_spatio > self.out_channel * self.out_spatio
         return channel_dim, spatio_dim
 
     def forward(self: T,
                 data: Tensor
                 ) -> Tensor:
 
-        data = data.contiguous()
+        data = data.contiguous() * self.maxval
 
         data = data.view(-1, self.in_channel, self.in_spatio)
         data = th.permute(data, [0, 2, 1]).reshape(-1, self.in_channel)
@@ -313,7 +312,7 @@ class MacSplineUnit(SplineMacUnit):
         data = th.matmul(data, self.spatio_transform)
         data = data.view(-1, self.out_channel, self.out_spatio)
 
-        return data
+        return data / self.maxval
 
 
 
