@@ -4,11 +4,10 @@ import lightning as pl
 from torch import nn
 from torch.nn import functional as F
 
-from manet.aeg import ZigzagFunction
-from manet.mac import MLP, MacSplineUnit, MacMatrixUnit, Reshape
+from manet.mac import MLP, MacSplineUnit, Reshape
 
 
-class Fashion1(pl.LightningModule):
+class Fashion2(pl.LightningModule):
     def __init__(self, learning_rate=1e-3):
         super().__init__()
         self.learning_rate = 1e-3
@@ -90,4 +89,4 @@ class Fashion1(pl.LightningModule):
 
 
 def _model_():
-    return Fashion1()
+    return Fashion2()
