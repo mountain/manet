@@ -281,7 +281,7 @@ class MacSplineUnit(SplineMacUnit):
 
         super().__init__(in_channel, out_channel, in_spatio, out_spatio, num_steps, step_length, num_points)
         self.channel_dim, self.spatio_dim = self.calculate()
-        self.maxval = num_steps * step_length
+        self.maxval = np.sinh(num_steps * step_length)
 
         self.channel_transform = nn.Parameter(
             th.normal(0, 1, (1, self.in_channel, self.out_channel))
@@ -346,9 +346,9 @@ class Classification(nn.Module):
         super().__init__()
         self.num_class = num_class
         self.length = length
-        theta = th.linspace(0, 2 * th.pi, 2 * num_class + 1)[1::2]
-        values = (th.exp(length * th.sin(theta)) - 1) / th.tan(theta)
-        self.values = values.view(1, num_class, 1)
+        self.values = nn.Parameter(
+            th.normal(0, 1, (1, num_class,))
+        ) * np.sinh(length)
         self.matrix = nn.Parameter(
             th.normal(0, 1, (1, num_class, num_class))
         )
