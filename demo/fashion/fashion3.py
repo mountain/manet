@@ -4,10 +4,10 @@ import lightning as pl
 from torch import nn
 from torch.nn import functional as F
 
-from manet.mac import MLP, MacSplineUnit, Reshape
+from manet.mac import MLP, MacSplineUnit, Classification, Reshape
 
 
-class Fashion2(pl.LightningModule):
+class Fashion3(pl.LightningModule):
     def __init__(self, learning_rate=1e-3):
         super().__init__()
         self.learning_rate = 1e-3
@@ -30,7 +30,25 @@ class Fashion2(pl.LightningModule):
             nn.Conv2d(40, 80, kernel_size=1, padding=0),
             MLP(1, [1], mac_points=5, mac_steps=6, mac_unit=MacSplineUnit),
             Reshape(80, 3, 3),
-            MLP(80 * 9, [80 * 4, 80, 10], mac_points=5, mac_steps=6, mac_unit=MacSplineUnit),
+            nn.MaxPool2d(2),
+            nn.Conv2d(80, 160, kernel_size=1, padding=0),
+            MLP(1, [1], mac_points=5, mac_steps=6, mac_unit=MacSplineUnit),
+            Reshape(160, 1, 1),
+            nn.Conv2d(160, 80, kernel_size=1, padding=0),
+            MLP(1, [1], mac_points=5, mac_steps=6, mac_unit=MacSplineUnit),
+            Reshape(80, 1, 1),
+            nn.Conv2d(80, 40, kernel_size=1, padding=0),
+            MLP(1, [1], mac_points=5, mac_steps=6, mac_unit=MacSplineUnit),
+            Reshape(40, 1, 1),
+            nn.Conv2d(40, 20, kernel_size=1, padding=0),
+            MLP(1, [1], mac_points=5, mac_steps=6, mac_unit=MacSplineUnit),
+            Reshape(20, 1, 1),
+            nn.Conv2d(20, 10, kernel_size=1, padding=0),
+            MLP(1, [1], mac_points=5, mac_steps=6, mac_unit=MacSplineUnit),
+            Reshape(10, 1, 1),
+            nn.Conv2d(10, 1, kernel_size=1, padding=0),
+            MLP(1, [1], mac_points=5, mac_steps=6, mac_unit=MacSplineUnit),
+            Classification(10, 2.0),
             Reshape(10),
             nn.LogSoftmax(dim=1)
         )
@@ -89,4 +107,4 @@ class Fashion2(pl.LightningModule):
 
 
 def _model_():
-    return Fashion2()
+    return Fashion3()

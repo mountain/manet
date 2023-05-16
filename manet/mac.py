@@ -315,7 +315,6 @@ class MacSplineUnit(SplineMacUnit):
         return data / self.maxval
 
 
-
 class MLP(nn.Sequential):
     def __init__(
         self,
@@ -336,6 +335,23 @@ class MLP(nn.Sequential):
             in_dim = hidden_dim
         layers.append(nn.Flatten())
         super().__init__(*layers)
+
+
+class Classification(nn.Module):
+    def __init__(
+        self,
+        num_class: int,
+        length: float,
+    ) -> None:
+        super().__init__()
+        self.num_class = num_class
+        self.length = length
+        theta = th.linspace(0, 2 * th.pi, 2 * num_class + 1)[1::2]
+        values = (th.exp(length * th.sin(theta)) - 1) / th.tan(theta)
+        self.values = values.view(1, num_class, 1)
+
+    def forward(self, x):
+        return (x - self.values) ** 2
 
 
 class Reshape(nn.Module):
