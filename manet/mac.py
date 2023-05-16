@@ -347,7 +347,7 @@ class Classification(nn.Module):
         self.num_class = num_class
         self.length = length
         self.values = nn.Parameter(
-            th.normal(0, 1, (1, num_class,))
+            th.normal(0, 1, (1, num_class, 1))
         ) * np.sinh(length)
         self.matrix = nn.Parameter(
             th.normal(0, 1, (1, num_class, num_class))

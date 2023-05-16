@@ -46,7 +46,7 @@ if __name__ == '__main__':
     # training
     print('construct trainer...')
     trainer = pl.Trainer(accelerator=accelerator, precision=32, max_epochs=opt.n_epochs,
-                         callbacks=[EarlyStopping(monitor="correctness", mode="max", patience=30)], retain_graph=True)
+                         callbacks=[EarlyStopping(monitor="correctness", mode="max", patience=30)])
 
     import importlib
     print('construct model...')
