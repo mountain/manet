@@ -40,20 +40,11 @@ class MNModel8(pl.LightningModule):
             nn.LogSoftmax(dim=1)
         )
 
-        import lightning.pytorch.loggers as pl_loggers
-        tb_logger = None
-        for logger in self.trainer.loggers:
-            if isinstance(logger, pl_loggers.TensorBoardLogger):
-                tb_logger = logger.experiment
-                break
-        if tb_logger is None:
-            raise ValueError('TensorBoard Logger not found')
-
-        self.tb_logger = tb_logger
-        self.learnable_function0.logger = tb_logger
-        self.learnable_function1.logger = tb_logger
-        self.learnable_function2.logger = tb_logger
-        self.learnable_function3.logger = tb_logger
+        self.tb_logger = None
+        self.learnable_function0.logger = None
+        self.learnable_function1.logger = None
+        self.learnable_function2.logger = None
+        self.learnable_function3.logger = None
 
     def forward(self, x):
         return self.recognizer(x)
@@ -78,6 +69,21 @@ class MNModel8(pl.LightningModule):
         self.learnable_function1.current_epoch = self.current_epoch
         self.learnable_function2.current_epoch = self.current_epoch
         self.learnable_function3.current_epoch = self.current_epoch
+
+        import lightning.pytorch.loggers as pl_loggers
+        tb_logger = None
+        for logger in self.trainer.loggers:
+            if isinstance(logger, pl_loggers.TensorBoardLogger):
+                tb_logger = logger.experiment
+                break
+        if tb_logger is None:
+            raise ValueError('TensorBoard Logger not found')
+
+        self.tb_logger = tb_logger
+        self.learnable_function0.logger = tb_logger
+        self.learnable_function1.logger = tb_logger
+        self.learnable_function2.logger = tb_logger
+        self.learnable_function3.logger = tb_logger
 
         x, y = val_batch
         x = x.view(-1, 1, 28, 28)
