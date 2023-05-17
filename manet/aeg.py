@@ -1,5 +1,6 @@
 import torch as th
 import torch.nn as nn
+from lightning.pytorch.loggers import TensorBoardLogger
 
 from torch import Tensor
 from typing import List, TypeVar, Tuple, Type, Callable, Union, Any, Dict
@@ -119,7 +120,8 @@ class CubicHermiteParam(Param):
 
 
 class LearnableFunction(ExprFlow):
-    def __init__(self: U, num_steps: int = 3, num_points: int = 5, length: float = 1.0) -> None:
+    def __init__(self: U, num_steps: int = 3, num_points: int = 5, length: float = 1.0,
+                 debug: bool = False, debug_key: str = None, logger: TensorBoardLogger = None) -> None:
         super().__init__()
         self.num_steps = num_steps
         self.num_points = num_points
@@ -137,8 +139,16 @@ class LearnableFunction(ExprFlow):
         self.channel_transform = nn.Parameter(th.normal(0, 1, (1, 1)))
         self.spatio_transform = nn.Parameter(th.normal(0, 1, (1, 1)))
 
+        self.debug = debug
+        self.debug_key = debug_key
+        self.logger = logger
+        self.current_epoch = 0
+
     def forward(self: F, data: Tensor) -> Tensor:
         sz = data.size()
+
+        if self.debug and self.logger is not None:
+            self.logger.add_histogram('%s:input' % self.debug_key, data, self.current_epoch)
 
         data = data.view(-1, sz[1], sz[2] * sz[3])
         data = th.permute(data, [0, 2, 1]).reshape(-1, 1)
@@ -152,6 +162,9 @@ class LearnableFunction(ExprFlow):
         data = data.view(-1, sz[2] * sz[3], sz[1])
         data = th.permute(data, [0, 2, 1]).reshape(-1, 1)
         data = th.matmul(data, self.spatio_transform)
+
+        if self.debug and self.logger is not None:
+            self.logger.add_histogram('%s:output' % self.debug_key, data, self.current_epoch)
 
         data = data.view(*sz)
         return data
