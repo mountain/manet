@@ -61,20 +61,16 @@ class MNModel8(pl.LightningModule):
         return loss
 
     def validation_step(self, val_batch, batch_idx):
-        if batch_idx == 0:
+        if batch_idx % 100 == 0:
             self.learnable_function0.debug = True
             self.learnable_function1.debug = True
             self.learnable_function2.debug = True
             self.learnable_function3.debug = True
 
-            self.learnable_function0.current_epoch = self.current_epoch
-            self.learnable_function1.current_epoch = self.current_epoch
-            self.learnable_function2.current_epoch = self.current_epoch
-            self.learnable_function3.current_epoch = self.current_epoch
-            self.learnable_function0.current_step = batch_idx
-            self.learnable_function1.current_step = batch_idx
-            self.learnable_function2.current_step = batch_idx
-            self.learnable_function3.current_step = batch_idx
+            self.learnable_function0.global_step += 1
+            self.learnable_function1.global_step += 1
+            self.learnable_function2.global_step += 1
+            self.learnable_function3.global_step += 1
 
             import lightning.pytorch.loggers as pl_loggers
             tb_logger = None
@@ -103,11 +99,11 @@ class MNModel8(pl.LightningModule):
         self.labeled_correct += correct.item() * y.size()[0]
         self.counter += y.size()[0]
 
-        if batch_idx == 0:
-            imgs = x[:5]
-            y_true = y[:5]
-            y_pred = pred[:5]
-            self.log_tb_images((imgs, y_true, y_pred, batch_idx))
+        if batch_idx % 100 == 0:
+            imgs = x[:10]
+            y_true = y[:10]
+            y_pred = pred[:10]
+            self.log_tb_images((imgs, y_true, y_pred, self.learnable_function0.global_step))
 
         self.learnable_function0.debug = False
         self.learnable_function1.debug = False
@@ -140,9 +136,9 @@ class MNModel8(pl.LightningModule):
         self.labeled_correct = 0
 
     def log_tb_images(self, viz_batch) -> None:
-        image, y_true, y_pred, batch_idx = viz_batch
+        image, y_true, y_pred, idx = viz_batch
         for img_idx, (img, ground, pred) in enumerate(zip(image, y_true, y_pred)):
-            self.tb_logger.add_image(f"Image/{batch_idx}_{img_idx}-{ground.item()}-{pred.item()}", img, batch_idx)
+            self.tb_logger.add_image(f"Image/{idx}_{img_idx}-{ground.item()}-{pred.item()}", img, idx)
 
 
 def _model_():

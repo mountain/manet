@@ -162,20 +162,17 @@ class LearnableFunction(ExprFlow):
         self.debug = debug
         self.debug_key = debug_key
         self.logger = logger
-        self.current_epoch = 0
+        self.global_step = 0
 
     def forward(self: F, data: Tensor) -> Tensor:
         sz = data.size()
 
         if self.debug and self.logger is not None:
-            if sz[0] > 1:
-                self.logger.add_figure('%s:function:velocity' % self.debug_key, self.params.plot_function('velocity'), self.current_epoch)
-                self.logger.add_figure('%s:function:angles' % self.debug_key, self.params.plot_function('angles'), self.current_epoch)
-                self.logger.add_histogram('%s:input:0' % self.debug_key, data[0], self.current_epoch)
-                self.logger.add_histogram('%s:input:1' % self.debug_key, data[1], self.current_epoch)
-                self.logger.add_histogram('%s:input:2' % self.debug_key, data[2], self.current_epoch)
-                self.logger.add_histogram('%s:input:3' % self.debug_key, data[3], self.current_epoch)
-                self.logger.add_histogram('%s:input:4' % self.debug_key, data[4], self.current_epoch)
+            if sz[0] > 10:
+                self.logger.add_figure('%s:function:velocity' % self.debug_key, self.params.plot_function('velocity'), self.global_step)
+                self.logger.add_figure('%s:function:angles' % self.debug_key, self.params.plot_function('angles'), self.global_step)
+                for ix in range(10):
+                    self.logger.add_histogram('%s:input:%d' % (self.debug_key, ix), data[ix], self.global_step)
 
         data = data.view(-1, sz[1], sz[2] * sz[3])
         data = th.permute(data, [0, 2, 1]).reshape(-1, 1)
@@ -188,39 +185,21 @@ class LearnableFunction(ExprFlow):
             data = data + (velocity * th.cos(angle) + data * velocity * th.sin(angle)) * self.length / self.num_steps
 
             if self.debug and self.logger is not None:
-                if sz[0] > 1:
-                    self.logger.add_figure(
-                        '%s:invoke:%d:%d' % (self.debug_key, 0, ix),
-                        self.plot_invoke(velocity[0], angle[0]), self.current_epoch
-                    )
-                    self.logger.add_figure(
-                        '%s:invoke:%d:%d' % (self.debug_key, 1, ix),
-                        self.plot_invoke(velocity[1], angle[1]), self.current_epoch
-                    )
-                    self.logger.add_figure(
-                        '%s:invoke:%d:%d' % (self.debug_key, 2, ix),
-                        self.plot_invoke(velocity[2], angle[2]), self.current_epoch
-                    )
-                    self.logger.add_figure(
-                        '%s:invoke:%d:%d' % (self.debug_key, 3, ix),
-                        self.plot_invoke(velocity[3], angle[3]), self.current_epoch
-                    )
-                    self.logger.add_figure(
-                        '%s:invoke:%d:%d' % (self.debug_key, 4, ix),
-                        self.plot_invoke(velocity[4], angle[4]), self.current_epoch
-                    )
+                if sz[0] > 10:
+                    for jx in range(10):
+                        self.logger.add_figure(
+                            '%s:invoke:%d:%d' % (self.debug_key, jx, ix),
+                            self.plot_invoke(velocity[jx], angle[jx]), self.global_step
+                        )
 
         data = data.view(-1, sz[2] * sz[3], sz[1])
         data = th.permute(data, [0, 2, 1]).reshape(-1, 1)
         data = th.matmul(data, self.spatio_transform)
 
         if self.debug and self.logger is not None:
-            if sz[0] > 1:
-                self.logger.add_histogram('%s:output:0' % self.debug_key, data[0], self.current_epoch)
-                self.logger.add_histogram('%s:output:1' % self.debug_key, data[1], self.current_epoch)
-                self.logger.add_histogram('%s:output:2' % self.debug_key, data[2], self.current_epoch)
-                self.logger.add_histogram('%s:output:3' % self.debug_key, data[3], self.current_epoch)
-                self.logger.add_histogram('%s:output:4' % self.debug_key, data[4], self.current_epoch)
+            if sz[0] > 10:
+                for ix in range(10):
+                    self.logger.add_histogram('%s:output:%d' % (self.debug_key, ix), data[ix], self.global_step)
 
         data = data.view(*sz)
         return data
