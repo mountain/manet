@@ -4,7 +4,7 @@ import lightning as pl
 from torch import nn
 from torch.nn import functional as F
 
-from manet.aeg import ZigzagFunction
+from manet.aeg import LearnableFunction
 from manet.mac import MLP, MacSplineUnit, Reshape
 
 
@@ -17,19 +17,19 @@ class MNModel8(pl.LightningModule):
         self.labeled_correct = 0
         self.recognizer = nn.Sequential(
             nn.Conv2d(1, 5, kernel_size=5, padding=2),
-            ZigzagFunction(),
+            LearnableFunction(),
             Reshape(5, 28, 28),
             nn.MaxPool2d(2),
             nn.Conv2d(5, 10, kernel_size=3, padding=1),
-            ZigzagFunction(),
+            LearnableFunction(),
             Reshape(10, 14, 14),
             nn.MaxPool2d(2),
             nn.Conv2d(10, 20, kernel_size=3, padding=1),
-            ZigzagFunction(),
+            LearnableFunction(),
             Reshape(20, 7, 7),
             nn.MaxPool2d(2),
             nn.Conv2d(20, 40, kernel_size=1, padding=0),
-            ZigzagFunction(),
+            LearnableFunction(),
             Reshape(40, 3, 3),
             MLP(40 * 9, [10], mac_unit=MacSplineUnit),
             Reshape(10),
