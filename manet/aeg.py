@@ -40,6 +40,15 @@ class ExprFlow(nn.Module):
     def forward(self: F, data: Tensor) -> Tensor:
         return self.reduce(data)
 
+    def plot_invoke(self: F, velocity: Tensor, angle: Tensor) -> Tensor:
+        import numpy as np
+        import matplotlib.pyplot as plt
+        velo, theta = velocity.detach().cpu().numpy(), angle.detach().cpu().numpy()
+        x = velo * np.cos(theta)
+        y = velo * np.sin(theta)
+        plt.scatter(x, y)
+        return plt.figure()
+
 
 class Param:
     def __init__(self: P, module: Module, num_points: int = 5, initializers: Dict[str, Initializer] = None) -> None:
@@ -77,15 +86,6 @@ class Param:
             params = nn.Parameter(tensor)
             self.module.register_parameter(key, params)
         return self.module.get_parameter(key)
-
-    def plot_invoke(self: P, velocity: Tensor, angle: Tensor) -> Tensor:
-        import numpy as np
-        import matplotlib.pyplot as plt
-        velo, theta = velocity.detach().cpu().numpy(), angle.detach().cpu().numpy()
-        x = velo * np.cos(theta)
-        y = velo * np.sin(theta)
-        plt.scatter(x, y)
-        return plt.figure()
 
 
 class DiscreteParam(Param):
