@@ -105,11 +105,9 @@ class MNModel8(pl.LightningModule):
         if tb_logger is None:
             raise ValueError('TensorBoard Logger not found')
 
-            # Log the images (Give them different names)
         for img_idx, (image, y_true, y_pred, batch_idx) in enumerate(zip(*viz_batch)):
             tb_logger.add_image(f"Image/{batch_idx}_{img_idx}", image, 0)
-            tb_logger.add_image(f"GroundTruth/{batch_idx}_{img_idx}", y_true, 0)
-            tb_logger.add_image(f"Prediction/{batch_idx}_{img_idx}", y_pred, 0)
+            tb_logger.add_text(f"Label/{batch_idx}_{img_idx}", f"True: {y_true.item()}, Pred: {y_pred.item()}", 0)
 
 
 def _model_():
