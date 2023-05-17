@@ -3,6 +3,7 @@ torchvision
 torchtext
 tensorrt
 lightning
+lightning[extra]
 portalocker>=2.0.0
 revtok
 transformers
