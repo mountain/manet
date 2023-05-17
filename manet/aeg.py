@@ -176,6 +176,7 @@ class LearnableFunction(ExprFlow):
         data = data.view(-1, sz[1], sz[2] * sz[3])
         data = th.permute(data, [0, 2, 1]).reshape(-1, 1)
         data = th.matmul(data, self.channel_transform)
+        data = data.view(-1, sz[2] * sz[3], sz[1])
 
         for ix in range(self.num_steps):
             handler = self.params.handler(data)
