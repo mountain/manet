@@ -94,8 +94,7 @@ class MNModel8(pl.LightningModule):
         self.labeled_correct = 0
 
     def log_tb_images(self, viz_batch) -> None:
-        import pytorch_lightning.loggers as pl_loggers
-        # Get tensorboard logger
+        import lightning.pytorch.loggers as pl_loggers
         tb_logger = None
         for logger in self.trainer.loggers:
             if isinstance(logger, pl_loggers.TensorBoardLogger):
