@@ -74,6 +74,10 @@ class MNModel8(pl.LightningModule):
         self.learnable_function1.debug = True
         self.learnable_function2.debug = True
         self.learnable_function3.debug = True
+        self.learnable_function0.current_epoch = self.current_epoch
+        self.learnable_function1.current_epoch = self.current_epoch
+        self.learnable_function2.current_epoch = self.current_epoch
+        self.learnable_function3.current_epoch = self.current_epoch
 
         x, y = val_batch
         x = x.view(-1, 1, 28, 28)
