@@ -62,6 +62,11 @@ class MNModel8(pl.LightningModule):
         self.labeled_loss += loss.item() * y.size()[0]
         self.labeled_correct += correct.item() * y.size()[0]
         self.counter += y.size()[0]
+        if batch_idx % 10:  # Log every 10 batches
+            imgs = x[:5]
+            y_true = y[:5]
+            y_pred = pred[:5]
+            self.log_tb_images((imgs, y_true, y_pred, batch_idx))
 
     def test_step(self, test_batch, batch_idx):
         x, y = test_batch
@@ -87,6 +92,24 @@ class MNModel8(pl.LightningModule):
         self.counter = 0
         self.labeled_loss = 0
         self.labeled_correct = 0
+
+    def log_tb_images(self, viz_batch) -> None:
+        import pytorch_lightning.loggers as pl_loggers
+        # Get tensorboard logger
+        tb_logger = None
+        for logger in self.trainer.loggers:
+            if isinstance(logger, pl_loggers.TensorBoardLogger):
+                tb_logger = logger.experiment
+                break
+
+        if tb_logger is None:
+            raise ValueError('TensorBoard Logger not found')
+
+            # Log the images (Give them different names)
+        for img_idx, (image, y_true, y_pred, batch_idx) in enumerate(zip(*viz_batch)):
+            tb_logger.add_image(f"Image/{batch_idx}_{img_idx}", image, 0)
+            tb_logger.add_image(f"GroundTruth/{batch_idx}_{img_idx}", y_true, 0)
+            tb_logger.add_image(f"Prediction/{batch_idx}_{img_idx}", y_pred, 0)
 
 
 def _model_():
