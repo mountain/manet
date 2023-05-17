@@ -145,7 +145,7 @@ class LearnableFunction(ExprFlow):
         data = th.matmul(data, self.channel_transform)
 
         for _ in range(self.num_steps):
-            handler = self.handler(data)
+            handler = self.params.handler(data)
             velocity, angle = self.params('velocity', handler), self.params('angles', handler)
             data = data + (velocity * th.cos(angle) + data * velocity * th.sin(angle)) * self.length / self.num_steps
 
