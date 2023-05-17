@@ -172,23 +172,23 @@ class LearnableFunction(ExprFlow):
             if self.debug and self.logger is not None:
                 self.logger.add_figure(
                     '%s:invoke:%d:%d:%d' % (self.debug_key, self.current_step, 0, ix),
-                    self.plot_invok(velocity[0], angle[0]), self.current_epoch
+                    self.plot_invoke(velocity[0], angle[0]), self.current_epoch
                 )
                 self.logger.add_figure(
                     '%s:invoke:%d:%d:%d' % (self.debug_key, self.current_step, 0, ix),
-                    self.plot_invok(velocity[1], angle[1]), self.current_epoch
+                    self.plot_invoke(velocity[1], angle[1]), self.current_epoch
                 )
                 self.logger.add_figure(
                     '%s:invoke:%d:%d:%d' % (self.debug_key, self.current_step, 0, ix),
-                    self.plot_invok(velocity[2], angle[2]), self.current_epoch
+                    self.plot_invoke(velocity[2], angle[2]), self.current_epoch
                 )
                 self.logger.add_figure(
                     '%s:invoke:%d:%d:%d' % (self.debug_key, self.current_step, 0, ix),
-                    self.plot_invok(velocity[3], angle[3]), self.current_epoch
+                    self.plot_invoke(velocity[3], angle[3]), self.current_epoch
                 )
                 self.logger.add_figure(
                     '%s:invoke:%d:%d:%d' % (self.debug_key, self.current_step, 0, ix),
-                    self.plot_invok(velocity[4], angle[4]), self.current_epoch
+                    self.plot_invoke(velocity[4], angle[4]), self.current_epoch
                 )
 
         data = data.view(-1, sz[2] * sz[3], sz[1])
