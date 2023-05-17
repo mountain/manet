@@ -46,9 +46,10 @@ class ExprFlow(nn.Module):
         velo, theta = velocity.detach().cpu().numpy(), angle.detach().cpu().numpy()
         x = velo * np.cos(theta)
         y = velo * np.sin(theta)
-        plt.scatter(x, y)
-        plt.show(block=False)
-        return plt.figure()
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        ax.scatter(x, y)
+        return fig
 
 
 class Param:
@@ -95,9 +96,10 @@ class Param:
 
         import matplotlib.pyplot as plt
         x, y = line.detach().cpu().numpy(), curve.detach().cpu().numpy()
-        plt.plot(x, y)
-        plt.show(block=False)
-        return plt.figure()
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        ax.plot(x, y)
+        return fig
 
 
 class DiscreteParam(Param):
