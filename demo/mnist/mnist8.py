@@ -89,6 +89,14 @@ class MNModel8(pl.LightningModule):
 
         x, y = val_batch
         x = x.view(-1, 1, 28, 28)
+
+        if batch_idx % 100 == 0:
+            y_true = y[:10]
+            self.learnable_function0.labels = y_true
+            self.learnable_function1.labels = y_true
+            self.learnable_function2.labels = y_true
+            self.learnable_function3.labels = y_true
+
         z = self(x)
         loss = F.nll_loss(z, y)
         self.log('val_loss', loss, prog_bar=True)

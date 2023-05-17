@@ -163,6 +163,7 @@ class LearnableFunction(ExprFlow):
         self.debug_key = debug_key
         self.logger = logger
         self.global_step = 0
+        self.labels = None
 
     def forward(self: F, data: Tensor) -> Tensor:
         sz = data.size()
@@ -172,7 +173,7 @@ class LearnableFunction(ExprFlow):
                 self.logger.add_figure('%s:function:velocity' % self.debug_key, self.params.plot_function('velocity'), self.global_step)
                 self.logger.add_figure('%s:function:angles' % self.debug_key, self.params.plot_function('angles'), self.global_step)
                 for ix in range(10):
-                    self.logger.add_histogram('%s:input:%d' % (self.debug_key, ix), data[ix], self.global_step)
+                    self.logger.add_histogram('%s:input:%d' % (self.debug_key, self.labels[ix]), data[ix], self.global_step)
 
         data = data.view(-1, sz[1], sz[2] * sz[3])
         data = th.permute(data, [0, 2, 1]).reshape(-1, 1)
@@ -188,7 +189,7 @@ class LearnableFunction(ExprFlow):
                 if sz[0] > 10:
                     for jx in range(10):
                         self.logger.add_figure(
-                            '%s:invoke:%d:%d' % (self.debug_key, jx, ix),
+                            '%s:invoke:%d:%d' % (self.debug_key, self.labels[jx], ix),
                             self.plot_invoke(velocity[jx], angle[jx]), self.global_step
                         )
 
@@ -199,7 +200,7 @@ class LearnableFunction(ExprFlow):
         if self.debug and self.logger is not None:
             if sz[0] > 10:
                 for ix in range(10):
-                    self.logger.add_histogram('%s:output:%d' % (self.debug_key, ix), data[ix], self.global_step)
+                    self.logger.add_histogram('%s:output:%d' % (self.debug_key, self.labels[ix]), data[ix], self.global_step)
 
         data = data.view(*sz)
         return data
