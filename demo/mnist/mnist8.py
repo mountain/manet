@@ -105,7 +105,7 @@ class MNModel8(pl.LightningModule):
             raise ValueError('TensorBoard Logger not found')
 
         image, y_true, y_pred, batch_idx = viz_batch
-        for img_idx, img, ground, pred in enumerate(zip(image, y_true, y_pred)):
+        for img_idx, (img, ground, pred) in enumerate(zip(image, y_true, y_pred)):
             tb_logger.add_image(f"Image/{batch_idx}_{img_idx}-{ground.item()}-{pred.item()}", img, 0)
 
 
