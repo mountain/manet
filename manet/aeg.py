@@ -87,6 +87,16 @@ class Param:
             self.module.register_parameter(key, params)
         return self.module.get_parameter(key)
 
+    def plot_function(self: F, key: str) -> Tensor:
+        line = th.linspace(0, self.num_points, 1000)
+        handler = self.handler(line)
+        curve = self(key, handler)
+
+        import matplotlib.pyplot as plt
+        x, y = line.detach().cpu().numpy(), curve.detach().cpu().numpy()
+        plt.plot(x, y)
+        return plt.figure()
+
 
 class DiscreteParam(Param):
     def __init__(self: P, module: Module, num_params: int = 5, initializers: Dict[str, Initializer] = None) -> None:
@@ -154,6 +164,8 @@ class LearnableFunction(ExprFlow):
         sz = data.size()
 
         if self.debug and self.logger is not None:
+            self.logger.add_figure('%s:function:velocity:%d' % (self.debug_key, self.current_epoch), self.plot_function('velocity'), self.current_epoch)
+            self.logger.add_figure('%s:function:angles:%d' % (self.debug_key, self.current_epoch), self.plot_function('angles'), self.current_epoch)
             self.logger.add_histogram('%s:input:%d:0' % (self.debug_key, self.current_step), data[0], self.current_epoch)
             self.logger.add_histogram('%s:input:%d:1' % (self.debug_key, self.current_step), data[1], self.current_epoch)
             self.logger.add_histogram('%s:input:%d:2' % (self.debug_key, self.current_step), data[2], self.current_epoch)
