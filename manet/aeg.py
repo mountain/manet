@@ -89,8 +89,8 @@ class Param:
 
     def plot_function(self: F, key: str) -> Tensor:
         line = th.linspace(0, self.num_points, 1000)
-        handler = self.handler(line)
-        curve = self(key, handler)
+        handler = self.handler(line.view(1, 1000, 1))
+        curve = self(key, handler).view(1000)
 
         import matplotlib.pyplot as plt
         x, y = line.detach().cpu().numpy(), curve.detach().cpu().numpy()
