@@ -47,7 +47,7 @@ class ExprFlow(nn.Module):
         x = velo * np.cos(theta)
         y = velo * np.sin(theta)
         plt.scatter(x, y)
-        plt.show()
+        plt.show(block=False)
         return plt.figure()
 
 
@@ -96,7 +96,7 @@ class Param:
         import matplotlib.pyplot as plt
         x, y = line.detach().cpu().numpy(), curve.detach().cpu().numpy()
         plt.plot(x, y)
-        plt.show()
+        plt.show(block=False)
         return plt.figure()
 
 
