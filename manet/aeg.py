@@ -154,7 +154,11 @@ class LearnableFunction(ExprFlow):
         sz = data.size()
 
         if self.debug and self.logger is not None:
-            self.logger.add_histogram('%s:input' % self.debug_key, data, self.current_epoch)
+            self.logger.add_histogram('%s:input:%d:0' % (self.debug_key, self.current_step), data[0], self.current_epoch)
+            self.logger.add_histogram('%s:input:%d:1' % (self.debug_key, self.current_step), data[1], self.current_epoch)
+            self.logger.add_histogram('%s:input:%d:2' % (self.debug_key, self.current_step), data[2], self.current_epoch)
+            self.logger.add_histogram('%s:input:%d:3' % (self.debug_key, self.current_step), data[3], self.current_epoch)
+            self.logger.add_histogram('%s:input:%d:4' % (self.debug_key, self.current_step), data[4], self.current_epoch)
 
         data = data.view(-1, sz[1], sz[2] * sz[3])
         data = th.permute(data, [0, 2, 1]).reshape(-1, 1)
@@ -166,14 +170,37 @@ class LearnableFunction(ExprFlow):
             data = data + (velocity * th.cos(angle) + data * velocity * th.sin(angle)) * self.length / self.num_steps
 
             if self.debug and self.logger is not None:
-                self.logger.add_figure('%s:invoke:%d' % (self.debug_key, ix), self.plot_invok(velocity, angle), self.current_epoch)
+                self.logger.add_figure(
+                    '%s:invoke:%d:%d:%d' % (self.debug_key, self.current_step, 0, ix),
+                    self.plot_invok(velocity[0], angle[0]), self.current_epoch
+                )
+                self.logger.add_figure(
+                    '%s:invoke:%d:%d:%d' % (self.debug_key, self.current_step, 0, ix),
+                    self.plot_invok(velocity[1], angle[1]), self.current_epoch
+                )
+                self.logger.add_figure(
+                    '%s:invoke:%d:%d:%d' % (self.debug_key, self.current_step, 0, ix),
+                    self.plot_invok(velocity[2], angle[2]), self.current_epoch
+                )
+                self.logger.add_figure(
+                    '%s:invoke:%d:%d:%d' % (self.debug_key, self.current_step, 0, ix),
+                    self.plot_invok(velocity[3], angle[3]), self.current_epoch
+                )
+                self.logger.add_figure(
+                    '%s:invoke:%d:%d:%d' % (self.debug_key, self.current_step, 0, ix),
+                    self.plot_invok(velocity[4], angle[4]), self.current_epoch
+                )
 
         data = data.view(-1, sz[2] * sz[3], sz[1])
         data = th.permute(data, [0, 2, 1]).reshape(-1, 1)
         data = th.matmul(data, self.spatio_transform)
 
         if self.debug and self.logger is not None:
-            self.logger.add_histogram('%s:output' % self.debug_key, data, self.current_epoch)
+            self.logger.add_histogram('%s:output:%d:0' % (self.debug_key, self.current_step), data[0], self.current_epoch)
+            self.logger.add_histogram('%s:output:%d:1' % (self.debug_key, self.current_step), data[1], self.current_epoch)
+            self.logger.add_histogram('%s:output:%d:2' % (self.debug_key, self.current_step), data[2], self.current_epoch)
+            self.logger.add_histogram('%s:output:%d:3' % (self.debug_key, self.current_step), data[3], self.current_epoch)
+            self.logger.add_histogram('%s:output:%d:4' % (self.debug_key, self.current_step), data[4], self.current_epoch)
 
         data = data.view(*sz)
         return data
