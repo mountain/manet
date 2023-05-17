@@ -15,22 +15,22 @@ class Fashion2(pl.LightningModule):
         self.labeled_loss = 0
         self.labeled_correct = 0
         self.recognizer = nn.Sequential(
-            nn.Conv2d(1, 10, kernel_size=7, padding=3),
+            nn.Conv2d(1, 20, kernel_size=7, padding=3),
             MLP(1, [1], mac_points=5, mac_steps=9, mac_unit=MacSplineUnit),
-            Reshape(10, 28, 28),
+            Reshape(20, 28, 28),
             nn.MaxPool2d(2),
-            nn.Conv2d(10, 20, kernel_size=5, padding=2),
+            nn.Conv2d(20, 40, kernel_size=5, padding=2),
             MLP(1, [1], mac_points=5, mac_steps=9, mac_unit=MacSplineUnit),
-            Reshape(20, 14, 14),
+            Reshape(40, 14, 14),
             nn.MaxPool2d(2),
-            nn.Conv2d(20, 40, kernel_size=3, padding=1),
+            nn.Conv2d(40, 80, kernel_size=3, padding=1),
             MLP(1, [1], mac_points=5, mac_steps=9, mac_unit=MacSplineUnit),
-            Reshape(40, 7, 7),
+            Reshape(80, 7, 7),
             nn.MaxPool2d(2),
-            nn.Conv2d(40, 80, kernel_size=1, padding=0),
+            nn.Conv2d(80, 160, kernel_size=1, padding=0),
             MLP(1, [1], mac_points=5, mac_steps=9, mac_unit=MacSplineUnit),
-            Reshape(80, 3, 3),
-            MLP(80 * 9, [80 * 4, 80, 10], mac_points=5, mac_steps=9, mac_unit=MacSplineUnit),
+            Reshape(160, 3, 3),
+            MLP(160 * 9, [160 * 4, 160, 10], mac_points=5, mac_steps=9, mac_unit=MacSplineUnit),
             Reshape(10),
             nn.LogSoftmax(dim=1)
         )
