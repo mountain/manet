@@ -1,3 +1,6 @@
+import matplotlib
+matplotlib.use('Agg')
+
 import argparse
 import torch
 import lightning.pytorch as pl
