@@ -3,6 +3,7 @@ torchvision
 torchtext
 lightning[extra]
 tensorboard
+matplotlib
 portalocker>=2.0.0
 revtok
 transformers

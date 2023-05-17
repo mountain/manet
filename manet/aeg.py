@@ -78,8 +78,14 @@ class Param:
             self.module.register_parameter(key, params)
         return self.module.get_parameter(key)
 
-    def plot(self: P) -> Tensor:
-        th.linspace(0, self.nun_points - 1, 1000)
+    def plot_invoke(self: P, velocity: Tensor, angle: Tensor) -> Tensor:
+        import numpy as np
+        import matplotlib.pyplot as plt
+        velo, theta = velocity.detach().cpu().numpy(), angle.detach().cpu().numpy()
+        x = velo * np.cos(theta)
+        y = velo * np.sin(theta)
+        plt.scatter(x, y)
+        return plt.figure()
 
 
 class DiscreteParam(Param):
@@ -154,10 +160,13 @@ class LearnableFunction(ExprFlow):
         data = th.permute(data, [0, 2, 1]).reshape(-1, 1)
         data = th.matmul(data, self.channel_transform)
 
-        for _ in range(self.num_steps):
+        for ix in range(self.num_steps):
             handler = self.params.handler(data)
             velocity, angle = self.params('velocity', handler), self.params('angles', handler)
             data = data + (velocity * th.cos(angle) + data * velocity * th.sin(angle)) * self.length / self.num_steps
+
+            if self.debug and self.logger is not None:
+                self.logger.add_figure('%s:invoke:%d' % (self.debug_key, ix), self.plot_invok(velocity, angle), self.current_epoch)
 
         data = data.view(-1, sz[2] * sz[3], sz[1])
         data = th.permute(data, [0, 2, 1]).reshape(-1, 1)
