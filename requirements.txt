@@ -1,9 +1,8 @@
 torch
 torchvision
 torchtext
-tensorrt
-lightning
 lightning[extra]
+tensorboard
 portalocker>=2.0.0
 revtok
 transformers
