@@ -188,8 +188,9 @@ class LearnableFunction(ExprFlow):
                 self.logger.add_figure('%s:function:velocity' % self.debug_key, self.params.plot_function('velocity'), self.global_step)
                 self.logger.add_figure('%s:function:angles' % self.debug_key, self.params.plot_function('angles'), self.global_step)
                 self.logger.add_figure('%s:function:total' % self.debug_key, self.plot_total_function(), self.global_step)
-                for ix in range(self.num_samples):
-                    self.logger.add_histogram('%s:input:%d' % (self.debug_key, self.labels[ix]), data[ix], self.global_step)
+                # for ix in range(self.num_samples):
+                #     pass
+                #     self.logger.add_histogram('%s:input:%d:histo' % (self.debug_key, self.labels[ix]), data[ix], self.global_step)
 
         data = data.view(-1, sz[1], sz[2] * sz[3])
         data = th.permute(data, [0, 2, 1]).reshape(-1, 1)
@@ -199,35 +200,39 @@ class LearnableFunction(ExprFlow):
         if self.debug and self.logger is not None:
             if sz[0] > self.num_samples:
                 for ix in range(self.num_samples):
-                    self.logger.add_histogram('%s:before:%d' % (self.debug_key, self.labels[ix]), data[ix], self.global_step)
+                    self.logger.add_histogram('%s:before:%d:histo' % (self.debug_key, self.labels[ix]), data[ix], self.global_step)
+                    self.logger.add_image('%s:before:%d:image' % (self.debug_key, self.labels[ix]), data[ix].view(sz[2], sz[3] * sz[1]), self.global_step)
 
         for ix in range(self.num_steps):
             handler = self.params.handler(data)
             velocity, angle = self.params('velocity', handler), self.params('angles', handler)
             data = data + (velocity * th.cos(angle) + data * velocity * th.sin(angle)) * self.length / self.num_steps
 
-            if self.debug and self.logger is not None:
-                if sz[0] > self.num_samples:
-                    for jx in range(self.num_samples):
-                        self.logger.add_figure(
-                            '%s:invoke:%d:%d' % (self.debug_key, self.labels[jx], ix),
-                            self.plot_invoke(velocity[jx], angle[jx]), self.global_step
-                        )
-                        self.logger.add_histogram('%s:distr:%d:%d' % (self.debug_key, self.labels[jx], ix), data[ix], self.global_step)
+            # if self.debug and self.logger is not None:
+            #     if sz[0] > self.num_samples:
+            #         for jx in range(self.num_samples):
+            #             pass
+            #             self.logger.add_figure(
+            #                 '%s:invoke:%d:%d' % (self.debug_key, self.labels[jx], ix),
+            #                 self.plot_invoke(velocity[jx], angle[jx]), self.global_step
+            #             )
+            #             self.logger.add_histogram('%s:distr:%d:%d' % (self.debug_key, self.labels[jx], ix), data[ix], self.global_step)
 
         if self.debug and self.logger is not None:
             if sz[0] > self.num_samples:
                 for ix in range(self.num_samples):
-                    self.logger.add_histogram('%s:after:%d' % (self.debug_key, self.labels[ix]), data[ix], self.global_step)
+                    self.logger.add_histogram('%s:after:%d:histo' % (self.debug_key, self.labels[ix]), data[ix], self.global_step)
+                    self.logger.add_image('%s:after:%d:image' % (self.debug_key, self.labels[ix]), data[ix].view(sz[2], sz[3] * sz[1]), self.global_step)
 
         data = data.view(-1, sz[2] * sz[3], sz[1])
         data = th.permute(data, [0, 2, 1]).reshape(-1, 1)
         data = th.matmul(data, self.spatio_transform)
         data = data.view(*sz)
 
-        if self.debug and self.logger is not None:
-            if sz[0] > self.num_samples:
-                for ix in range(self.num_samples):
-                    self.logger.add_histogram('%s:output:%d' % (self.debug_key, self.labels[ix]), data[ix], self.global_step)
+        # if self.debug and self.logger is not None:
+        #     if sz[0] > self.num_samples:
+        #         for ix in range(self.num_samples):
+        #             pass
+        #             self.logger.add_histogram('%s:output:%d' % (self.debug_key, self.labels[ix]), data[ix], self.global_step)
 
         return data
