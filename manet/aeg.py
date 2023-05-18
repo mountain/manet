@@ -164,6 +164,7 @@ class LearnableFunction(ExprFlow):
         self.logger = logger
         self.global_step = 0
         self.labels = None
+        self.num_samples = 20
 
     def plot_total_function(self: F) -> Tensor:
         line = th.linspace(0, self.num_points, 1000)
@@ -183,11 +184,11 @@ class LearnableFunction(ExprFlow):
         sz = data.size()
 
         if self.debug and self.logger is not None:
-            if sz[0] > 10:
+            if sz[0] > self.num_samples:
                 self.logger.add_figure('%s:function:velocity' % self.debug_key, self.params.plot_function('velocity'), self.global_step)
                 self.logger.add_figure('%s:function:angles' % self.debug_key, self.params.plot_function('angles'), self.global_step)
                 self.logger.add_figure('%s:function:total' % self.debug_key, self.plot_total_function(), self.global_step)
-                for ix in range(10):
+                for ix in range(self.num_samples):
                     self.logger.add_histogram('%s:input:%d' % (self.debug_key, self.labels[ix]), data[ix], self.global_step)
 
         data = data.view(-1, sz[1], sz[2] * sz[3])
@@ -196,8 +197,8 @@ class LearnableFunction(ExprFlow):
         data = data.view(-1, sz[2] * sz[3], sz[1])
 
         if self.debug and self.logger is not None:
-            if sz[0] > 10:
-                for ix in range(10):
+            if sz[0] > self.num_samples:
+                for ix in range(self.num_samples):
                     self.logger.add_histogram('%s:before:%d' % (self.debug_key, self.labels[ix]), data[ix], self.global_step)
 
         for ix in range(self.num_steps):
@@ -206,8 +207,8 @@ class LearnableFunction(ExprFlow):
             data = data + (velocity * th.cos(angle) + data * velocity * th.sin(angle)) * self.length / self.num_steps
 
             if self.debug and self.logger is not None:
-                if sz[0] > 10:
-                    for jx in range(10):
+                if sz[0] > self.num_samples:
+                    for jx in range(self.num_samples):
                         self.logger.add_figure(
                             '%s:invoke:%d:%d' % (self.debug_key, self.labels[jx], ix),
                             self.plot_invoke(velocity[jx], angle[jx]), self.global_step
@@ -215,8 +216,8 @@ class LearnableFunction(ExprFlow):
                         self.logger.add_histogram('%s:distr:%d:%d' % (self.debug_key, self.labels[jx], ix), data[ix], self.global_step)
 
         if self.debug and self.logger is not None:
-            if sz[0] > 10:
-                for ix in range(10):
+            if sz[0] > self.num_samples:
+                for ix in range(self.num_samples):
                     self.logger.add_histogram('%s:after:%d' % (self.debug_key, self.labels[ix]), data[ix], self.global_step)
 
         data = data.view(-1, sz[2] * sz[3], sz[1])
@@ -225,8 +226,8 @@ class LearnableFunction(ExprFlow):
         data = data.view(*sz)
 
         if self.debug and self.logger is not None:
-            if sz[0] > 10:
-                for ix in range(10):
+            if sz[0] > self.num_samples:
+                for ix in range(self.num_samples):
                     self.logger.add_histogram('%s:output:%d' % (self.debug_key, self.labels[ix]), data[ix], self.global_step)
 
         return data
