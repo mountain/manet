@@ -180,6 +180,11 @@ class LearnableFunction(ExprFlow):
         data = th.matmul(data, self.channel_transform)
         data = data.view(-1, sz[2] * sz[3], sz[1])
 
+        if self.debug and self.logger is not None:
+            if sz[0] > 10:
+                for ix in range(10):
+                    self.logger.add_histogram('%s:before:%d' % (self.debug_key, self.labels[ix]), data[ix], self.global_step)
+
         for ix in range(self.num_steps):
             handler = self.params.handler(data)
             velocity, angle = self.params('velocity', handler), self.params('angles', handler)
@@ -192,6 +197,12 @@ class LearnableFunction(ExprFlow):
                             '%s:invoke:%d:%d' % (self.debug_key, self.labels[jx], ix),
                             self.plot_invoke(velocity[jx], angle[jx]), self.global_step
                         )
+                        self.logger.add_histogram('%s:distr:%d:%d' % (self.debug_key, self.labels[jx], ix), data[ix], self.global_step)
+
+        if self.debug and self.logger is not None:
+            if sz[0] > 10:
+                for ix in range(10):
+                    self.logger.add_histogram('%s:after:%d' % (self.debug_key, self.labels[ix]), data[ix], self.global_step)
 
         data = data.view(-1, sz[2] * sz[3], sz[1])
         data = th.permute(data, [0, 2, 1]).reshape(-1, 1)
