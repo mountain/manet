@@ -1,3 +1,4 @@
+import numpy as np
 import torch as th
 import torch.nn as nn
 from lightning.pytorch.loggers import TensorBoardLogger
@@ -158,6 +159,7 @@ class LearnableFunction(ExprFlow):
         })
         self.channel_transform = nn.Parameter(th.normal(0, 1, (1, 1)))
         self.spatio_transform = nn.Parameter(th.normal(0, 1, (1, 1)))
+        self.maxval = np.sinh(self.length)
 
         self.debug = debug
         self.debug_key = debug_key
@@ -182,6 +184,7 @@ class LearnableFunction(ExprFlow):
 
     def forward(self: F, data: Tensor) -> Tensor:
         sz = data.size()
+        data = data * self.maxval
 
         if self.debug and self.logger is not None:
             if sz[0] > self.num_samples:
@@ -235,4 +238,4 @@ class LearnableFunction(ExprFlow):
         #             pass
         #             self.logger.add_histogram('%s:output:%d' % (self.debug_key, self.labels[ix]), data[ix], self.global_step)
 
-        return data
+        return data / self.maxval
