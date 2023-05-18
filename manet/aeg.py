@@ -204,7 +204,9 @@ class LearnableFunction(ExprFlow):
             if sz[0] > self.num_samples:
                 for ix in range(self.num_samples):
                     self.logger.add_histogram('%s:before:%d:histo' % (self.debug_key, self.labels[ix]), data[ix], self.global_step)
-                    self.logger.add_image('%s:before:%d:image' % (self.debug_key, self.labels[ix]), data[ix].view(sz[2], sz[3] * sz[1]), self.global_step, dataformats='HW')
+                    image = data[ix].view(sz[2], sz[3] * sz[1])
+                    image = (image - image.min()) / (image.max() - image.min())
+                    self.logger.add_image('%s:before:%d:image' % (self.debug_key, self.labels[ix]), image, self.global_step, dataformats='HW')
 
         for ix in range(self.num_steps):
             handler = self.params.handler(data)
@@ -225,7 +227,9 @@ class LearnableFunction(ExprFlow):
             if sz[0] > self.num_samples:
                 for ix in range(self.num_samples):
                     self.logger.add_histogram('%s:after:%d:histo' % (self.debug_key, self.labels[ix]), data[ix], self.global_step)
-                    self.logger.add_image('%s:after:%d:image' % (self.debug_key, self.labels[ix]), data[ix].view(sz[2], sz[3] * sz[1]), self.global_step, dataformats='HW')
+                    image = data[ix].view(sz[2], sz[3] * sz[1])
+                    image = (image - image.min()) / (image.max() - image.min())
+                    self.logger.add_image('%s:after:%d:image' % (self.debug_key, self.labels[ix]), image, self.global_step, dataformats='HW')
 
         data = data.view(-1, sz[2] * sz[3], sz[1])
         data = th.permute(data, [0, 2, 1]).reshape(-1, 1)
