@@ -167,9 +167,9 @@ class LearnableFunction(ExprFlow):
 
     def plot_total_function(self: F) -> Tensor:
         line = th.linspace(0, self.num_points, 1000)
-        handler = self.handler(line.view(1, 1000, 1))
-        velocity = self('velocity', handler).view(1000)
-        angle = self('angles', handler).view(1000)
+        handler = self.params.handler(line.view(1, 1000, 1))
+        velocity = self.params('velocity', handler).view(1000)
+        angle = self.params('angles', handler).view(1000)
         curve = line + (velocity * th.cos(angle) + line * velocity * th.sin(angle)) * self.length / self.num_steps
 
         import matplotlib.pyplot as plt
@@ -186,7 +186,7 @@ class LearnableFunction(ExprFlow):
             if sz[0] > 10:
                 self.logger.add_figure('%s:function:velocity' % self.debug_key, self.params.plot_function('velocity'), self.global_step)
                 self.logger.add_figure('%s:function:angles' % self.debug_key, self.params.plot_function('angles'), self.global_step)
-                self.logger.add_figure('%s:function:total' % self.debug_key, self.params.plot_total_function(), self.global_step)
+                self.logger.add_figure('%s:function:total' % self.debug_key, self.plot_total_function(), self.global_step)
                 for ix in range(10):
                     self.logger.add_histogram('%s:input:%d' % (self.debug_key, self.labels[ix]), data[ix], self.global_step)
 
