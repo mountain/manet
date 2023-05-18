@@ -91,7 +91,7 @@ class MNModel8(pl.LightningModule):
         x = x.view(-1, 1, 28, 28)
 
         if batch_idx % 100 == 0:
-            y_true = y[:self.num_samples]
+            y_true = y[:self.learnable_function0.num_samples]
             self.learnable_function0.labels = y_true
             self.learnable_function1.labels = y_true
             self.learnable_function2.labels = y_true
