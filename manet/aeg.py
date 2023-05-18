@@ -222,11 +222,11 @@ class LearnableFunction(ExprFlow):
         data = data.view(-1, sz[2] * sz[3], sz[1])
         data = th.permute(data, [0, 2, 1]).reshape(-1, 1)
         data = th.matmul(data, self.spatio_transform)
+        data = data.view(*sz)
 
         if self.debug and self.logger is not None:
             if sz[0] > 10:
                 for ix in range(10):
                     self.logger.add_histogram('%s:output:%d' % (self.debug_key, self.labels[ix]), data[ix], self.global_step)
 
-        data = data.view(*sz)
         return data
