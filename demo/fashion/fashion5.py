@@ -34,7 +34,7 @@ class Fashion5(pl.LightningModule):
             self.learnable_function2,
             Reshape(45, 7, 7),
             nn.MaxPool2d(2),
-            nn.Conv2d(45, 135, kernel_size=3, padding=1),
+            nn.Conv2d(45, 135, kernel_size=1, padding=0),
             self.learnable_function3,
             Reshape(135, 3, 3),
             nn.MaxPool2d(2),
