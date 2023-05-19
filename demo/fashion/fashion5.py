@@ -20,6 +20,7 @@ class Fashion4(pl.LightningModule):
         self.learnable_function1 = LogisticFunction(p=3.8, debug_key='lf1')
         self.learnable_function2 = LogisticFunction(p=3.9, debug_key='lf2')
         self.learnable_function3 = LogisticFunction(p=3.8, debug_key='lf3')
+        self.learnable_function4 = LogisticFunction(p=3.8, debug_key='lf4')
         self.recognizer = nn.Sequential(
             nn.Conv2d(1, 5, kernel_size=5, padding=2),
             self.learnable_function0,
@@ -33,10 +34,14 @@ class Fashion4(pl.LightningModule):
             self.learnable_function2,
             Reshape(45, 7, 7),
             nn.MaxPool2d(2),
-            nn.Conv2d(45, 135, kernel_size=1, padding=0),
+            nn.Conv2d(45, 135, kernel_size=3, padding=1),
             self.learnable_function3,
-            Reshape(135 * 3 * 3),
-            MLP(135 * 9, [10]),
+            Reshape(135, 3, 3),
+            nn.MaxPool2d(2),
+            nn.Conv2d(135, 405, kernel_size=1, padding=0),
+            self.learnable_function4,
+            Reshape(405),
+            MLP(405, [10]),
             Reshape(10),
             nn.LogSoftmax(dim=1)
         )
