@@ -35,7 +35,7 @@ class MNModel9(pl.LightningModule):
             nn.MaxPool2d(2),
             nn.Conv2d(20, 40, kernel_size=1, padding=0),
             self.learnable_function3,
-            Reshape(40, 3, 3),
+            Reshape(40 * 3 * 3),
             MLP(40 * 9, [10]),
             Reshape(10),
             nn.LogSoftmax(dim=1)
