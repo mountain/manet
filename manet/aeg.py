@@ -259,10 +259,10 @@ class LearnableFunction(ExprFlow):
 
 class LogisticFunction(ExprFlow):
 
-    def __init__(self: U, num_steps: int = 3, debug: bool = False, debug_key: str = None, logger: TensorBoardLogger = None) -> None:
+    def __init__(self: U, num_steps: int = 3, p: float = 3.8, debug: bool = False, debug_key: str = None, logger: TensorBoardLogger = None) -> None:
         super().__init__()
         self.num_steps = num_steps
-        self.p = nn.Parameter(th.ones(1).view(1, 1)) * 2
+        self.p = nn.Parameter(th.ones(1).view(1, 1)) * p
         self.channel_transform = nn.Parameter(th.normal(0, 1, (1, 1)))
         self.spatio_transform = nn.Parameter(th.normal(0, 1, (1, 1)))
 
