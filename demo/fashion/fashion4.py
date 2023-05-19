@@ -3,6 +3,7 @@ import lightning as pl
 
 from torch import nn
 from torch.nn import functional as F
+from torchvision.ops import MLP
 
 from manet.aeg import LogisticFunction
 from manet.mac import Reshape
