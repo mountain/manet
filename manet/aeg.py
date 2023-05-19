@@ -274,7 +274,7 @@ class LogisticFunction(ExprFlow):
         self.num_samples = 20
 
     def plot_total_function(self: F) -> Tensor:
-        line = th.linspace(0, 1, 1, 1000)
+        line = th.linspace(0, 1, 1000).view(1, 1000)
         curve = self.p * line * (1 - line)
 
         import matplotlib.pyplot as plt
