@@ -47,6 +47,9 @@ class MNModel9(pl.LightningModule):
         self.learnable_function2.logger = None
         self.learnable_function3.logger = None
 
+    def backward(self, loss, *args, **kwargs):
+        loss.backward(*args, **kwargs, retain_graph=True)
+
     def forward(self, x):
         return self.recognizer(x)
 

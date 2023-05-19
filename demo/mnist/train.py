@@ -26,7 +26,6 @@ if __name__ == '__main__':
 
     print('loading data...')
     from torch.utils.data import DataLoader
-    from torch.utils.data import random_split
     from torchvision.datasets import MNIST
     from torchvision import transforms
 
