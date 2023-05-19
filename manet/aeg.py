@@ -306,7 +306,7 @@ class LogisticFunction(ExprFlow):
 
         data = th.sigmoid(data)
         for ix in range(self.num_steps):
-            data = self.p * data * (1 - data)
+            data = th.zeros_like(data) + self.p * data * (1 - data)
 
         if self.debug and self.logger is not None:
             if sz[0] > self.num_samples:
