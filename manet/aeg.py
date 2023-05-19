@@ -281,6 +281,7 @@ class LogisticFunction(ExprFlow):
         x, y = line[0].detach().cpu().numpy(), curve[0].detach().cpu().numpy()
         fig = plt.figure()
         ax = fig.add_subplot(111)
+        ax.set_title('p=%f' % self.p.item())
         ax.plot(x, y)
         return fig
 
