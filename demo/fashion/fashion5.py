@@ -9,7 +9,7 @@ from manet.aeg import LogisticFunction
 from manet.mac import Reshape
 
 
-class Fashion4(pl.LightningModule):
+class Fashion5(pl.LightningModule):
     def __init__(self, learning_rate=1e-3):
         super().__init__()
         self.learning_rate = 1e-3
@@ -18,7 +18,7 @@ class Fashion4(pl.LightningModule):
         self.labeled_correct = 0
         self.learnable_function0 = LogisticFunction(p=3.8, debug_key='lf0')
         self.learnable_function1 = LogisticFunction(p=3.8, debug_key='lf1')
-        self.learnable_function2 = LogisticFunction(p=3.9, debug_key='lf2')
+        self.learnable_function2 = LogisticFunction(p=3.8, debug_key='lf2')
         self.learnable_function3 = LogisticFunction(p=3.8, debug_key='lf3')
         self.learnable_function4 = LogisticFunction(p=3.8, debug_key='lf4')
         self.recognizer = nn.Sequential(
@@ -159,4 +159,4 @@ class Fashion4(pl.LightningModule):
 
 
 def _model_():
-    return Fashion4()
+    return Fashion5()
