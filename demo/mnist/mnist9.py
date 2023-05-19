@@ -16,10 +16,10 @@ class MNModel9(pl.LightningModule):
         self.counter = 0
         self.labeled_loss = 0
         self.labeled_correct = 0
-        self.learnable_function0 = LogisticFunction(debug_key='lf0')
-        self.learnable_function1 = LogisticFunction(debug_key='lf1')
-        self.learnable_function2 = LogisticFunction(debug_key='lf2')
-        self.learnable_function3 = LogisticFunction(debug_key='lf3')
+        self.learnable_function0 = LogisticFunction(p=3.8, debug_key='lf0')
+        self.learnable_function1 = LogisticFunction(p=3.8, debug_key='lf1')
+        self.learnable_function2 = LogisticFunction(p=3.8, debug_key='lf2')
+        self.learnable_function3 = LogisticFunction(p=3.8, debug_key='lf3')
         self.recognizer = nn.Sequential(
             nn.Conv2d(1, 5, kernel_size=5, padding=2),
             self.learnable_function0,
