@@ -278,7 +278,7 @@ class LogisticFunction(ExprFlow):
         curve = self.p * line * (1 - line)
 
         import matplotlib.pyplot as plt
-        x, y = line.detach().cpu().numpy(), curve.detach().cpu().numpy()
+        x, y = line[0].detach().cpu().numpy(), curve[0].detach().cpu().numpy()
         fig = plt.figure()
         ax = fig.add_subplot(111)
         ax.plot(x, y)
