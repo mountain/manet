@@ -22,6 +22,7 @@ class Fashion6(pl.LightningModule):
         self.upsample0 = nn.Upsample(scale_factor=28 / 14, mode='nearest')
         self.upsample1 = nn.Upsample(scale_factor=14 / 7, mode='nearest')
         self.upsample2 = nn.Upsample(scale_factor=7 / 3, mode='nearest')
+        self.upsample3 = nn.Upsample(scale_factor=3 / 1, mode='nearest')
         self.learnable_function0 = LogisticFunction(p=3.8, debug_key='lf0')
         self.learnable_function1 = LogisticFunction(p=3.8, debug_key='lf1')
         self.learnable_function2 = LogisticFunction(p=3.9, debug_key='lf2')
@@ -29,18 +30,21 @@ class Fashion6(pl.LightningModule):
         self.learnable_function4 = LogisticFunction(p=3.8, debug_key='lf4')
         self.learnable_function5 = LogisticFunction(p=3.8, debug_key='lf5')
         self.learnable_function6 = LogisticFunction(p=3.8, debug_key='lf6')
+        self.learnable_function7 = LogisticFunction(p=3.8, debug_key='lf7')
 
         self.conv0 = nn.Conv2d(1, 5, kernel_size=5, padding=2)
         self.conv1 = nn.Conv2d(5, 15, kernel_size=3, padding=1)
         self.conv2 = nn.Conv2d(15, 45, kernel_size=3, padding=1)
         self.conv3 = nn.Conv2d(45, 135, kernel_size=3, padding=1)
+        self.conv4 = nn.Conv2d(135, 405, kernel_size=3, padding=1)
 
-        self.conv4 = nn.Conv2d(45 + 135, 60, kernel_size=3, padding=1)
-        self.conv5 = nn.Conv2d(15 + 60, 25, kernel_size=3, padding=1)
-        self.conv6 = nn.Conv2d(5 + 25, 1, kernel_size=3, padding=1)
+        self.conv5 = nn.Conv2d(135 + 405, 180, kernel_size=3, padding=1)
+        self.conv6 = nn.Conv2d(45 + 180, 75, kernel_size=3, padding=1)
+        self.conv7 = nn.Conv2d(15 + 75, 30, kernel_size=3, padding=1)
+        self.conv8 = nn.Conv2d(30, 1, kernel_size=3, padding=1)
 
-        self.flat = Reshape(135 * 9)
-        self.mlp = MLP(135 * 9, [10])
+        self.flat = Reshape(405)
+        self.mlp = MLP(405, [10])
         self.lsm = nn.LogSoftmax(dim=1)
 
         self.tb_logger = None
@@ -64,22 +68,26 @@ class Fashion6(pl.LightningModule):
         x3 = self.dnsample(x2)
         x3 = self.conv3(x3)
         x3 = self.learnable_function3(x3)
-
-        coeff = np.exp(- self.counter // 500000)
-
-        x4 = self.upsample2(x3)
-        x4 = th.cat([x4, x2], dim=1)
+        x4 = self.dnsample(x3)
         x4 = self.conv4(x4)
-        x4 = self.learnable_function4(x4)
-        x5 = self.upsample1(x4)
-        x5 = th.cat([x5, x1], dim=1)
+        x4 = self.learnable_function3(x4)
+
+        x5 = self.upsample3(x4)
+        x5 = th.cat([x5, x3], dim=1)
         x5 = self.conv5(x5)
         x5 = self.learnable_function5(x5)
-        x6 = self.upsample0(x5)
-        x6 = th.cat([x6, (1 - coeff) * x0 + coeff * th.rand_like(x0)], dim=1)
-        x6 = self.conv6(x6)
+        x6 = self.upsample2(x5)
+        x6 = th.cat([x6, x2], dim=1)
+        x6 = self.conv5(x6)
+        x6 = self.learnable_function6(x6)
+        x7 = self.upsample1(x6)
+        x7 = th.cat([x7, x1], dim=1)
+        x7 = self.conv7(x7)
+        x7 = self.learnable_function7(x7)
+        x8 = self.upsample0(x7)
+        x8 = self.conv8(x8)
 
-        return self.lsm(self.mlp(self.flat(x3))), x6
+        return self.lsm(self.mlp(self.flat(x4))), x8
 
     def configure_optimizers(self):
         return th.optim.Adam(self.parameters(), lr=self.learning_rate)
