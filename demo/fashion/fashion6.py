@@ -38,6 +38,7 @@ class Fashion6(pl.LightningModule):
         self.conv5 = nn.Conv2d(15 + 60, 25, kernel_size=3, padding=1)
         self.conv6 = nn.Conv2d(5 + 25, 1, kernel_size=3, padding=1)
 
+        self.flat = Reshape(135 * 9)
         self.mlp = MLP(135 * 9, [10])
         self.lsm = nn.LogSoftmax(dim=1)
 
@@ -75,7 +76,7 @@ class Fashion6(pl.LightningModule):
         x5 = th.cat([x5, x0], dim=1)
         x6 = self.conv6(x5)
 
-        return self.lsm(self.mlp(th.flatten(x3))), x6
+        return self.lsm(self.mlp(self.flat(x3))), x6
 
     def configure_optimizers(self):
         return th.optim.Adam(self.parameters(), lr=self.learning_rate)
