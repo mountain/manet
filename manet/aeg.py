@@ -371,7 +371,7 @@ class SplineFunction(ExprFlow):
 
     def plot_total_function(self: F) -> Tensor:
         line = th.linspace(0, 1, 1000).view(1, 1000)
-        curve = self.split(line)
+        curve = self.spline(line)
 
         import matplotlib.pyplot as plt
         x, y = line[0].detach().cpu().numpy(), curve[0].detach().cpu().numpy()
