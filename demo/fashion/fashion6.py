@@ -17,8 +17,10 @@ class Fashion6(pl.LightningModule):
         self.labeled_loss = 0
         self.labeled_correct = 0
 
-        self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
         self.dnsample = nn.MaxPool2d(2)
+        self.upsample0 = nn.Upsample(scale_factor=28 / 14, mode='nearest')
+        self.upsample1 = nn.Upsample(scale_factor=14 / 7, mode='nearest')
+        self.upsample2 = nn.Upsample(scale_factor=7 / 3, mode='nearest')
         self.learnable_function0 = LogisticFunction(p=3.8, debug_key='lf0')
         self.learnable_function1 = LogisticFunction(p=3.8, debug_key='lf1')
         self.learnable_function2 = LogisticFunction(p=3.9, debug_key='lf2')
@@ -34,8 +36,7 @@ class Fashion6(pl.LightningModule):
 
         self.conv4 = nn.Conv2d(45 + 135, 60, kernel_size=3, padding=1)
         self.conv5 = nn.Conv2d(15 + 60, 25, kernel_size=3, padding=1)
-        self.conv6 = nn.Conv2d(5 + 25, 10, kernel_size=3, padding=1)
-        self.conv7 = nn.Conv2d(10, 1, kernel_size=3, padding=1)
+        self.conv6 = nn.Conv2d(5 + 25, 1, kernel_size=3, padding=1)
 
         self.mlp = MLP(135 * 9, [10])
         self.lsm = nn.LogSoftmax(dim=1)
@@ -62,22 +63,19 @@ class Fashion6(pl.LightningModule):
         x3 = self.conv3(x3)
         x3 = self.learnable_function3(x3)
 
-        x3 = self.upsample(x3)
+        x3 = self.upsample2(x3)
         x3 = th.cat([x3, x2], dim=1)
         x4 = self.conv4(x3)
         x4 = self.learnable_function4(x4)
-        x4 = self.upsample(x4)
+        x4 = self.upsample1(x4)
         x4 = th.cat([x4, x1], dim=1)
         x5 = self.conv5(x4)
         x5 = self.learnable_function5(x5)
-        x5 = self.upsample(x5)
+        x5 = self.upsample0(x5)
         x5 = th.cat([x5, x0], dim=1)
         x6 = self.conv6(x5)
-        x6 = self.learnable_function6(x6)
-        x6 = self.upsample(x6)
-        x7 = self.conv7(x6)
 
-        return self.lsm(self.mlp(th.flatten(x3))), x7
+        return self.lsm(self.mlp(th.flatten(x3))), x6
 
     def configure_optimizers(self):
         return th.optim.Adam(self.parameters(), lr=self.learning_rate)
