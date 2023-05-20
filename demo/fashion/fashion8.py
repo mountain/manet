@@ -35,7 +35,7 @@ class Fashion6(pl.LightningModule):
 
         self.conv0 = nn.Conv2d(1, 10, kernel_size=5, padding=2)
         self.conv1 = nn.Conv2d(10, 30, kernel_size=3, padding=1)
-        self.conv2 = nn.Conv2d(30, 80, kernel_size=3, padding=1)
+        self.conv2 = nn.Conv2d(30, 90, kernel_size=3, padding=1)
         self.conv3 = nn.Conv2d(90, 270, kernel_size=3, padding=1)
         self.conv4 = nn.Conv2d(270, 810, kernel_size=3, padding=1)
 
