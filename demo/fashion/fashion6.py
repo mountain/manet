@@ -140,7 +140,7 @@ class Fashion6(pl.LightningModule):
 
         pred = z.data.max(1, keepdim=True)[1]
         correct = pred.eq(y.data.view_as(pred)).sum() / y.size()[0]
-        self.log('correct_rate', correct, prog_bar=True)
+        self.log('correctness', correct, prog_bar=True)
         self.labeled_loss += loss.item() * y.size()[0]
         self.labeled_correct += correct.item() * y.size()[0]
         self.counter += y.size()[0]
