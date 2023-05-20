@@ -100,11 +100,15 @@ class Fashion6(pl.LightningModule):
             self.learnable_function1.debug = True
             self.learnable_function2.debug = True
             self.learnable_function3.debug = True
+            self.learnable_function4.debug = True
+            self.learnable_function5.debug = True
 
             self.learnable_function0.global_step += 1
             self.learnable_function1.global_step += 1
             self.learnable_function2.global_step += 1
             self.learnable_function3.global_step += 1
+            self.learnable_function5.global_step += 1
+            self.learnable_function5.global_step += 1
 
             import lightning.pytorch.loggers as pl_loggers
             tb_logger = None
@@ -120,6 +124,8 @@ class Fashion6(pl.LightningModule):
             self.learnable_function1.logger = tb_logger
             self.learnable_function2.logger = tb_logger
             self.learnable_function3.logger = tb_logger
+            self.learnable_function4.logger = tb_logger
+            self.learnable_function5.logger = tb_logger
 
         x, y = val_batch
         x = x.view(-1, 1, 28, 28)
@@ -130,6 +136,8 @@ class Fashion6(pl.LightningModule):
             self.learnable_function1.labels = y_true
             self.learnable_function2.labels = y_true
             self.learnable_function3.labels = y_true
+            self.learnable_function4.labels = y_true
+            self.learnable_function5.labels = y_true
 
         z, x_hat = self(x)
         loss_classify = F.nll_loss(z, y)
@@ -150,7 +158,8 @@ class Fashion6(pl.LightningModule):
             imgs = x[:10]
             y_true = y[:10]
             y_pred = pred[:10]
-            self.log_tb_images((imgs, y_true, y_pred, self.learnable_function0.global_step))
+            self.log_tb_images('Ground', (imgs, y_true, y_pred, self.learnable_function0.global_step))
+            self.log_tb_images('Recovery', (x_hat, y_true, y_pred, self.learnable_function0.global_step))
 
         self.learnable_function0.debug = False
         self.learnable_function1.debug = False
@@ -182,10 +191,10 @@ class Fashion6(pl.LightningModule):
         self.labeled_loss = 0
         self.labeled_correct = 0
 
-    def log_tb_images(self, viz_batch) -> None:
+    def log_tb_images(self, key, viz_batch) -> None:
         image, y_true, y_pred, idx = viz_batch
         for img_idx, (img, ground, pred) in enumerate(zip(image, y_true, y_pred)):
-            self.tb_logger.add_image(f"Image/{idx}_{img_idx}-{ground.item()}-{pred.item()}", img, idx)
+            self.tb_logger.add_image(f"{key}/{idx}_{img_idx}-{ground.item()}-{pred.item()}", img, idx)
 
 
 def _model_():
