@@ -23,6 +23,7 @@ class Fashion6(pl.LightningModule):
         self.upsample1 = nn.Upsample(scale_factor=14 / 7, mode='nearest')
         self.upsample2 = nn.Upsample(scale_factor=7 / 3, mode='nearest')
         self.upsample3 = nn.Upsample(scale_factor=3 / 1, mode='nearest')
+
         self.learnable_function0 = LogisticFunction(p=3.8, debug_key='lf0')
         self.learnable_function1 = LogisticFunction(p=3.8, debug_key='lf1')
         self.learnable_function2 = LogisticFunction(p=3.9, debug_key='lf2')
@@ -78,7 +79,7 @@ class Fashion6(pl.LightningModule):
         x5 = self.learnable_function5(x5)
         x6 = self.upsample2(x5)
         x6 = th.cat([x6, x2], dim=1)
-        x6 = self.conv5(x6)
+        x6 = self.conv6(x6)
         x6 = self.learnable_function6(x6)
         x7 = self.upsample1(x6)
         x7 = th.cat([x7, x1], dim=1)
