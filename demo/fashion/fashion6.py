@@ -36,7 +36,7 @@ class Fashion6(pl.LightningModule):
 
         self.conv4 = nn.Conv2d(45 + 135, 60, kernel_size=3, padding=1)
         self.conv5 = nn.Conv2d(15 + 60, 25, kernel_size=3, padding=1)
-        self.conv6 = nn.Conv2d(5 + 25, 1, kernel_size=3, padding=1)
+        self.conv6 = nn.Conv2d(25, 1, kernel_size=3, padding=1)
 
         self.flat = Reshape(135 * 9)
         self.mlp = MLP(135 * 9, [10])
@@ -73,7 +73,6 @@ class Fashion6(pl.LightningModule):
         x5 = self.conv5(x5)
         x5 = self.learnable_function5(x5)
         x6 = self.upsample0(x5)
-        x6 = th.cat([x6, x0], dim=1)
         x6 = self.conv6(x6)
 
         return self.lsm(self.mlp(self.flat(x3))), x6
