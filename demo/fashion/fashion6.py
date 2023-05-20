@@ -112,13 +112,16 @@ class Fashion6(pl.LightningModule):
             self.learnable_function3.debug = True
             self.learnable_function4.debug = True
             self.learnable_function5.debug = True
+            self.learnable_function6.debug = True
+            self.learnable_function7.debug = True
 
             self.learnable_function0.global_step += 1
             self.learnable_function1.global_step += 1
             self.learnable_function2.global_step += 1
             self.learnable_function3.global_step += 1
             self.learnable_function5.global_step += 1
-            self.learnable_function5.global_step += 1
+            self.learnable_function6.global_step += 1
+            self.learnable_function7.global_step += 1
 
             import lightning.pytorch.loggers as pl_loggers
             tb_logger = None
@@ -136,6 +139,8 @@ class Fashion6(pl.LightningModule):
             self.learnable_function3.logger = tb_logger
             self.learnable_function4.logger = tb_logger
             self.learnable_function5.logger = tb_logger
+            self.learnable_function6.logger = tb_logger
+            self.learnable_function7.logger = tb_logger
 
         x, y = val_batch
         x = x.view(-1, 1, 28, 28)
@@ -148,6 +153,8 @@ class Fashion6(pl.LightningModule):
             self.learnable_function3.labels = y_true
             self.learnable_function4.labels = y_true
             self.learnable_function5.labels = y_true
+            self.learnable_function6.labels = y_true
+            self.learnable_function7.labels = y_true
 
         z, x_hat = self(x)
         loss_classify = F.nll_loss(z, y)
@@ -175,6 +182,10 @@ class Fashion6(pl.LightningModule):
         self.learnable_function1.debug = False
         self.learnable_function2.debug = False
         self.learnable_function3.debug = False
+        self.learnable_function4.debug = False
+        self.learnable_function5.debug = False
+        self.learnable_function6.debug = False
+        self.learnable_function7.debug = False
 
     def test_step(self, test_batch, batch_idx):
         x, y = test_batch
