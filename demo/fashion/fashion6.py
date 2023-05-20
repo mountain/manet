@@ -65,6 +65,8 @@ class Fashion6(pl.LightningModule):
         x3 = self.conv3(x3)
         x3 = self.learnable_function3(x3)
 
+        coeff = np.exp(- self.counter // 5000)
+
         x4 = self.upsample2(x3)
         x4 = th.cat([x4, x2], dim=1)
         x4 = self.conv4(x4)
@@ -74,7 +76,7 @@ class Fashion6(pl.LightningModule):
         x5 = self.conv5(x5)
         x5 = self.learnable_function5(x5)
         x6 = self.upsample0(x5)
-        x6 = th.cat([x6, x0 * (1 - np.exp(- self.counter // 5000))], dim=1)
+        x6 = th.cat([x6, (1 - coeff) * x0 + coeff * th.rand_like(x0)], dim=1)
         x6 = self.conv6(x6)
 
         return self.lsm(self.mlp(self.flat(x3))), x6
