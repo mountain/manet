@@ -65,7 +65,7 @@ class Fashion6(pl.LightningModule):
         x3 = self.conv3(x3)
         x3 = self.learnable_function3(x3)
 
-        coeff = np.exp(- self.counter // 5000)
+        coeff = np.exp(- self.counter // 500000)
 
         x4 = self.upsample2(x3)
         x4 = th.cat([x4, x2], dim=1)
