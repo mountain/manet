@@ -71,7 +71,7 @@ class Fashion6(pl.LightningModule):
         x3 = self.learnable_function3(x3)
         x4 = self.dnsample(x3)
         x4 = self.conv4(x4)
-        x4 = self.learnable_function3(x4)
+        x4 = self.learnable_function4(x4)
 
         x5 = self.upsample3(x4)
         x5 = th.cat([x5, x3], dim=1)
