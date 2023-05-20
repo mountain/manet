@@ -333,8 +333,8 @@ class SplineFunction(ExprFlow):
         self.num_points = num_points
         self.alpha = nn.Parameter(th.ones(1, 1, 1))
         self.beta = nn.Parameter(th.zeros(1, 1, 1))
-        self.value = nn.Parameter(th.linspace(0, 1, num_points).view(1, num_points))
-        self.derivative = nn.Parameter(th.ones(num_points).view(1, num_points) * 2 * th.pi / num_points)
+        self.value = nn.Parameter(th.linspace(0, 1, num_points).view(num_points))
+        self.derivative = nn.Parameter(th.ones(num_points).view(num_points) * 2 * th.pi / num_points)
         self.channel_transform = nn.Parameter(th.normal(0, 1, (1, 1)))
         self.spatio_transform = nn.Parameter(th.normal(0, 1, (1, 1)))
 
@@ -377,7 +377,6 @@ class SplineFunction(ExprFlow):
         x, y = line[0].detach().cpu().numpy(), curve[0].detach().cpu().numpy()
         fig = plt.figure()
         ax = fig.add_subplot(111)
-        ax.set_title('p=%f' % self.p.item())
         ax.plot(x, y)
         return fig
 
