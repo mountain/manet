@@ -12,26 +12,36 @@ class IterativeMap(nn.Module):
         super().__init__()
         self.num_steps = num_steps
 
-    def post_forward(self: It, data: th.Tensor) -> th.Tensor:
+    def before_forward(self: It, data: th.Tensor) -> th.Tensor:
         return data
 
-    def pre_mapping(self: It, data: th.Tensor) -> th.Tensor:
+    def pre_transform(self: It, data: th.Tensor) -> th.Tensor:
         return data
 
-    def post_mapping(self: It, data: th.Tensor) -> th.Tensor:
+    def befoer_mapping(self: It, data: th.Tensor) -> th.Tensor:
         return data
 
     def mapping(self: It, data: th.Tensor) -> th.Tensor:
         raise NotImplemented()
 
+    def after_mapping(self: It, data: th.Tensor) -> th.Tensor:
+        return data
+
+    def post_transform(self: It, data: th.Tensor) -> th.Tensor:
+        return data
+
+    def after_forward(self: It, data: th.Tensor) -> th.Tensor:
+        return data
+
     def forward(self: It, data: th.Tensor) -> th.Tensor:
-        data = self.pre_forward(data)
+        data = self.before_forward(data)
 
+        data = self.pre_transform(data)
         for ix in range(self.num_steps):
-            data = self.pre_mapping(data)
+            data = self.befor_mapping(data)
             data = self.mapping(data)
-            data = self.post_mapping(data)
+            data = self.after_mapping(data)
+        data = self.post_transform(data)
 
-        data = self.post_forward(data)
-
+        data = self.after_forward(data)
         return data

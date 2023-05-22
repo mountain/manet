@@ -1,24 +1,35 @@
-import aspectlib
 import torch as th
 import matplotlib.pyplot as plt
 
-from matplotlib.figure import Figure
 from aspectlib import Aspect, Proceed, Return
+
+from manet.tools.profiler import find_tb_logger
 
 
 @Aspect
-def strip_return_value(*args, **kwargs):
+def plot_iterative_function(*args, **kwargs):
     result = yield Proceed
-    yield Return(result.strip())
 
+    model = args[0]
 
-def plot_iterative_function() -> Figure:
-    line = th.linspace(0, 1, 1000).view(1, 1000)
-    curve = self.p * line * (1 - line)
+    xs = th.linspace(0, 1, 1000).view(1, 1000)
+    xs.requires_grad = False
+    ys = model.mapping(xs)
 
-    x, y = line[0].detach().cpu().numpy(), curve[0].detach().cpu().numpy()
+    xs, ys = xs[0].detach().cpu().numpy(), ys[0].detach().cpu().numpy()
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    ax.set_title('p=%f' % self.p.item())
-    ax.plot(x, y)
-    return fig
+    ax.set_title(model.title())
+    ax.plot(xs, ys)
+
+    find_tb_logger(model).add_figure(model.title(), fig, model.global_step)
+
+    yield Return(result)
+
+
+def plot_image():
+    return None
+
+
+def plot_histogram():
+    return None

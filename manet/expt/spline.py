@@ -1,8 +1,19 @@
+import torch as th
+
+from torch import nn
+from manet.iter import IterativeMap
+
+from torch import Tensor
+from typing import TypeVar, Type, Tuple
+
+from manet.tools.ploter import plot_iterative_function, plot_image, plot_histogram
+
+Sp: Type = TypeVar('Sp', bound='SplineFunction')
 
 
-class SplineFunction(ExprFlow):
+class SplineFunction(IterativeMap):
 
-    def __init__(self: U, num_steps: int = 3, num_points: int = 5, debug: bool = False, debug_key: str = None, logger: TensorBoardLogger = None) -> None:
+    def __init__(self: Sp, num_steps: int = 3, num_points: int = 5, debug: bool = False, debug_key: str = None, logger: TensorBoardLogger = None) -> None:
         super().__init__()
         self.num_steps = num_steps
         self.num_points = num_points
@@ -20,10 +31,7 @@ class SplineFunction(ExprFlow):
         self.labels = None
         self.num_samples = 20
 
-    def handler(self: P, data: Tensor) -> Tensor:
-        return th.sigmoid(data * self.alpha + self.beta) * self.num_points
-
-    def begin_end_of(self: P, handler: Tensor) -> Tuple[Tensor, Tensor, Tensor]:
+    def begin_end_of(self: Sp, handler: Tensor) -> Tuple[Tensor, Tensor, Tensor]:
         bgn = handler.floor().long()
         end = bgn + 1
         bgn = (bgn * (bgn + 1 < self.num_points) + (bgn - 1) * (bgn + 1 >= self.num_points)) * (bgn >= 0)
@@ -31,8 +39,28 @@ class SplineFunction(ExprFlow):
         t = handler - bgn
         return bgn, end, t
 
-    def spline(self: U, handler: Tensor) -> Tensor:
-        bgn, end, t = self.begin_end_of(handler)
+    @plot_iterative_function
+    def before_forward(self: Sp, data: Tensor) -> Tensor:
+        self.size = data.size()
+        return data
+
+    @plot_image
+    @plot_histogram
+    def pre_transform(self: Sp, data: Tensor) -> Tensor:
+        sz = self.size
+        data = data.view(-1, sz[1], sz[2] * sz[3])
+        data = th.permute(data, [0, 2, 1]).reshape(-1, 1)
+        data = th.matmul(data, self.channel_transform)
+        data = data.view(-1, sz[2] * sz[3], sz[1])
+        data = th.sigmoid(data)
+        return data
+
+    def befoer_mapping(self: Sp, data: th.Tensor) -> th.Tensor:
+        self.handle = th.sigmoid(data * self.alpha + self.beta) * self.num_points
+        return data
+
+    def mapping(self: Sp, data: th.Tensor) -> th.Tensor:
+        bgn, end, t = self.begin_end_of(self.handle)
         p0, p1 = self.value[bgn], self.value[end]
         m0, m1 = self.derivative[bgn], self.derivative[end]
 
@@ -44,52 +72,12 @@ class SplineFunction(ExprFlow):
 
         return q1 + q2 + q3 + q4
 
-    def plot_total_function(self: F) -> Tensor:
-        line = th.linspace(0, 1, 1000).view(1, 1000)
-        curve = self.spline(line)
-
-        import matplotlib.pyplot as plt
-        x, y = line[0].detach().cpu().numpy(), curve[0].detach().cpu().numpy()
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
-        ax.plot(x, y)
-        return fig
-
-    def forward(self: F, data: Tensor) -> Tensor:
-        sz = data.size()
-
-        if self.debug and self.logger is not None:
-            if sz[0] > self.num_samples:
-                self.logger.add_figure('%s:0:function:total' % self.debug_key, self.plot_total_function(), self.global_step)
-
-        data = data.view(-1, sz[1], sz[2] * sz[3])
-        data = th.permute(data, [0, 2, 1]).reshape(-1, 1)
-        data = th.matmul(data, self.channel_transform)
-        data = data.view(-1, sz[2] * sz[3], sz[1])
-
-        if self.debug and self.logger is not None:
-            if sz[0] > self.num_samples:
-                for ix in range(self.num_samples):
-                    self.logger.add_histogram('%s:1:before:%d:histo' % (self.debug_key, self.labels[ix]), data[ix], self.global_step)
-                    image = data[ix].view(sz[2], sz[3] * sz[1])
-                    image = (image - image.min()) / (image.max() - image.min())
-                    self.logger.add_image('%s:1:before:%d:image' % (self.debug_key, self.labels[ix]), image, self.global_step, dataformats='HW')
-
-        for ix in range(self.num_steps):
-            handler = self.handler(data)
-            data = self.spline(handler)
-
-        if self.debug and self.logger is not None:
-            if sz[0] > self.num_samples:
-                for ix in range(self.num_samples):
-                    self.logger.add_histogram('%s:2:after:%d:histo' % (self.debug_key, self.labels[ix]), data[ix], self.global_step)
-                    image = data[ix].view(sz[2], sz[3] * sz[1])
-                    image = (image - image.min()) / (image.max() - image.min())
-                    self.logger.add_image('%s:2:after:%d:image' % (self.debug_key, self.labels[ix]), image, self.global_step, dataformats='HW')
-
+    @plot_image
+    @plot_histogram
+    def post_transform(self: Sp, data: Tensor) -> Tensor:
+        sz = self.size
         data = data.view(-1, sz[2] * sz[3], sz[1])
         data = th.permute(data, [0, 2, 1]).reshape(-1, 1)
         data = th.matmul(data, self.spatio_transform)
         data = data.view(*sz)
-
         return data
