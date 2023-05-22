@@ -7,3 +7,5 @@ matplotlib
 portalocker>=2.0.0
 revtok
 transformers
+
+aspectlib
