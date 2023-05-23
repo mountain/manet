@@ -17,7 +17,7 @@ class BRModel2(TraceNet):
         pass
 
     def trace(self, width, x, y):
-        w = self.lni(th.cat((x, y), dim=1))
+        w = self.lni(th.cat((x, y), dim=1).view(-1, 2))
         w1, w2 = w[:, 0:1], w[:, 1:2]
         w1 = w1.view(-1, 1, 1, 1)
         z1 = self.lf(w1).view(-1, 1)
