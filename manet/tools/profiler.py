@@ -1,41 +1,50 @@
-counter = 0
-global_step = 0
-tb_logger = None
+ctx = {
+    'stage': None,
+    'debug': False,
+    'counter': 0,
+    'global_step': 0,
+    'sampling_steps': 10000,
+    'num_samples': 20,
+    'tb_logger': None,
+    'trainer': None,
+    'ground_truth': None,
+    'prediction': None,
+}
 
 
-def bind_profiling_context(trainer):
+def bind_profiling_context(**kwargs):
+    import lightning as pl
     import lightning.pytorch.loggers as pl_loggers
+    ctx.update(kwargs)
+    ctx['counter'] = 0
+    ctx['global_step'] = 0
 
-    global counter
-    global global_step
-    global tb_logger
+    trainer: pl.Trainer = ctx['trainer']
+    if trainer is None:
+        raise ValueError('Trainer not found')
+    else:
+        for logger in trainer.loggers:
+            if isinstance(logger, pl_loggers.TensorBoardLogger):
+                ctx['tb_logger'] = logger.experiment
+                break
+        if ctx['tb_logger'] is None:
+            raise ValueError('TensorBoard Logger not found')
 
-    counter = 0
-    global_step = 0
+    return ctx
 
-    for logger in trainer.loggers:
-        if isinstance(logger, pl_loggers.TensorBoardLogger):
-            tb_logger = logger.experiment
-            break
 
-    if tb_logger is None:
-        raise ValueError('TensorBoard Logger not found')
-
-    return counter, global_step, tb_logger
+def reset_profiling_stage(stage, **kwargs):
+    ctx['stage'] = stage
+    ctx['global_step'] = 0
+    ctx.update(kwargs)
 
 
 class Profiler:
-    def __init__(self, debug: bool = False, dkey: str = None, num_samples: int = 20):
-        self.tb_logger = None
-        self.debug = debug
+    def __init__(self, dkey: str = None):
         self.dkey = dkey
         self.order = None
-        self.sampling_steps = 10000
-        self.num_samples = num_samples
-        self.labels = None
 
     def initialize(self):
-        global counter
         if self.order is None:
-            self.order = counter
-            counter += 1
+            self.order = ctx['counter']
+            ctx['counter'] += 1

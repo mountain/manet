@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from aspectlib import Aspect, Proceed, Return
 
 from manet.iter import IterativeMap
-from manet.tools.profiler import Profiler, global_step
+from manet.tools.profiler import Profiler, ctx
 
 Model = Union[IterativeMap, Profiler]
 
@@ -14,15 +14,13 @@ Model = Union[IterativeMap, Profiler]
 def plot_iterative_function(dkey: str = None):
     @Aspect
     def iterative_function_plotter(*args, **kwargs):
-        from manet.tools.profiler import global_step, tb_logger
-
         model: Model = args[0]
         if model.counter is None:
             model.initialize()
 
         result = yield Proceed
 
-        if model.debug and global_step % model.sampling_steps == 0:
+        if model.debug and ctx['global_step'] % ctx['sampling_steps'] == 0:
             xs = th.linspace(0, 1, 1000).view(1, 1000)
             xs.requires_grad = False
             ys = model.mapping(xs)
@@ -32,7 +30,7 @@ def plot_iterative_function(dkey: str = None):
             ax = fig.add_subplot(111)
             ax.plot(xs, ys)
             key = '%d:%s:%s' % (model.order, dkey, model.dkey)
-            tb_logger.add_figure(key, fig, model.global_step)
+            ctx['tb_logger'].add_figure(key, fig, model.global_step)
 
         yield Return(result)
 
@@ -42,19 +40,17 @@ def plot_iterative_function(dkey: str = None):
 def plot_image(dkey: str = None):
     @Aspect
     def image_plotter(*args, **kwargs):
-        from manet.tools.profiler import global_step, tb_logger
-
         model: Model = args[0]
         if model.counter is None:
             model.initialize()
 
         result = yield Proceed
 
-        if model.debug and global_step % model.sampling_steps == 0:
+        if model.debug and ctx['global_step'] % ctx['sampling_steps'] == 0:
             sz = model.size
             data = result.view(-1, sz[1], sz[2] * sz[3])
             key = '%d:%s:%s' % (model.order, dkey, model.dkey)
-            tb_logger.add_image(key, data[0], model.global_step)
+            ctx['tb_logger'].add_image(key, data[0], model.global_step)
 
         yield Return(result)
 
@@ -64,19 +60,17 @@ def plot_image(dkey: str = None):
 def plot_histogram(dkey: str = None):
     @Aspect
     def histogram_plotter(*args, **kwargs):
-        from manet.tools.profiler import global_step, tb_logger
-
         model: Model = args[0]
         if model.counter is None:
             model.initialize()
 
         result = yield Proceed
 
-        if model.debug and global_step % model.sampling_steps == 0:
+        if model.debug and ctx['global_step'] % ctx['sampling_steps'] == 0:
             sz = model.size
             data = result.view(-1, sz[1], sz[2] * sz[3])
             key = '%d:%s:%s' % (model.order, dkey, model.dkey)
-            tb_logger.add_histogram(key, data[0], model.global_step)
+            ctx['tb_logger'].add_histogram(key, data[0], model.global_step)
 
         yield Return(result)
 
@@ -86,8 +80,6 @@ def plot_histogram(dkey: str = None):
 def plot_invoke(dkey: str = None):
     @Aspect
     def invoke_plotter(*args, **kwargs):
-        from manet.tools.profiler import global_step, tb_logger
-
         velo, theta = velocity.detach().cpu().numpy(), angle.detach().cpu().numpy()
         x = velo * np.cos(theta)
         y = velo * np.sin(theta)

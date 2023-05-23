@@ -1,99 +1,39 @@
-import torch as th
-import lightning as pl
-
 from torch import nn
-from torch.nn import functional as F
 
-from manet.mac import Reshape
-# from torchvision.ops import MLP
-from manet.mac import MLP, MacMatrixUnit
+from manet.mac import Reshape, MLP
+from manet.aeg.flow import LearnableFunction
+from manet.nn.model import MNISTModel
+
+# A learnable non-linearity functions with the help of gradient formula from arithmetical expression geometry.
+# The non-linearity is learned in an iterative system, and the gradient dispersal phenomenon is avoided.
+# We change the backbone to UNet.
 
 
-class MNModel4(pl.LightningModule):
-    def __init__(self, learning_rate=1e-3):
+class MNModel6(MNISTModel):
+    def __init__(self):
         super().__init__()
-        self.learning_rate = learning_rate
-        self.hidden = 28 * 4
-        self.encoder = nn.Sequential(
-            Reshape(28 * 28),
-            MLP(28 * 28, [self.hidden], mac_unit=MacMatrixUnit),
-        )
-        #self.learner = MLP(self.hidden * 2, [self.hidden * 8])
-        self.decoder = nn.Sequential(
-            MLP(self.hidden, [10]),
+        self.recognizer = nn.Sequential(
+            nn.Conv2d(1, 5, kernel_size=5, padding=2),
+            nn.MaxPool2d(2),
+            LearnableFunction(),
+            nn.Conv2d(5, 10, kernel_size=5, padding=2),
+            nn.MaxPool2d(2),
+            LearnableFunction(),
+            nn.Conv2d(10, 20, kernel_size=5, padding=2),
+            nn.MaxPool2d(2),
+            LearnableFunction(),
+            nn.Conv2d(20, 40, kernel_size=3, padding=1),
+            nn.MaxPool2d(2),
+            LearnableFunction(),
+            Reshape(40 * 3 * 3),
+            MLP(40 * 9, [10]),
+            Reshape(10),
             nn.LogSoftmax(dim=1)
         )
 
-    def ulearn(self, learner, inputs):
-        output = th.zeros_like(inputs)
-        context = th.zeros_like(inputs)
-        dc = th.zeros_like(inputs)
-        do = th.zeros_like(inputs)
-        for _ in range(6):
-            state = th.sigmoid(learner(th.cat((context, inputs), dim=1))).view(-1, 8, self.hidden)
-            p, r, t, v = state[:, 0], state[:, 1], state[:, 2], state[:, 3]
-            q, s, u, w = state[:, 4], state[:, 5], state[:, 6], state[:, 7]
-            p, q = 4 * p, 4 * q
-
-            do = th.fmod((1 - do) * do * p + inputs * v, 1) * (r > 0.5) + do * (r <= 0.5)
-            do = do * t * (r <= 0.5) + do * (r > 0.5)
-            output = output + do
-
-            dc = th.fmod((1 - dc) * dc * q + inputs * w, 1) * (s > 0.5) + dc * (s <= 0.5)
-            dc = dc * u * (s <= 0.5) + dc * (s > 0.5)
-            context = context + dc
-
-        return th.cat((output, context), dim=1)
-
     def forward(self, x):
-        inputs = self.encoder(x)
-        # output = self.ulearn(self.learner, inputs).flatten(1)
-        # output = th.cat((inputs, inputs), dim=1)
-        output = inputs
-        return self.decoder(output)
-
-    def configure_optimizers(self):
-        return th.optim.Adam(self.parameters(), lr=self.learning_rate)
-
-    def training_step(self, train_batch, batch_idx):
-        x, y = train_batch
-        x = x.view(-1, 1, 28, 28)
-        z = self(x)
-        loss = F.nll_loss(z, y)
-        self.log('train_loss', loss, prog_bar=True)
-        return loss
-
-    def validation_step(self, val_batch, batch_idx):
-        x, y = val_batch
-        x = x.view(-1, 1, 28, 28)
-        z = self(x)
-        loss = F.nll_loss(z, y)
-        self.log('val_loss', loss, prog_bar=True)
-        pred = z.data.max(1, keepdim=True)[1]
-        correct = pred.eq(y.data.view_as(pred)).sum() / y.size()[0]
-        self.log('correct', correct, prog_bar=True)
-        self.labeled_loss = loss.item()
-        self.labeled_correct = correct.item()
-
-    def test_step(self, test_batch, batch_idx):
-        x, y = test_batch
-        x = x.view(-1, 1, 28, 28)
-        z = self(x)
-        pred = z.data.max(1, keepdim=True)[1]
-        correct = pred.eq(y.data.view_as(pred)).sum() / y.size()[0]
-        self.log('correct', correct, prog_bar=True)
-
-    def on_save_checkpoint(self, checkpoint) -> None:
-        import pickle, glob, os
-
-        record = '%2.5f-%03d-%1.5f.ckpt' % (self.labeled_correct, checkpoint['epoch'], self.labeled_loss)
-        fname = 'best-%s' % record
-        with open(fname, 'bw') as f:
-            pickle.dump(checkpoint, f)
-        for ix, ckpt in enumerate(sorted(glob.glob('best-*.ckpt'), reverse=True)):
-            if ix > 5:
-                os.unlink(ckpt)
+        return self.recognizer(x)
 
 
 def _model_():
-    return MNModel4()
+    return MNModel6()

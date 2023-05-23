@@ -5,6 +5,7 @@ from torch import nn
 from torch.nn import functional as F
 from torchvision.ops import MLP
 
+from manet.tools.profiler import bind_profiling_context
 from manet.expt.logistic import LogisticFunction
 from manet.mac import Reshape
 
@@ -41,12 +42,6 @@ class MNModel9(pl.LightningModule):
             nn.LogSoftmax(dim=1)
         )
 
-        self.tb_logger = None
-        self.learnable_function0.logger = None
-        self.learnable_function1.logger = None
-        self.learnable_function2.logger = None
-        self.learnable_function3.logger = None
-
     def backward(self, loss, *args, **kwargs):
         loss.backward(*args, **kwargs, retain_graph=True)
 
@@ -75,21 +70,6 @@ class MNModel9(pl.LightningModule):
             self.learnable_function1.global_step += 1
             self.learnable_function2.global_step += 1
             self.learnable_function3.global_step += 1
-
-            import lightning.pytorch.loggers as pl_loggers
-            tb_logger = None
-            for logger in self.trainer.loggers:
-                if isinstance(logger, pl_loggers.TensorBoardLogger):
-                    tb_logger = logger.experiment
-                    break
-            if tb_logger is None:
-                raise ValueError('TensorBoard Logger not found')
-
-            self.tb_logger = tb_logger
-            self.learnable_function0.logger = tb_logger
-            self.learnable_function1.logger = tb_logger
-            self.learnable_function2.logger = tb_logger
-            self.learnable_function3.logger = tb_logger
 
         x, y = val_batch
         x = x.view(-1, 1, 28, 28)
