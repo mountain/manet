@@ -6,7 +6,7 @@ from torch.utils.data import Dataset
 class ValidDataset(Dataset):
 
     def __len__(self):
-        return 100
+        return 256
 
     def __getitem__(self, index):
         #rng = 10 * np.random.rand(1)
@@ -17,7 +17,7 @@ class ValidDataset(Dataset):
 class TestDataset(Dataset):
 
     def __len__(self):
-        return 100
+        return 256
 
     def __getitem__(self, index):
         #rng = 10 * np.random.rand(1)
@@ -28,7 +28,7 @@ class TestDataset(Dataset):
 class TrainDataset(Dataset):
 
     def __len__(self):
-        return 1000
+        return 2048
 
     def __getitem__(self, index):
         #rng = 10 * np.random.rand(1)
