@@ -41,7 +41,7 @@ if __name__ == '__main__':
     # training
     print('construct trainer...')
     trainer = pl.Trainer(accelerator=accelerator, precision=32, max_epochs=opt.n_epochs,
-                         callbacks=[EarlyStopping(monitor="loss", mode="max", patience=30)])
+                         callbacks=[EarlyStopping(monitor="val_loss", mode="max", patience=30)])
     bind_profiling_context(trainer=trainer)
 
     import importlib
