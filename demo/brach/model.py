@@ -92,16 +92,17 @@ class TraceNet(BrachNet):
         b = inputs.size()[0]
         result = []
         w = inputs[:, 0:1].reshape(b, 1, 1)
-        y = inputs[:, 1:2].reshape(b, 1, 1)
-        self.init(w, th.zeros_like(y), y)
+        y0 = inputs[:, 1:2].reshape(b, 1, 1)
+        self.init(w, th.zeros_like(y0), y0)
+        y = y0
         for ix in range(1001):
             if ix == 0:
-                result.append(y)
+                result.append(y0)
             elif ix == 1000:
-                result.append(th.zeros_like(y))
+                result.append(th.zeros_like(y0))
             else:
                 ratio = ix / 1000
                 x = w * ratio
-                y = (1 - ratio) * (1 - ratio * self.trace(w, x, y))
+                y = (1 - ratio) * (y0 - ratio * self.trace(w, x, y))
                 result.append(y)
         return th.cat(result, dim=1)
