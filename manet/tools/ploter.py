@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from aspectlib import Aspect, Proceed, Return
 
 from manet.iter import IterativeMap
-from manet.tools.profiler import Profiler
+from manet.tools.profiler import Profiler, global_step
 
 Model = Union[IterativeMap, Profiler]
 
@@ -20,7 +20,7 @@ def plot_iterative_function(dkey: str = None):
 
         result = yield Proceed
 
-        if model.debug and model.global_step % model.sampling_steps == 0:
+        if model.debug and global_step % model.sampling_steps == 0:
             xs = th.linspace(0, 1, 1000).view(1, 1000)
             xs.requires_grad = False
             ys = model.mapping(xs)
@@ -46,7 +46,7 @@ def plot_image(dkey: str = None):
 
         result = yield Proceed
 
-        if model.debug and model.global_step % model.sampling_steps == 0:
+        if model.debug and global_step % model.sampling_steps == 0:
             sz = model.size
             data = result.view(-1, sz[1], sz[2] * sz[3])
             key = '%d:%s:%s' % (model.order, dkey, model.dkey)
@@ -66,7 +66,7 @@ def plot_histogram(dkey: str = None):
 
         result = yield Proceed
 
-        if model.debug and model.global_step % model.sampling_steps == 0:
+        if model.debug and global_step % model.sampling_steps == 0:
             sz = model.size
             data = result.view(-1, sz[1], sz[2] * sz[3])
             key = '%d:%s:%s' % (model.order, dkey, model.dkey)

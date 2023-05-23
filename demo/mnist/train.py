@@ -6,6 +6,7 @@ import torch
 import lightning.pytorch as pl
 
 from lightning.pytorch.callbacks.early_stopping import EarlyStopping
+from manet.tools.profiler import bind_profiling_context
 
 
 parser = argparse.ArgumentParser()
@@ -49,6 +50,7 @@ if __name__ == '__main__':
     print('construct trainer...')
     trainer = pl.Trainer(accelerator=accelerator, precision=32, max_epochs=opt.n_epochs,
                          callbacks=[EarlyStopping(monitor="correctness", mode="max", patience=30)])
+    bind_profiling_context(trainer)
 
     import importlib
     print('construct model...')
