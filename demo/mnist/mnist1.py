@@ -8,6 +8,10 @@ from manet.nn.model import MNISTModel
 # Logistic map exhibits chaotic behavior for p > 3.56995
 # Here we check the behavior of the logistic map for p = 3.5
 # and compare it with the behavior of the ReLU function.
+#
+# Result:
+# The loss is stopped at 2.30, which is the random guess loss.
+
 
 class MNModel1(MNISTModel):
     def __init__(self):
