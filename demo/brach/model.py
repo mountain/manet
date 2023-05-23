@@ -17,8 +17,8 @@ class BrachNet(pl.LightningModule):
         self.lr = 0.01
 
     def make_plot(self, xs, ys, ix):
-        inputs = xs[0].cpu().numpy().reshape([2])
-        ylist = ys[0].cpu().numpy().reshape([1001])
+        inputs = xs[0].detach().cpu().numpy().reshape([2])
+        ylist = ys[0].detach().cpu().numpy().reshape([1001])
         xlist = np.linspace(0, inputs[0], 1001)
 
         fig = plt.figure()
@@ -72,7 +72,6 @@ class BrachNet(pl.LightningModule):
         err, t, lss = self.benchmark(xs, ys, yt)
         self.log('val_loss', lss, prog_bar=True)
         self.make_plot(xs, ys, batch_idx)
-        return lss
 
     def test_step(self, test_batch, batch_idx):
         reset_profiling_stage('test')
@@ -80,7 +79,6 @@ class BrachNet(pl.LightningModule):
         ys = self.forward(xs)
         err, t, lss = self.benchmark(xs, ys, yt)
         self.log('test_loss', lss)
-        return lss
 
 
 class TraceNet(BrachNet):
