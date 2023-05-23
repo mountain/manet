@@ -1,25 +1,16 @@
 import numpy as np
 import torch as th
 import torch.nn as nn
-from lightning.pytorch.loggers import TensorBoardLogger
 
 from torch import Tensor
-from typing import TypeVar, Tuple, Callable, Union
+from typing import TypeVar, Callable, Union
 
 from manet.aeg.params import CubicHermiteParam
 from manet.nn.iter import IterativeMap
 from manet.tools.ploter import plot_iterative_function, plot_image, plot_histogram
 from manet.tools.profiler import Profiler
 
-F = TypeVar('F', bound='ExprFlow')
 Lf = TypeVar('Lf', bound='LearnableFunction')
-
-
-Accessor = Callable[[Tensor], Tensor]
-Mapper = Callable[[Tensor], Tensor]
-Evaluator = Callable[[Tensor], Tensor]
-Reducer = Callable[[Evaluator, Tensor, Tensor], Tensor]
-Initializer = Union[None, Callable, Tensor]
 
 
 class LearnableFunction(IterativeMap, Profiler):
