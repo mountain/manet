@@ -1,35 +1,91 @@
+from ctypes import Union
+
 import torch as th
 import matplotlib.pyplot as plt
 
 from aspectlib import Aspect, Proceed, Return
 
-from manet.tools.profiler import find_tb_logger
+from manet.iter import IterativeMap
+from manet.tools.profiler import Profiler
+
+Model = Union[IterativeMap, Profiler]
 
 
-@Aspect
-def plot_iterative_function(*args, **kwargs):
-    result = yield Proceed
+def plot_iterative_function(dkey: str = None):
+    @Aspect
+    def iterative_function_plotter(*args, **kwargs):
+        model: Model = args[0]
+        if model.tb_logger is None:
+            model.initialize()
 
-    model = args[0]
+        result = yield Proceed
 
-    xs = th.linspace(0, 1, 1000).view(1, 1000)
-    xs.requires_grad = False
-    ys = model.mapping(xs)
+        if model.debug and model.global_step % model.sampling_steps == 0:
+            xs = th.linspace(0, 1, 1000).view(1, 1000)
+            xs.requires_grad = False
+            ys = model.mapping(xs)
+            xs, ys = xs[0].detach().cpu().numpy(), ys[0].detach().cpu().numpy()
 
-    xs, ys = xs[0].detach().cpu().numpy(), ys[0].detach().cpu().numpy()
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    ax.set_title(model.title())
-    ax.plot(xs, ys)
+            fig = plt.figure()
+            ax = fig.add_subplot(111)
+            ax.plot(xs, ys)
+            key = '%d:%s:%s' % (model.order, dkey, model.dkey)
+            model.tb_logger.add_figure(key, fig, model.global_step)
 
-    find_tb_logger(model).add_figure(model.title(), fig, model.global_step)
+        yield Return(result)
 
-    yield Return(result)
-
-
-def plot_image():
-    return None
+    return iterative_function_plotter
 
 
-def plot_histogram():
-    return None
+def plot_image(dkey: str = None):
+    @Aspect
+    def image_plotter(*args, **kwargs):
+        model: Model = args[0]
+        if model.tb_logger is None:
+            model.initialize()
+
+        result = yield Proceed
+
+        if model.debug and model.global_step % model.sampling_steps == 0:
+            sz = model.size
+            data = result.view(-1, sz[1], sz[2] * sz[3])
+            key = '%d:%s:%s' % (model.order, dkey, model.dkey)
+            model.tb_logger.add_image(key, data[0], model.global_step)
+
+        yield Return(result)
+
+    return image_plotter
+
+
+def plot_histogram(dkey: str = None):
+    @Aspect
+    def histogram_plotter(*args, **kwargs):
+        model: Model = args[0]
+        if model.tb_logger is None:
+            model.initialize()
+
+        result = yield Proceed
+
+        if model.debug and model.global_step % model.sampling_steps == 0:
+            sz = model.size
+            data = result.view(-1, sz[1], sz[2] * sz[3])
+            key = '%d:%s:%s' % (model.order, dkey, model.dkey)
+            model.tb_logger.add_histogram(key, data[0], model.global_step)
+
+        yield Return(result)
+
+    return histogram_plotter
+
+
+def plot_invoke(dkey: str = None):
+    @Aspect
+    def invoke_plotter(*args, **kwargs):
+        velo, theta = velocity.detach().cpu().numpy(), angle.detach().cpu().numpy()
+        x = velo * np.cos(theta)
+        y = velo * np.sin(theta)
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        ax.scatter(x, y)
+        return fig
+
+    return invoke_plotter

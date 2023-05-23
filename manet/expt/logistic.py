@@ -2,6 +2,7 @@ import torch as th
 
 from torch import nn
 from manet.iter import IterativeMap
+from manet.tools.profiler import Profiler
 
 from torch import Tensor
 from typing import TypeVar, Type
@@ -11,29 +12,25 @@ from manet.tools.ploter import plot_iterative_function, plot_image, plot_histogr
 Lg: Type = TypeVar('Lg', bound='LogisticFunction')
 
 
-class LogisticFunction(IterativeMap):
+class LogisticFunction(IterativeMap, Profiler):
+    dkey: str = 'lg'
 
-    def __init__(self: Lg, num_steps: int = 3, p: float = 3.8, debug: bool = False, debug_key: str = None, logger: TensorBoardLogger = None) -> None:
-        super().__init__(num_steps=num_steps)
+    def __init__(self: Lg, num_steps: int = 3, p: float = 3.8, debug: bool = False, dkey: str = None) -> None:
+        IterativeMap.__init__(self, num_steps=num_steps)
+        Profiler.__init__(self, debug=debug, dkey=dkey)
+
         self.size = None
         self.p = nn.Parameter(th.ones(1).view(1, 1)) * p
         self.channel_transform = nn.Parameter(th.normal(0, 1, (1, 1)))
         self.spatio_transform = nn.Parameter(th.normal(0, 1, (1, 1)))
 
-        self.debug = debug
-        self.debug_key = debug_key
-        self.logger = logger
-        self.global_step = 0
-        self.labels = None
-        self.num_samples = 20
-
-    @plot_iterative_function
+    @plot_iterative_function(dkey)
     def before_forward(self: Lg, data: Tensor) -> Tensor:
         self.size = data.size()
         return data
 
-    @plot_image
-    @plot_histogram
+    @plot_image(dkey)
+    @plot_histogram(dkey)
     def pre_transform(self: Lg, data: Tensor) -> Tensor:
         sz = self.size
         data = data.view(-1, sz[1], sz[2] * sz[3])
@@ -46,8 +43,8 @@ class LogisticFunction(IterativeMap):
     def mapping(self: Lg, data: th.Tensor) -> th.Tensor:
         return self.p * data * (1 - data)
 
-    @plot_image
-    @plot_histogram
+    @plot_image(dkey)
+    @plot_histogram(dkey)
     def post_transform(self: Lg, data: Tensor) -> Tensor:
         sz = self.size
         data = data.view(-1, sz[2] * sz[3], sz[1])

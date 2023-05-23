@@ -7,14 +7,18 @@ from torch import Tensor
 from typing import TypeVar, Type, Tuple
 
 from manet.tools.ploter import plot_iterative_function, plot_image, plot_histogram
+from manet.tools.profiler import Profiler
 
 Sp: Type = TypeVar('Sp', bound='SplineFunction')
 
 
 class SplineFunction(IterativeMap):
+    dkey: str = 'sp'
 
-    def __init__(self: Sp, num_steps: int = 3, num_points: int = 5, debug: bool = False, debug_key: str = None, logger: TensorBoardLogger = None) -> None:
-        super().__init__()
+    def __init__(self: Sp, num_steps: int = 3, num_points: int = 5, debug: bool = False, dkey: str = None) -> None:
+        super(IterativeMap, self).__init__(num_steps=num_steps)
+        super(Profiler, self).__init__(debug=debug, dkey=dkey)
+
         self.num_steps = num_steps
         self.num_points = num_points
         self.alpha = nn.Parameter(th.ones(1, 1, 1))
@@ -24,13 +28,6 @@ class SplineFunction(IterativeMap):
         self.channel_transform = nn.Parameter(th.normal(0, 1, (1, 1)))
         self.spatio_transform = nn.Parameter(th.normal(0, 1, (1, 1)))
 
-        self.debug = debug
-        self.debug_key = debug_key
-        self.logger = logger
-        self.global_step = 0
-        self.labels = None
-        self.num_samples = 20
-
     def begin_end_of(self: Sp, handler: Tensor) -> Tuple[Tensor, Tensor, Tensor]:
         bgn = handler.floor().long()
         end = bgn + 1
@@ -39,13 +36,13 @@ class SplineFunction(IterativeMap):
         t = handler - bgn
         return bgn, end, t
 
-    @plot_iterative_function
+    @plot_iterative_function(dkey)
     def before_forward(self: Sp, data: Tensor) -> Tensor:
         self.size = data.size()
         return data
 
-    @plot_image
-    @plot_histogram
+    @plot_image(dkey)
+    @plot_histogram(dkey)
     def pre_transform(self: Sp, data: Tensor) -> Tensor:
         sz = self.size
         data = data.view(-1, sz[1], sz[2] * sz[3])
@@ -55,12 +52,9 @@ class SplineFunction(IterativeMap):
         data = th.sigmoid(data)
         return data
 
-    def befoer_mapping(self: Sp, data: th.Tensor) -> th.Tensor:
-        self.handle = th.sigmoid(data * self.alpha + self.beta) * self.num_points
-        return data
-
     def mapping(self: Sp, data: th.Tensor) -> th.Tensor:
-        bgn, end, t = self.begin_end_of(self.handle)
+        handle = th.sigmoid(data * self.alpha + self.beta) * self.num_points
+        bgn, end, t = self.begin_end_of(handle)
         p0, p1 = self.value[bgn], self.value[end]
         m0, m1 = self.derivative[bgn], self.derivative[end]
 
@@ -72,8 +66,8 @@ class SplineFunction(IterativeMap):
 
         return q1 + q2 + q3 + q4
 
-    @plot_image
-    @plot_histogram
+    @plot_image(dkey)
+    @plot_histogram(dkey)
     def post_transform(self: Sp, data: Tensor) -> Tensor:
         sz = self.size
         data = data.view(-1, sz[2] * sz[3], sz[1])

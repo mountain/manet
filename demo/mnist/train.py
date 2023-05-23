@@ -11,7 +11,7 @@ from lightning.pytorch.callbacks.early_stopping import EarlyStopping
 parser = argparse.ArgumentParser()
 parser.add_argument("-n", "--n_epochs", type=int, default=50, help="number of epochs of training")
 parser.add_argument("-b", "--batch", type=int, default=32, help="batch size of training")
-parser.add_argument("-m", "--model", type=str, default='mnist11', help="model to execute")
+parser.add_argument("-m", "--model", type=str, default='mnist9', help="model to execute")
 opt = parser.parse_args()
 
 if torch.cuda.is_available():

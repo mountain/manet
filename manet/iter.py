@@ -8,8 +8,8 @@ It: Type = TypeVar('It', bound='IterativeMap')
 
 
 class IterativeMap(nn.Module):
-    def __init__(self: It, num_steps: int = 3) -> None:
-        super().__init__()
+    def __init__(self: It, num_steps: int = 3, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
         self.num_steps = num_steps
 
     def before_forward(self: It, data: th.Tensor) -> th.Tensor:
