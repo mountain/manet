@@ -34,9 +34,9 @@ if __name__ == '__main__':
 
     ds_train, ds_val, ds_test = TrainDataset(), ValidDataset(), TestDataset()
 
-    train_loader = DataLoader(ds_train, shuffle=True, batch_size=opt.batch, num_workers=8)
-    val_loader = DataLoader(ds_val, batch_size=opt.batch, num_workers=8)
-    test_loader = DataLoader(ds_test, batch_size=opt.batch, num_workers=8)
+    train_loader = DataLoader(ds_train, shuffle=False, batch_size=opt.batch, num_workers=1)
+    val_loader = DataLoader(ds_val, batch_size=opt.batch, num_workers=1)
+    test_loader = DataLoader(ds_test, batch_size=opt.batch, num_workers=1)
 
     # training
     print('construct trainer...')
