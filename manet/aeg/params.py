@@ -5,7 +5,7 @@ from torch import Tensor
 from typing import TypeVar, Tuple, Callable, Union, Dict
 from torch.nn import Module
 
-P = TypeVar('P', bound='Parametor')
+P = TypeVar('P', bound='Param')
 
 Initializer = Union[None, Callable, Tensor]
 
