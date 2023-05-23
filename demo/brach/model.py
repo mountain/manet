@@ -71,13 +71,13 @@ class BrachNet(pl.LightningModule):
         ys = self.forward(xs)
         err, t, lss = self.benchmark(xs, ys, yt)
         self.log('val_loss', lss, prog_bar=True)
-        self.make_plot(xs, ys, batch_idx)
+        self.make_plot(xs, ys, self.current_epoch)
 
     def test_step(self, test_batch, batch_idx):
         reset_profiling_stage('test')
         xs, yt = test_batch
         ys = self.forward(xs)
-        err, t, lss = self.benchmark(xs, ys, self.current_epoch)
+        err, t, lss = self.benchmark(xs, ys, yt)
         self.log('test_loss', lss)
 
 
