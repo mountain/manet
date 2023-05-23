@@ -2,7 +2,7 @@ import torch as th
 import lightning as ltn
 import torch.nn.functional as F
 
-from manet.tools.profiler import reset_profiling_stage, is_profiling_on, ctx
+from manet.tools.profiler import reset_profiling_stage, is_profiling, ctx
 
 
 class BaseModel(ltn.LightningModule):
@@ -56,7 +56,7 @@ class MNISTModel(BaseModel):
         self.labeled_correct += correct.item() * y.size()[0]
         self.counter += y.size()[0]
 
-        if is_profiling_on():
+        if is_profiling():
             num_samples = ctx['num_samples']
             ctx['original_input'] = x[:num_samples]
             ctx['ground_truth'] = y[:num_samples]

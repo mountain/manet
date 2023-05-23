@@ -13,19 +13,18 @@ class MNModel5(MNISTModel):
         super().__init__()
         self.recognizer = nn.Sequential(
             nn.Conv2d(1, 5, kernel_size=5, padding=2),
-            nn.MaxPool2d(2),
             LearnableFunction(),
-            nn.Conv2d(5, 10, kernel_size=5, padding=2),
             nn.MaxPool2d(2),
+            nn.Conv2d(5, 15, kernel_size=5, padding=2),
             LearnableFunction(),
-            nn.Conv2d(10, 20, kernel_size=5, padding=2),
             nn.MaxPool2d(2),
+            nn.Conv2d(15, 45, kernel_size=5, padding=2),
             LearnableFunction(),
-            nn.Conv2d(20, 40, kernel_size=3, padding=1),
             nn.MaxPool2d(2),
+            nn.Conv2d(45, 135, kernel_size=3, padding=1),
             LearnableFunction(),
-            Reshape(40 * 3 * 3),
-            MLP(40 * 9, [10]),
+            Reshape(135 * 3 * 3),
+            MLP(135 * 9, [10]),
             Reshape(10),
             nn.LogSoftmax(dim=1)
         )

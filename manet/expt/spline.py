@@ -1,7 +1,7 @@
 import torch as th
 
 from torch import nn
-from manet.iter import IterativeMap
+from manet.nn.iter import IterativeMap
 
 from torch import Tensor
 from typing import TypeVar, Type, Tuple
@@ -12,14 +12,13 @@ from manet.tools.profiler import Profiler
 Sp: Type = TypeVar('Sp', bound='SplineFunction')
 
 
-class SplineFunction(IterativeMap):
+class SplineFunction(IterativeMap, Profiler):
     dkey: str = 'sp'
 
     def __init__(self: Sp, num_steps: int = 3, num_points: int = 5, debug: bool = False, dkey: str = None) -> None:
-        super(IterativeMap, self).__init__(num_steps=num_steps)
-        super(Profiler, self).__init__(debug=debug, dkey=dkey)
+        IterativeMap.__init__(self, num_steps=num_steps)
+        Profiler.__init__(self, dkey=dkey)
 
-        self.num_steps = num_steps
         self.num_points = num_points
         self.alpha = nn.Parameter(th.ones(1, 1, 1))
         self.beta = nn.Parameter(th.zeros(1, 1, 1))

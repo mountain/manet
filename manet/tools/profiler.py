@@ -39,6 +39,10 @@ def reset_profiling_stage(stage, **kwargs):
     ctx.update(kwargs)
 
 
+def is_profiling():
+    return ctx['stage'] == 'valid'
+
+
 class Profiler:
     def __init__(self, dkey: str = None):
         self.dkey = dkey

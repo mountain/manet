@@ -18,7 +18,7 @@ class IterativeMap(nn.Module):
     def pre_transform(self: It, data: th.Tensor) -> th.Tensor:
         return data
 
-    def befoer_mapping(self: It, data: th.Tensor) -> th.Tensor:
+    def before_mapping(self: It, data: th.Tensor) -> th.Tensor:
         return data
 
     def mapping(self: It, data: th.Tensor) -> th.Tensor:
@@ -38,7 +38,7 @@ class IterativeMap(nn.Module):
 
         data = self.pre_transform(data)
         for ix in range(self.num_steps):
-            data = self.befor_mapping(data)
+            data = self.before_mapping(data)
             data = self.mapping(data)
             data = self.after_mapping(data)
         data = self.post_transform(data)

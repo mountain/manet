@@ -1,7 +1,7 @@
 import torch as th
 
 from torch import nn
-from manet.iter import IterativeMap
+from manet.nn.iter import IterativeMap
 from manet.tools.profiler import Profiler
 
 from torch import Tensor
@@ -15,9 +15,9 @@ Lg: Type = TypeVar('Lg', bound='LogisticFunction')
 class LogisticFunction(IterativeMap, Profiler):
     dkey: str = 'lg'
 
-    def __init__(self: Lg, num_steps: int = 3, p: float = 3.8, debug: bool = False, dkey: str = None) -> None:
+    def __init__(self: Lg, num_steps: int = 3, p: float = 3.8, dkey: str = None) -> None:
         IterativeMap.__init__(self, num_steps=num_steps)
-        Profiler.__init__(self, debug=debug, dkey=dkey)
+        Profiler.__init__(self, dkey=dkey)
 
         self.size = None
         self.p = nn.Parameter(th.ones(1).view(1, 1)) * p

@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 from aspectlib import Aspect, Proceed, Return
 
-from manet.iter import IterativeMap
+from manet.nn.iter import IterativeMap
 from manet.tools.profiler import Profiler, ctx
 
 Model = Union[IterativeMap, Profiler]
@@ -15,12 +15,12 @@ def plot_iterative_function(dkey: str = None):
     @Aspect
     def iterative_function_plotter(*args, **kwargs):
         model: Model = args[0]
-        if model.counter is None:
+        if model.order is None:
             model.initialize()
 
         result = yield Proceed
 
-        if model.debug and ctx['global_step'] % ctx['sampling_steps'] == 0:
+        if ctx['debug'] and ctx['global_step'] % ctx['sampling_steps'] == 0:
             xs = th.linspace(0, 1, 1000).view(1, 1000)
             xs.requires_grad = False
             ys = model.mapping(xs)
@@ -41,12 +41,12 @@ def plot_image(dkey: str = None):
     @Aspect
     def image_plotter(*args, **kwargs):
         model: Model = args[0]
-        if model.counter is None:
+        if model.order is None:
             model.initialize()
 
         result = yield Proceed
 
-        if model.debug and ctx['global_step'] % ctx['sampling_steps'] == 0:
+        if ctx['debug'] and ctx['global_step'] % ctx['sampling_steps'] == 0:
             sz = model.size
             data = result.view(-1, sz[1], sz[2] * sz[3])
             key = '%d:%s:%s' % (model.order, dkey, model.dkey)
@@ -61,12 +61,12 @@ def plot_histogram(dkey: str = None):
     @Aspect
     def histogram_plotter(*args, **kwargs):
         model: Model = args[0]
-        if model.counter is None:
+        if model.order is None:
             model.initialize()
 
         result = yield Proceed
 
-        if model.debug and ctx['global_step'] % ctx['sampling_steps'] == 0:
+        if ctx['debug'] and ctx['global_step'] % ctx['sampling_steps'] == 0:
             sz = model.size
             data = result.view(-1, sz[1], sz[2] * sz[3])
             key = '%d:%s:%s' % (model.order, dkey, model.dkey)
