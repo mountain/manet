@@ -11,7 +11,7 @@ class ValidDataset(Dataset):
     def __getitem__(self, index):
         #rng = 10 * np.random.rand(1)
         #return np.float32(rng), 0
-        return np.array((2, 1), dtype=np.float32), 0
+        return np.array((10, 2), dtype=np.float32), 0
 
 
 class TestDataset(Dataset):
@@ -22,7 +22,7 @@ class TestDataset(Dataset):
     def __getitem__(self, index):
         #rng = 10 * np.random.rand(1)
         #return np.float32(rng), 0
-        return np.array((2, 1), dtype=np.float32), 0
+        return np.array((10, 2), dtype=np.float32), 0
 
 
 class TrainDataset(Dataset):
@@ -33,4 +33,4 @@ class TrainDataset(Dataset):
     def __getitem__(self, index):
         #rng = 10 * np.random.rand(1)
         #return np.float32(rng), 0
-        return np.array((2, 1), dtype=np.float32), 0
+        return np.array((10, 2), dtype=np.float32), 0
