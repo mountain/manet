@@ -77,7 +77,7 @@ class BrachNet(pl.LightningModule):
         reset_profiling_stage('test')
         xs, yt = test_batch
         ys = self.forward(xs)
-        err, t, lss = self.benchmark(xs, ys, yt)
+        err, t, lss = self.benchmark(xs, ys, self.current_epoch)
         self.log('test_loss', lss)
 
 
