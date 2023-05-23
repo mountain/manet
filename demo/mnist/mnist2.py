@@ -9,6 +9,10 @@ from manet.nn.model import MNISTModel
 # but when p < 3.82843, there are still some periodic islands.
 # Here we check the behavior of the logistic map for p = 3.8
 # and compare it with the behavior of the ReLU function.
+#
+# Result:
+# The loss was dropped from 2.30, and the accuracy was good.
+# accuracy = ?????
 
 
 class MNModel2(MNISTModel):

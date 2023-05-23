@@ -8,6 +8,10 @@ from manet.nn.model import MNISTModel
 
 # Spline functions can be used to approximate any continuous function.
 # but in an iterative system, the non-linearity can not be learned for the dispersal of the gradient.
+#
+# Result:
+# The loss is stopped at 2.30, which is the random guess loss.
+# accuracy = ?????
 
 
 class MNModel4(MNISTModel):

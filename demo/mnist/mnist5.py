@@ -6,7 +6,10 @@ from manet.nn.model import MNISTModel
 
 # A learnable non-linearity functions with the help of gradient formula from arithmetical expression geometry.
 # The non-linearity is learned in an iterative system, and the gradient dispersal phenomenon is avoided.
-
+#
+# Result:
+# The loss was dropped from 2.30, and the accuracy was better.
+# accuracy = ?????
 
 class MNModel5(MNISTModel):
     def __init__(self):

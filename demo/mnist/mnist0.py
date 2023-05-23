@@ -6,6 +6,9 @@ from manet.nn.model import MNISTModel
 
 # Baseline model with ReLU activation function.
 # A normal CNN as backbone model for all our tests.
+#
+# Result:
+# accuracy = ?????
 
 
 class MNModel0(MNISTModel):
