@@ -1,15 +1,15 @@
 import torch as th
 import torch.nn as nn
 
-from manet.mac import MLP
+from manet.mac import MLP, MacMatrixUnit
 from demo.brach.model import TraceNet
 
 
-class BRModel4(TraceNet):
+class BRModel5(TraceNet):
     def __init__(self):
         super().__init__()
-        self.mlp = MLP(2, [1])
-        self.model_name = 'v4'
+        self.mlp = MLP(2, [1], mac_unit=MacMatrixUnit)
+        self.model_name = 'v5'
 
     def init(self, width, x, y):
         pass
@@ -19,4 +19,4 @@ class BRModel4(TraceNet):
 
 
 def _model_():
-    return BRModel4()
+    return BRModel5()
