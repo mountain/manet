@@ -11,6 +11,7 @@ from manet.nn.model import MNISTModel
 # The loss was dropped from 2.30, and the accuracy was better.
 # accuracy = ?????
 
+
 class MNModel5(MNISTModel):
     def __init__(self):
         super().__init__()
