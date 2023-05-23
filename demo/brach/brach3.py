@@ -20,8 +20,8 @@ class BRModel2(TraceNet):
         w = self.lni(th.cat((x, y), dim=1))
         w1, w2 = w[:, 0:1], w[:, 1:2]
         w1 = w1.view(-1, 1, 1, 1)
-        z1 = self.lf(w1).view(-1, 1, 1)
-        return self.lno(th.cat((z1, w2), dim=1))[:, 0].view(-1, 1, 1)
+        z1 = self.lf(w1).view(-1, 1)
+        return self.lno(th.cat((z1, w2), dim=1))[:, 0:1].view(-1, 1, 1)
 
 
 def _model_():
