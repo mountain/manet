@@ -197,9 +197,8 @@ class MacSTPUnit(AbstractMacUnit):
         data = th.matmul(self.ch_transform, data)
         data = th.matmul(data, self.sp_transform)
         data = data.view(-1, self.in_channel, self.out_channel, self.in_spatio, self.out_spatio)
-        data = data * self.weight
         data = self.nonlinear(data)
-        data = th.mean(data, dim=(1, 3))
+        data = th.mean(self.weight * data, dim=(1, 3))
 
         return data
 
