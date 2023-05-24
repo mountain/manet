@@ -170,16 +170,12 @@ class MacSTPUnit(AbstractMacUnit):
         super().__init__(in_channel, out_channel, in_spatio, out_spatio, num_steps, step_length, num_points)
         self.channel_dim, self.spatio_dim = self.calculate()
 
-        self.ch_weight = nn.Parameter(
-            th.normal(0, 1, (in_channel, 1))
-        )
-        ch_identity = th.diag(nn.Parameter(th.ones(out_channel)))
-        self.ch_transform = th.kron(self.ch_weight, ch_identity)
-        self.sp_weight = nn.Parameter(
-            th.normal(0, 1, (1, in_spatio))
-        )
-        sp_identity = th.diag(nn.Parameter(th.ones(out_spatio)))
-        self.sp_transform = th.kron(self.sp_weight, sp_identity)
+        ch_weight = th.ones(out_channel, 1)
+        ch_identity = th.diag(nn.Parameter(th.ones(in_channel)))
+        self.ch_transform = th.kron(ch_weight, ch_identity)
+        sp_weight = th.ones(1, out_spatio)
+        sp_identity = th.diag(nn.Parameter(th.ones(in_spatio)))
+        self.sp_transform = th.kron(sp_weight, sp_identity)
         self.weight = nn.Parameter(
             th.normal(0, 1, (1, in_channel, 1, self.in_spatio, 1))
         )
