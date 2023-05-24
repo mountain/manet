@@ -163,8 +163,8 @@ class MacUnit(AbstractMacUnit):
                  out_channel: int,
                  in_spatio: int = 1,
                  out_spatio: int = 1,
-                 num_steps: int = 3,
-                 step_length: float = 0.33333,
+                 num_steps: int = 1,
+                 step_length: float = 1.,
                  num_points: int = 5,
                  ) -> None:
         super().__init__(in_channel, out_channel, in_spatio, out_spatio, num_steps, step_length, num_points)
