@@ -180,6 +180,9 @@ class MacSTPUnit(AbstractMacUnit):
         )
         sp_identity = th.diag(th.ones(in_spatio))
         self.sp_transform = th.kron(self.sp_weight, sp_identity)
+        self.weight = nn.Parameter(
+            th.normal(0, 1, (1, in_channel, 1, self.in_spatio, 1))
+        )
 
     def calculate(self: T) -> Tuple[int, int]:
         channel_dim = self.in_channel * self.out_channel
@@ -197,7 +200,7 @@ class MacSTPUnit(AbstractMacUnit):
         data = th.matmul(data, self.sp_transform)
         data = data.view(-1, self.in_channel, self.out_channel, self.in_spatio, self.out_spatio)
         data = self.nonlinear(data)
-        data = th.mean(data, dim=(1, 3))
+        data = th.mean(data * self.weight, dim=(1, 3))
 
         return data
 
