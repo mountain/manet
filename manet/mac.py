@@ -170,8 +170,8 @@ class MacUnit(AbstractMacUnit):
         super().__init__(in_channel, out_channel, in_spatio, out_spatio, num_steps, step_length, num_points)
         self.channel_dim, self.spatio_dim = self.calculate()
 
-        self.ch_transform = nn.Parameter(th.normal(0, 1, (out_channel, in_channel)))
-        self.sp_transform = nn.Parameter(th.normal(0, 1, (in_spatio, out_spatio)))
+        self.ch_transform = nn.Parameter(th.normal(0, 1, (self.channel_dim, in_channel)))
+        self.sp_transform = nn.Parameter(th.normal(0, 1, (in_spatio, self.spatio_dim)))
 
     def calculate(self: T) -> Tuple[int, int]:
         channel_dim = self.in_channel * self.out_channel
@@ -184,9 +184,11 @@ class MacUnit(AbstractMacUnit):
 
         data = data.view(-1, self.in_channel, self.in_spatio)
         data = th.matmul(self.ch_transform, data)
-        data = self.nonlinear(data)
         data = th.matmul(data, self.sp_transform)
-        data = data.view(-1, self.out_channel, self.out_spatio)
+        data = data.view(-1, self.channel_dim, self.spatio_dim)
+        data = self.nonlinear(data)
+        data = data.view(-1, self.in_channel, self.out_channel, self.in_spatio, self.out_spatio)
+        data = th.sum(data, dim=(1, 3))
 
         return data
 
