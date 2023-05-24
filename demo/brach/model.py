@@ -27,6 +27,9 @@ class BrachNet(pl.LightningModule):
 
         ctx['tb_logger'].add_figure('curve', fig, ix)
 
+    def backward(self, loss, *args, **kwargs):
+        loss.backward(*args, **kwargs, retain_graph=True)
+
     def forward(self, inputs):
         raise NotImplementedError()
 
