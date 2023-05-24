@@ -182,7 +182,6 @@ class MacUnit(AbstractMacUnit):
                 data: Tensor
                 ) -> Tensor:
 
-        data = self.nonlinear(data)
         data = data.view(-1, self.in_channel, self.in_spatio)
         data = th.matmul(self.ch_transform, data)
         data = self.nonlinear(data)
@@ -190,7 +189,6 @@ class MacUnit(AbstractMacUnit):
         data = self.nonlinear(data)
         data = data.view(-1, self.in_channel, self.out_channel, self.in_spatio, self.out_spatio)
         data = th.sum(data, dim=(1, 3))
-        data = self.nonlinear(data)
 
         return data
 
