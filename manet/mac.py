@@ -168,49 +168,30 @@ class MacSTPUnit(AbstractMacUnit):
                  num_points: int = 5,
                  ) -> None:
         super().__init__(in_channel, out_channel, in_spatio, out_spatio, num_steps, step_length, num_points)
-        self.in_channel_factor, self.out_channel_factor = None, None
-        self.in_spatio_factor, self.out_spatio_factor = None, None
-        self.channel_dim, self.spatio_dim = self.calculate()
 
-        self.in_weight = nn.Parameter(
-            th.normal(0, 1, (1, self.channel_dim, self.spatio_dim))
+        self.ch_weight = nn.Parameter(
+            th.normal(0, 1, (out_channel, 1))
         )
-        self.in_bias = nn.Parameter(
-            th.normal(0, 1, (1, self.channel_dim, self.spatio_dim))
+        ch_identity = th.diag(th.ones(in_channel))
+        self.ch_transform = th.kron(self.ch_weight, ch_identity)
+        self.sp_weight = nn.Parameter(
+            th.normal(0, 1, (1, out_spatio))
         )
-        self.out_weight = nn.Parameter(
-            th.normal(0, 1, (1, self.channel_dim, self.spatio_dim))
-        )
-        self.out_bias = nn.Parameter(
-            th.normal(0, 1, (1, self.channel_dim, self.spatio_dim))
-        )
-
-    def calculate(self: T) -> Tuple[int, int]:
-        channel_dim, self.in_channel_factor, self.out_channel_factor = _exchangeable_multiplier_(
-            self.in_channel, self.out_channel
-        )
-        spatio_dim, self.in_spatio_factor, self.out_spatio_factor = _exchangeable_multiplier_(
-            self.in_spatio, self.out_spatio
-        )
-        return channel_dim, spatio_dim
-
-    def expansion(self: T, data: Tensor) -> Tensor:
-        data = data.view(-1, self.in_channel, 1, self.in_spatio, 1)
-        data = data * self.in_weight.view(1, self.in_channel, self.in_channel_factor, self.in_spatio, self.in_spatio_factor)
-        data = data + self.in_bias.view(1, self.in_channel, self.in_channel_factor, self.in_spatio, self.in_spatio_factor)
-        return data.view(-1, self.channel_dim, self.spatio_dim)
-
-    def reduction(self: T, data: Tensor) -> Tensor:
-        data = data.view(-1, self.out_channel_factor, self.out_channel, self.out_spatio_factor, self.out_spatio)
-        return th.sum(data, dim=(1, 3))
+        sp_identity = th.diag(th.ones(in_spatio))
+        self.sp_transform = th.kron(self.sp_weight, sp_identity)
 
     def forward(self: T,
                 data: Tensor
                 ) -> Tensor:
 
-        data = self.expansion(data)
+        data = data.view(-1, self.in_channel, self.in_spatio)
+        data = th.matmul(self.channel_transform, data)
+        data = th.matmul(data, self.spatio_transform)
+        data = data.view(-1, self.in_channel, self.out_channel, self.in_spatio, self.out_spatio)
         data = self.nonlinear(data)
-        return self.reduction(data)
+        data = th.mean(data, dim=(1, 3))
+
+        return data
 
 
 class MacMatrixUnit(AbstractMacUnit):
@@ -317,7 +298,7 @@ class MLP(nn.Sequential):
         mac_steps: int = 3,
         mac_length: float = 1.0,
         mac_points: int = 5,
-        mac_unit: Type[AbstractMacUnit] = MacTensorUnit
+        mac_unit: Type[AbstractMacUnit] = MacSTPUnit
     ) -> None:
         layers = []
         in_dim = in_channels
