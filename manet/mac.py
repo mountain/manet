@@ -168,6 +168,7 @@ class MacSTPUnit(AbstractMacUnit):
                  num_points: int = 5,
                  ) -> None:
         super().__init__(in_channel, out_channel, in_spatio, out_spatio, num_steps, step_length, num_points)
+        self.channel_dim, self.spatio_dim = self.calculate()
 
         self.ch_weight = nn.Parameter(
             th.normal(0, 1, (out_channel, 1))
@@ -179,6 +180,11 @@ class MacSTPUnit(AbstractMacUnit):
         )
         sp_identity = th.diag(th.ones(in_spatio))
         self.sp_transform = th.kron(self.sp_weight, sp_identity)
+
+    def calculate(self: T) -> Tuple[int, int]:
+        channel_dim = self.in_channel * self.out_channel
+        spatio_dim = self.in_spatio * self.out_spatio
+        return channel_dim, spatio_dim
 
     def forward(self: T,
                 data: Tensor
