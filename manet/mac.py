@@ -194,11 +194,10 @@ class MacSTPUnit(AbstractMacUnit):
                 ) -> Tensor:
 
         data = data.view(-1, self.in_channel, self.in_spatio)
-        data = self.nonlinear(data)
         data = th.matmul(self.ch_transform, data)
+        data = self.nonlinear(data)
         data = th.matmul(data, self.sp_transform)
         data = data.view(-1, self.in_channel, self.out_channel, self.in_spatio, self.out_spatio)
-        data = self.nonlinear(data)
         data = th.mean(self.weight * data, dim=(1, 3))
 
         return data
