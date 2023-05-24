@@ -184,9 +184,9 @@ class MacUnit(AbstractMacUnit):
 
         data = data.view(-1, self.in_channel, self.in_spatio)
         data = th.matmul(self.ch_transform, data)
+        data = self.nonlinear(data)
         data = th.matmul(data, self.sp_transform)
         data = data.view(-1, self.channel_dim, self.spatio_dim)
-        data = self.nonlinear(data)
         data = data.view(-1, self.in_channel, self.out_channel, self.in_spatio, self.out_spatio)
         data = th.sum(data, dim=(1, 3))
 
