@@ -172,8 +172,11 @@ class MacUnit(AbstractMacUnit):
 
         self.ch_transform = nn.Parameter(th.normal(0, 1, (out_channel, in_channel)))
         self.sp_transform = nn.Parameter(th.normal(0, 1, (in_spatio, out_spatio)))
-        self.weight = nn.Parameter(
-            th.normal(0, 1, (1, in_channel, 1, self.in_spatio, 1))
+        self.in_weight = nn.Parameter(
+            th.normal(0, 1, (1, in_channel, self.in_spatio))
+        )
+        self.out_weight = nn.Parameter(
+            th.normal(0, 1, (1, out_channel, self.out_spatio))
         )
 
     def calculate(self: T) -> Tuple[int, int]:
@@ -186,9 +189,9 @@ class MacUnit(AbstractMacUnit):
                 ) -> Tensor:
 
         data = data.view(-1, self.in_channel, self.in_spatio)
-        data = th.matmul(self.ch_transform, data)
+        data = th.matmul(self.ch_transform, data * self.in_weight)
         data = self.nonlinear(data)
-        data = th.matmul(data, self.sp_transform)
+        data = th.matmul(data * self.out_weight, self.sp_transform)
         data = data.view(-1, self.out_channel, self.out_spatio)
 
         return data
