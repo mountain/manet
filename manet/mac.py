@@ -157,7 +157,7 @@ class SplineMacUnit(AbstractMacUnit):
         return velo * th.cos(angels) + data * velo * th.sin(angels)
 
 
-class MacSTPUnit(AbstractMacUnit):
+class MacUnit(AbstractMacUnit):
     def __init__(self: T,
                  in_channel: int,
                  out_channel: int,
@@ -170,12 +170,8 @@ class MacSTPUnit(AbstractMacUnit):
         super().__init__(in_channel, out_channel, in_spatio, out_spatio, num_steps, step_length, num_points)
         self.channel_dim, self.spatio_dim = self.calculate()
 
-        ch_weight = th.ones(out_channel, 1)
-        ch_identity = th.diag(nn.Parameter(th.ones(in_channel)))
-        self.ch_transform = th.kron(ch_weight, ch_identity)
-        sp_weight = th.ones(1, out_spatio)
-        sp_identity = th.diag(nn.Parameter(th.ones(in_spatio)))
-        self.sp_transform = th.kron(sp_weight, sp_identity)
+        self.ch_transform = nn.Parameter(th.normal(0, 1, (out_channel, in_channel)))
+        self.sp_transform = nn.Parameter(th.normal(0, 1, (in_spatio, out_spatio)))
         self.weight = nn.Parameter(
             th.normal(0, 1, (1, in_channel, 1, self.in_spatio, 1))
         )
@@ -303,7 +299,7 @@ class MLP(nn.Sequential):
         mac_steps: int = 3,
         mac_length: float = 1.0,
         mac_points: int = 5,
-        mac_unit: Type[AbstractMacUnit] = MacSTPUnit
+        mac_unit: Type[AbstractMacUnit] = MacUnit
     ) -> None:
         layers = []
         in_dim = in_channels
