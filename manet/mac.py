@@ -157,7 +157,7 @@ class SplineMacUnit(AbstractMacUnit):
         return velo * th.cos(angels) + data * velo * th.sin(angels)
 
 
-class MacTensorUnit(AbstractMacUnit):
+class MacSTPUnit(AbstractMacUnit):
     def __init__(self: T,
                  in_channel: int,
                  out_channel: int,
@@ -200,11 +200,6 @@ class MacTensorUnit(AbstractMacUnit):
         data = data + self.in_bias.view(1, self.in_channel, self.in_channel_factor, self.in_spatio, self.in_spatio_factor)
         return data.view(-1, self.channel_dim, self.spatio_dim)
 
-    def attention(self: T, data: Tensor) -> Tensor:
-        data = data.view(-1, self.channel_dim, self.spatio_dim)
-        data = data * self.out_weight + self.out_bias
-        return th.sigmoid(data)
-
     def reduction(self: T, data: Tensor) -> Tensor:
         data = data.view(-1, self.out_channel_factor, self.out_channel, self.out_spatio_factor, self.out_spatio)
         return th.sum(data, dim=(1, 3))
@@ -215,8 +210,6 @@ class MacTensorUnit(AbstractMacUnit):
 
         data = self.expansion(data)
         data = self.nonlinear(data)
-        data = data * self.attention(data)
-
         return self.reduction(data)
 
 
