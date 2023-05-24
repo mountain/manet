@@ -191,8 +191,8 @@ class MacSTPUnit(AbstractMacUnit):
                 ) -> Tensor:
 
         data = data.view(-1, self.in_channel, self.in_spatio)
-        data = th.matmul(self.channel_transform, data)
-        data = th.matmul(data, self.spatio_transform)
+        data = th.matmul(self.ch_transform, data)
+        data = th.matmul(data, self.sp_transform)
         data = data.view(-1, self.in_channel, self.out_channel, self.in_spatio, self.out_spatio)
         data = self.nonlinear(data)
         data = th.mean(data, dim=(1, 3))
