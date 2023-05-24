@@ -315,6 +315,70 @@ class MacSplineUnit(SplineMacUnit):
         return data / self.length
 
 
+class MacUnit(SplineMacUnit):
+    def __init__(self: T,
+                 in_channel: int,
+                 out_channel: int,
+                 in_spatio: int = 1,
+                 out_spatio: int = 1,
+                 num_steps: int = 3,
+                 step_length: float = 0.33333,
+                 num_points: int = 5,
+                 ) -> None:
+        super().__init__(in_channel, out_channel, in_spatio, out_spatio, num_steps, step_length, num_points)
+        self.in_channel_factor, self.out_channel_factor = None, None
+        self.in_spatio_factor, self.out_spatio_factor = None, None
+        self.channel_dim, self.spatio_dim = self.calculate()
+
+        self.in_weight = nn.Parameter(
+            th.normal(0, 1, (1, self.channel_dim, self.spatio_dim))
+        )
+        self.in_bias = nn.Parameter(
+            th.normal(0, 1, (1, self.channel_dim, self.spatio_dim))
+        )
+        self.out_weight = nn.Parameter(
+            th.normal(0, 1, (1, self.channel_dim, self.spatio_dim))
+        )
+        self.out_bias = nn.Parameter(
+            th.normal(0, 1, (1, self.channel_dim, self.spatio_dim))
+        )
+
+    def calculate(self: T) -> Tuple[int, int]:
+        channel_dim, self.in_channel_factor, self.out_channel_factor = _exchangeable_multiplier_(
+            self.in_channel, self.out_channel
+        )
+        spatio_dim, self.in_spatio_factor, self.out_spatio_factor = _exchangeable_multiplier_(
+            self.in_spatio, self.out_spatio
+        )
+        return channel_dim, spatio_dim
+
+    def expansion(self: T, data: Tensor) -> Tensor:
+        data = data.view(-1, self.in_channel, 1, self.in_spatio, 1)
+        data = data * self.in_weight.view(1, self.in_channel, self.in_channel_factor, self.in_spatio, self.in_spatio_factor)
+        data = data + self.in_bias.view(1, self.in_channel, self.in_channel_factor, self.in_spatio, self.in_spatio_factor)
+        return data.view(-1, self.channel_dim, self.spatio_dim)
+
+    def attention(self: T, data: Tensor) -> Tensor:
+        data = data.view(-1, self.channel_dim, self.spatio_dim)
+        data = data * self.out_weight + self.out_bias
+        return th.sigmoid(data)
+
+    def reduction(self: T, data: Tensor) -> Tensor:
+        data = data.view(-1, self.out_channel_factor, self.out_channel, self.out_spatio_factor, self.out_spatio)
+        return th.sum(data, dim=(1, 3))
+
+    def forward(self: T,
+                data: Tensor
+                ) -> Tensor:
+
+        data = self.expansion(data)
+        data = self.nonlinear(data)
+        data = data * self.attention(data)
+
+        return self.reduction(data)
+
+
+
 class MLP(nn.Sequential):
     def __init__(
         self,
@@ -324,7 +388,7 @@ class MLP(nn.Sequential):
         mac_steps: int = 3,
         mac_length: float = 1.0,
         mac_points: int = 5,
-        mac_unit: Type[AbstractMacUnit] = MacTensorUnit
+        mac_unit: Type[AbstractMacUnit] = MacUnit
     ) -> None:
         layers = []
         in_dim = in_channels
