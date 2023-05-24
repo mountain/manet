@@ -173,12 +173,12 @@ class MacSTPUnit(AbstractMacUnit):
         self.ch_weight = nn.Parameter(
             th.normal(0, 1, (out_channel, 1))
         )
-        ch_identity = th.diag(th.ones(in_channel))
+        ch_identity = th.diag(nn.Parameter(th.ones(in_channel)))
         self.ch_transform = th.kron(self.ch_weight, ch_identity)
         self.sp_weight = nn.Parameter(
             th.normal(0, 1, (1, out_spatio))
         )
-        sp_identity = th.diag(th.ones(in_spatio))
+        sp_identity = th.diag(nn.Parameter(th.ones(in_spatio)))
         self.sp_transform = th.kron(self.sp_weight, sp_identity)
         self.weight = nn.Parameter(
             th.normal(0, 1, (1, in_channel, 1, self.in_spatio, 1))
@@ -198,7 +198,7 @@ class MacSTPUnit(AbstractMacUnit):
         data = self.nonlinear(data)
         data = th.matmul(data, self.sp_transform)
         data = data.view(-1, self.in_channel, self.out_channel, self.in_spatio, self.out_spatio)
-        data = th.mean(th.sigmoid(self.weight) * data, dim=(1, 3))
+        data = th.mean(self.weight * data, dim=(1, 3))
 
         return data
 
