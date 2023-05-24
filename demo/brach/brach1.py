@@ -5,7 +5,7 @@ from torch.nn import LSTM
 from demo.brach.model import TraceNet
 
 
-s, c, h, l = 1, 1, 1, 1
+s, c, h, l = 1, 2, 1, 1
 hidden, current = th.zeros(l, s, h), th.zeros(l, s, h)
 
 
