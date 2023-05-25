@@ -23,10 +23,10 @@ class LearnableFunction(IterativeMap, Profiler):
 
         self.in_channel = in_channel
         self.out_channel = out_channel
-        self.ch_transform = nn.Parameter(th.normal(0, 1, (in_channel, out_channel)))
+        self.ch_transform = nn.Parameter(th.normal(0, 1, (out_channel, in_channel)))
+        self.sp_transform = nn.Parameter(th.normal(0, 1, (1, 1)))
 
         self.size = None
-        self.spatio_dims = None
         self.num_points = num_points
         self.length = length
         self.params = CubicHermiteParam(self, num_points=num_points, initializers={
@@ -43,13 +43,8 @@ class LearnableFunction(IterativeMap, Profiler):
 
     @plot_iterative_function(dkey)
     def before_forward(self: Lf, data: Tensor) -> Tensor:
-        sz = list(data.size())
-        self.spatio_dims = np.prod(sz[2:])
-        perm = np.array(range(len(sz)), dtype=np.int64) + 1
-        perm[0], perm[-1] = 0, 1
-        data = th.permute(data, tuple(perm)).view(-1, self.spatio_dims, self.in_channel)
-        data = th.matmul(data, self.ch_transform)
-        self.size = [sz[0]] + sz[2:] + [self.out_channel]
+        data = th.matmul(self.ch_transform, data)
+        self.size = data.size()
         return data
 
     @plot_image(dkey)
@@ -70,6 +65,6 @@ class LearnableFunction(IterativeMap, Profiler):
         return data
 
     def after_forward(self: Lf, data: Tensor) -> Tensor:
-        data = th.permute(data, (0, 2, 1))
         data = data.view(*self.size)
+        data = th.matmul(data, self.sp_transform)
         return data
