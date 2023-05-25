@@ -48,7 +48,7 @@ class LearnableFunction(IterativeMap, Profiler):
     def before_forward(self: Lf, data: Tensor) -> Tensor:
         sz = list(data.size())
         self.spatio_dims = np.prod(sz[2:])
-        perm = np.array(range(len(sz)), dtype=np.long) + 1
+        perm = np.array(range(len(sz)), dtype=np.int64) + 1
         perm[0], perm[-1] = 0, 1
         data = th.permute(data, tuple(perm))
         data = th.matmul(self.in_transform, data)
