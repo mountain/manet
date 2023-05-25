@@ -48,13 +48,12 @@ class LearnableFunction(IterativeMap, Profiler):
     @plot_iterative_function(dkey)
     def before_forward(self: Lf, data: Tensor) -> Tensor:
         data = th.matmul(self.channel_transform, data)
-        data = data.view(-1, 1, 1) * self.maxval
         return data
 
     @plot_image(dkey)
     @plot_histogram(dkey)
     def pre_transform(self: Lf, data: Tensor) -> Tensor:
-        data = th.matmul(self.channel_weight, data)
+        data = data.view(-1, 1, 1) * self.maxval
         return data
 
     def mapping(self: Lf, data: th.Tensor) -> th.Tensor:
@@ -65,10 +64,9 @@ class LearnableFunction(IterativeMap, Profiler):
     @plot_image(dkey)
     @plot_histogram(dkey)
     def post_transform(self: Lf, data: Tensor) -> Tensor:
-        data = th.matmul(data, self.spatio_weight)
+        data = data.view(-1, self.out_channel, self.in_spatio) / self.maxval
         return data
 
     def after_forward(self: Lf, data: Tensor) -> Tensor:
-        data = data.view(-1, self.out_channel, self.in_spatio) / self.maxval
         data = th.matmul(data, self.spatio_transform)
         return data
