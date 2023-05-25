@@ -61,10 +61,8 @@ class LearnableFunction(IterativeMap, Profiler):
     @plot_image(dkey)
     @plot_histogram(dkey)
     def post_transform(self: Lf, data: Tensor) -> Tensor:
-        data = data.view(-1, self.spatio_dims, self.out_channel) / self.maxval
-        return data
+        return data.view(*self.size) / self.maxval
 
     def after_forward(self: Lf, data: Tensor) -> Tensor:
-        data = data.view(*self.size)
         data = th.matmul(data, self.sp_transform)
         return data
