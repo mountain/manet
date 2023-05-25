@@ -32,7 +32,7 @@ class BRModel4(TraceNet):
         y0 = inputs[:, 1:2].reshape(b, 1, 1)
         self.init(w, th.zeros_like(y0), y0)
         y = y0
-        result, error = [], th.zeros_like(y0)
+        result, error = [], 0
         for ix in range(1001):
             if ix == 0:
                 result.append(y0)
