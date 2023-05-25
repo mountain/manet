@@ -14,7 +14,7 @@ class BRModel3(TraceNet):
         pass
 
     def trace(self, width, x, y):
-        return self.lf(th.cat((x, y), dim=1).view(-1, 2, 1))
+        return self.lf(th.cat((x, y / width), dim=1).view(-1, 2, 1))
 
 
 def _model_():
