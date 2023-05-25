@@ -13,7 +13,7 @@ class BRModel1(TraceNet):
     def __init__(self):
         super().__init__()
         self.lstm = LSTM(input_size=c, hidden_size=h, num_layers=l)
-        self.ln = nn.Linear(in_features=2 * h, out_features=c)
+        self.ln = nn.Linear(in_features=2 * h, out_features=1)
         self.model_name = 'v1'
 
         self.hdn = None
@@ -26,7 +26,7 @@ class BRModel1(TraceNet):
     def trace(self, width, x, y):
         b = width.size()[0]
         output, (self.hdn, self.cur) = self.lstm(th.cat((x, y, width), dim=2), (self.hdn, self.cur))
-        return self.ln(output.reshape(-1, 2 * h)).reshape(b, s, 1)
+        return self.ln(output.reshape(-1, 2 * h)).reshape(b, 1, 1)
 
 
 def _model_():
