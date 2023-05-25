@@ -26,6 +26,27 @@ class BRModel4(TraceNet):
 
         return y_1, (x_1 - x) ** 2
 
+    def forward(self, inputs):
+        b = inputs.size()[0]
+        w = inputs[:, 0:1].reshape(b, 1, 1)
+        y0 = inputs[:, 1:2].reshape(b, 1, 1)
+        self.init(w, th.zeros_like(y0), y0)
+        y = y0
+        result, error = [], th.zeros_like(y0)
+        for ix in range(1001):
+            if ix == 0:
+                result.append(y0)
+            elif ix == 1000:
+                result.append(th.zeros_like(y0))
+            else:
+                ratio = ix / 1000
+                x = w * ratio
+                y, xerr = self.trace(w, x, y)
+                y = (1 - ratio) * (y0 - ratio * y)
+                error = error + xerr
+                result.append(y)
+        return th.cat(result, dim=1), error
+
     def training_step(self, train_batch, batch_idx):
         reset_profiling_stage('train')
         xs, yt = train_batch
