@@ -1,32 +1,19 @@
 import torch as th
-import torch.nn as nn
 
-from torch.nn import LSTM
+from manet.aeg.flow import LearnableFunction
 from demo.brach.model import TraceNet
-
-
-s, c, h, l = 1, 2, 1, 1
-hidden, current = th.zeros(l, s, h), th.zeros(l, s, h)
 
 
 class BRModel1(TraceNet):
     def __init__(self):
         super().__init__()
-        self.lstm = LSTM(input_size=c, hidden_size=h, num_layers=l)
-        self.ln = nn.Linear(in_features=2 * h, out_features=c)
-        self.model_name = 'v1'
-
-        self.hdn = None
-        self.cur = None
+        self.lf = LearnableFunction(in_channel=3, out_channel=1)
 
     def init(self, width, x, y):
-        self.hdn = hidden
-        self.cur = current
+        pass
 
     def trace(self, width, x, y):
-        b = width.size()[0]
-        output, (self.hdn, self.cur) = self.lstm(th.cat((x, y), dim=2), (self.hdn, self.cur))
-        return self.ln(output.reshape(-1, 2 * h)).reshape(b, s, 1)
+        return self.lf(th.cat((x, y, width), dim=1).view(-1, 3, 1))
 
 
 def _model_():
