@@ -50,7 +50,7 @@ class LearnableFunction(IterativeMap, Profiler):
         self.spatio_dims = np.prod(sz[2:])
         perm = np.array(range(len(sz)), dtype=np.int64) + 1
         perm[0], perm[-1] = 0, 1
-        data = th.permute(data, tuple(perm))
+        data = th.permute(data, tuple(perm)).view(-1, self.spatio_dims, self.in_channel)
         data = th.matmul(self.in_transform, data)
         self.size = [sz[0]] + sz[2:] + [self.out_channel]
         return data
