@@ -70,11 +70,10 @@ class LearnableFunction(IterativeMap, Profiler):
     @plot_histogram(dkey)
     def post_transform(self: Lf, data: Tensor) -> Tensor:
         data = data.view(-1, self.spatio_dims, self.hidden_channel) / self.maxval
-        data = th.matmul(data, self.out_transform)
-        data = th.permute(data, (0, 2, 1))
-        data = data.view(*self.size)
         return data
 
     def after_forward(self: Lf, data: Tensor) -> Tensor:
         data = th.matmul(data, self.out_transform)
+        data = th.permute(data, (0, 2, 1))
+        data = data.view(*self.size)
         return data
