@@ -24,7 +24,7 @@ class BRModel4(TraceNet):
         x_1 = a * (1 - th.cos(t_1))
         y_1 = 2 - a * (t_1 - th.sin(t_1))
 
-        return y_1, th.mean((x_1 - x) ** 2)
+        return y_1, th.mean((x_1 - x_0) ** 2)
 
     def forward(self, inputs):
         b = inputs.size()[0]
@@ -45,7 +45,7 @@ class BRModel4(TraceNet):
                 y = (1 - ratio) * (y0 - ratio * y)
                 error = error + xerr
                 result.append(y)
-        return th.cat(result, dim=1), error
+        return th.cat(result, dim=1), th.abs(error - 1.0)
 
     def training_step(self, train_batch, batch_idx):
         reset_profiling_stage('train')
