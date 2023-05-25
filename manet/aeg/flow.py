@@ -3,7 +3,7 @@ import torch as th
 import torch.nn as nn
 
 from torch import Tensor
-from typing import TypeVar, Callable, Union
+from typing import TypeVar
 
 from manet.aeg.params import CubicHermiteParam
 from manet.nn.iter import IterativeMap
@@ -16,9 +16,15 @@ Lf = TypeVar('Lf', bound='LearnableFunction')
 class LearnableFunction(IterativeMap, Profiler):
     dkey: str = 'lf'
 
-    def __init__(self: Lf, num_steps: int = 3, num_points: int = 5, length: float = 1.0, dkey: str = None) -> None:
+    def __init__(self: Lf, in_channel: int = 1, out_channel: int = 1,  in_spatio: int = 1, out_spatio: int = 1,
+                 num_steps: int = 3, num_points: int = 5, length: float = 1.0, dkey: str = None) -> None:
         IterativeMap.__init__(self, num_steps=num_steps)
         Profiler.__init__(self, dkey=dkey)
+
+        self.in_channel = in_channel
+        self.out_channel = out_channel
+        self.in_spatio = in_spatio
+        self.out_spatio = out_spatio
 
         self.size = None
         self.num_points = num_points
@@ -33,8 +39,8 @@ class LearnableFunction(IterativeMap, Profiler):
                 th.ones(num_points).view(1, num_points) * 2 * th.pi / num_points
             ), dim=0),
         })
-        self.channel_transform = nn.Parameter(th.normal(0, 1, (1, 1)))
-        self.spatio_transform = nn.Parameter(th.normal(0, 1, (1, 1)))
+        self.channel_transform = nn.Parameter(th.normal(0, 1, (out_channel, in_channel)))
+        self.spatio_transform = nn.Parameter(th.normal(0, 1, (in_spatio, out_spatio)))
         self.maxval = np.sinh(self.length)
 
     @plot_iterative_function(dkey)
@@ -46,10 +52,9 @@ class LearnableFunction(IterativeMap, Profiler):
     @plot_histogram(dkey)
     def pre_transform(self: Lf, data: Tensor) -> Tensor:
         sz = self.size
-        data = data.view(-1, sz[1], sz[2] * sz[3])
-        data = th.permute(data, [0, 2, 1]).reshape(-1, 1)
-        data = th.matmul(data, self.channel_transform)
-        data = data.view(-1, sz[2] * sz[3], sz[1])
+        data = data.view(sz[0], sz[1], -1)
+        data = th.matmul(self.channel_transform, data)
+        data = data.view(sz[0], self.out_channel, -1)
         return data
 
     def mapping(self: Lf, data: th.Tensor) -> th.Tensor:
@@ -61,13 +66,10 @@ class LearnableFunction(IterativeMap, Profiler):
     @plot_histogram(dkey)
     def post_transform(self: Lf, data: Tensor) -> Tensor:
         sz = self.size
-        data = data.view(-1, sz[2] * sz[3], sz[1])
-        data = th.permute(data, [0, 2, 1]).reshape(-1, 1)
+        data = data.view(sz[0], self.out_channel, -1)
         data = th.matmul(data, self.spatio_transform)
-        data = data.view(*sz)
+        data = data.view(sz[0], self.out_channel, self.out_spatio)
         return data
 
     def after_forward(self: Lf, data: Tensor) -> Tensor:
-        sz = self.size
-        data = data.view(*sz)
         return data / self.maxval
