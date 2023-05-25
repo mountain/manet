@@ -21,12 +21,9 @@ class LearnableFunction(IterativeMap, Profiler):
         IterativeMap.__init__(self, num_steps=num_steps)
         Profiler.__init__(self, dkey=dkey)
 
-        hidden_channel = 2 * (in_channel + out_channel)
         self.in_channel = in_channel
         self.out_channel = out_channel
-        self.hidden_channel = hidden_channel
-        self.in_transform = nn.Parameter(th.normal(0, 1, (in_channel, hidden_channel)))
-        self.out_transform = nn.Parameter(th.normal(0, 1, (hidden_channel, out_channel)))
+        self.ch_transform = nn.Parameter(th.normal(0, 1, (in_channel, out_channel)))
 
         self.size = None
         self.spatio_dims = None
@@ -51,7 +48,7 @@ class LearnableFunction(IterativeMap, Profiler):
         perm = np.array(range(len(sz)), dtype=np.int64) + 1
         perm[0], perm[-1] = 0, 1
         data = th.permute(data, tuple(perm)).view(-1, self.spatio_dims, self.in_channel)
-        data = th.matmul(data, self.in_transform)
+        data = th.matmul(data, self.ch_transform)
         self.size = [sz[0]] + sz[2:] + [self.out_channel]
         return data
 
@@ -69,11 +66,10 @@ class LearnableFunction(IterativeMap, Profiler):
     @plot_image(dkey)
     @plot_histogram(dkey)
     def post_transform(self: Lf, data: Tensor) -> Tensor:
-        data = data.view(-1, self.spatio_dims, self.hidden_channel) / self.maxval
+        data = data.view(-1, self.spatio_dims, self.out_channel) / self.maxval
         return data
 
     def after_forward(self: Lf, data: Tensor) -> Tensor:
-        data = th.matmul(data, self.out_transform)
         data = th.permute(data, (0, 2, 1))
         data = data.view(*self.size)
         return data
