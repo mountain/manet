@@ -58,6 +58,23 @@ class BRModel4(TraceNet):
         self.log('train_loss', lss, prog_bar=True)
         return lss + x_err
 
+    def validation_step(self, val_batch, batch_idx):
+        reset_profiling_stage('valid')
+        xs, yt = val_batch
+        ys, x_err = self.forward(xs)
+        err, t, lss = self.benchmark(xs, ys, yt)
+        self.log('x_err', x_err, prog_bar=True)
+        self.log('val_loss', lss, prog_bar=True)
+        self.make_plot(xs, ys, self.current_epoch)
+
+    def test_step(self, test_batch, batch_idx):
+        reset_profiling_stage('test')
+        xs, yt = test_batch
+        ys, x_err = self.forward(xs)
+        err, t, lss = self.benchmark(xs, ys, yt)
+        self.log('x_err', x_err, prog_bar=True)
+        self.log('test_loss', lss)
+
 
 def _model_():
     return BRModel4()
