@@ -41,17 +41,20 @@ class LearnableFunction(IterativeMap, Profiler):
         })
         self.channel_transform = nn.Parameter(th.normal(0, 1, (out_channel, in_channel)))
         self.spatio_transform = nn.Parameter(th.normal(0, 1, (in_spatio, out_spatio)))
+        self.channel_weight = nn.Parameter(th.normal(0, 1, (1, 1)))
+        self.spatio_weight = nn.Parameter(th.normal(0, 1, (1, 1)))
         self.maxval = np.sinh(self.length)
 
     @plot_iterative_function(dkey)
     def before_forward(self: Lf, data: Tensor) -> Tensor:
-        self.size = data.size()
-        return data * self.maxval
+        data = th.matmul(self.channel_transform, data)
+        data = data.view(-1, 1) * self.maxval
+        return data
 
     @plot_image(dkey)
     @plot_histogram(dkey)
     def pre_transform(self: Lf, data: Tensor) -> Tensor:
-        data = th.matmul(self.channel_transform, data)
+        data = th.matmul(self.channel_weight, data)
         return data
 
     def mapping(self: Lf, data: th.Tensor) -> th.Tensor:
@@ -62,9 +65,10 @@ class LearnableFunction(IterativeMap, Profiler):
     @plot_image(dkey)
     @plot_histogram(dkey)
     def post_transform(self: Lf, data: Tensor) -> Tensor:
-        sz = self.size
-        data = th.matmul(data, self.spatio_transform)
+        data = th.matmul(data, self.spatio_weight)
         return data
 
     def after_forward(self: Lf, data: Tensor) -> Tensor:
-        return data / self.maxval
+        data = data.view(-1, self.out_channel, self.in_spatio) / self.maxval
+        data = th.matmul(data, self.spatio_transform)
+        return data
