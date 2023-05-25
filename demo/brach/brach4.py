@@ -24,7 +24,7 @@ class BRModel4(TraceNet):
         x_1 = a * (1 - th.cos(t_1))
         y_1 = 2 - a * (t_1 - th.sin(t_1))
 
-        return y_1, (x_1 - x) ** 2
+        return y_1, th.mean((x_1 - x) ** 2)
 
     def forward(self, inputs):
         b = inputs.size()[0]
