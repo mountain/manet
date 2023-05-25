@@ -48,7 +48,7 @@ class LearnableFunction(IterativeMap, Profiler):
     @plot_iterative_function(dkey)
     def before_forward(self: Lf, data: Tensor) -> Tensor:
         data = th.matmul(self.channel_transform, data)
-        data = data.view(-1, 1) * self.maxval
+        data = data.view(-1, 1, 1) * self.maxval
         return data
 
     @plot_image(dkey)
