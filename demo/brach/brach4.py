@@ -1,5 +1,4 @@
 import torch as th
-from torch import nn
 
 from demo.brach.model import TraceNet
 from manet.aeg.flow import LearnableFunction
