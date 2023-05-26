@@ -25,23 +25,12 @@ class BrachNet(pl.LightningModule):
         ax = fig.add_subplot(111)
         ax.plot(xlist, ylist, color='b')
 
-        r = 1.0590274735513345948
-        ts = np.linspace(-np.pi, 4 * np.pi, 1001)
-        xs = r * (ts + np.sin(ts))
-        ys = 2 + r * (np.cos(ts) - 1)
+        r = 1.7896595
+        ts = np.linspace(0, 1.96245036, 1001)
+        omega = np.sqrt(9.81 / r)
+        xs = r * (omega * ts - np.sin(omega * ts))
+        ys = 2.0 - r * (1 - np.cos(omega * ts))
         ax.plot(xs, ys, color='g')
-
-        r = 1.3301938088969672306
-        ts = np.linspace(-np.pi, 4 * np.pi, 1001)
-        xs = r * (ts + np.sin(ts))
-        ys = 2 + r * (np.cos(ts) - 1)
-        ax.plot(xs, ys, color='r')
-
-        r = 2.5335670497927349199
-        ts = np.linspace(-np.pi, 4 * np.pi, 1001)
-        xs = r * (ts - np.sin(ts))
-        ys = 2 + r * (np.cos(ts) - 1)
-        ax.plot(xs, ys, color='c')
 
         ctx['tb_logger'].add_figure('curve', fig, ix)
 
