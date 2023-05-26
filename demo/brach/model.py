@@ -28,19 +28,19 @@ class BrachNet(pl.LightningModule):
         r = 1.0590274735513345948
         ts = np.linspace(-np.pi, 4 * np.pi, 1001)
         xs = r * (ts + np.sin(ts))
-        ys = 2 - r * (1 - np.cos(ts))
+        ys = 2 - r * (np.cos(ts) - 1)
         ax.plot(xs, ys, color='g')
 
         r = 1.3301938088969672306
         ts = np.linspace(-np.pi, 4 * np.pi, 1001)
         xs = r * (ts + np.sin(ts))
-        ys = 2 - r * (1 - np.cos(ts))
+        ys = 2 - r * (np.cos(ts) - 1)
         ax.plot(xs, ys, color='r')
 
         r = 2.5335670497927349199
         ts = np.linspace(-np.pi, 4 * np.pi, 1001)
         xs = r * (ts + np.sin(ts))
-        ys = 2 - r * (1 - np.cos(ts))
+        ys = 2 - r * (np.cos(ts) - 1)
         ax.plot(xs, ys, color='c')
 
         ctx['tb_logger'].add_figure('curve', fig, ix)
