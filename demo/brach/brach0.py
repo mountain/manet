@@ -9,7 +9,7 @@ s, c, h, l = 1, 3, 1, 1
 hidden, current = th.zeros(l, s, h), th.zeros(l, s, h)
 
 
-class BRModel1(TraceNet):
+class BRModel0(TraceNet):
     def __init__(self):
         super().__init__()
         self.lstm = LSTM(input_size=c, hidden_size=h, num_layers=l)
@@ -30,4 +30,4 @@ class BRModel1(TraceNet):
 
 
 def _model_():
-    return BRModel1()
+    return BRModel0()
