@@ -1,14 +1,15 @@
 import torch as th
 
 from demo.brach.model import TraceNet
-from manet.aeg.flow import LearnableFunction
+from manet.mac import MLP
 
 
 class BRModel3(TraceNet):
     def __init__(self):
         super().__init__()
-        self.a = LearnableFunction(in_channel=1, out_channel=1)
-        self.t = LearnableFunction(in_channel=3, out_channel=1)
+        self.r = MLP(1, [1])
+        self.o = MLP(1, [1])
+        self.t = MLP(3, [1])
 
     def init(self, width, x, y):
         pass
@@ -17,9 +18,10 @@ class BRModel3(TraceNet):
         w = width.view(-1, 1, 1)
         x = x.view(-1, 1, 1)
         y = y.view(-1, 1, 1)
-        a = self.a(w).view(-1, 1, 1)
+        r = self.r(w).view(-1, 1, 1)
+        o = self.o(r).view(-1, 1, 1)
         t = self.t(th.cat((w, x, y), dim=1))
-        y_hat = 2 - a * (t - th.sin(t))
+        y_hat = 2 - r * (1 - th.cos(o * t))
         return y_hat
 
 
