@@ -83,6 +83,9 @@ class BrachNet(pl.LightningModule):
         self.log('val_loss', lss, prog_bar=True)
         self.make_plot(xs, ys, self.current_epoch)
 
+        ctx['tb_logger'].add_graph(self, xs[0:1])
+
+
     def test_step(self, test_batch, batch_idx):
         reset_profiling_stage('test')
         xs, yt = test_batch
