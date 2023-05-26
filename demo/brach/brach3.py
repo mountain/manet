@@ -8,7 +8,6 @@ class BRModel3(TraceNet):
     def __init__(self):
         super().__init__()
         self.r = MLP(1, [1])
-        self.o = MLP(1, [1])
         self.t = MLP(3, [1])
 
     def init(self, width, x, y):
@@ -19,9 +18,8 @@ class BRModel3(TraceNet):
         x = x.view(-1, 1, 1)
         y = y.view(-1, 1, 1)
         r = self.r(w).view(-1, 1, 1)
-        o = self.o(r).view(-1, 1, 1)
         t = self.t(th.cat((w, x, y), dim=1).view(-1, 3, 1)).view(-1, 1, 1)
-        y_hat = 2 - r * (1 - th.cos(o * t))
+        y_hat = 2 - r * (1 - th.cos(t))
         return y_hat
 
 
