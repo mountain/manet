@@ -46,10 +46,10 @@ class LearnableFunction(IterativeMap, Profiler):
     def before_forward(self: Lf, data: Tensor) -> Tensor:
         # data = th.matmul(self.ch_transform, data)
 
-        data = data.view(-1, self.in_channel, self.in_spatio)
+        data = data.view(-1, self.in_channel, 1)
         data = th.permute(data, [0, 2, 1]).reshape(-1, self.in_channel)
         data = th.matmul(data, self.channel_transform)
-        data = data.view(-1, self.in_spatio, self.out_channel)
+        data = data.view(-1, 1, self.out_channel)
 
         self.size = data.size()
         return data
@@ -73,8 +73,8 @@ class LearnableFunction(IterativeMap, Profiler):
     def after_forward(self: Lf, data: Tensor) -> Tensor:
         # data = th.matmul(data, self.sp_transform)
 
-        data = th.permute(data, [0, 2, 1]).reshape(-1, self.in_spatio)
+        data = th.permute(data, [0, 2, 1]).reshape(-1, 1)
         data = th.matmul(data, self.spatio_transform)
-        data = data.view(-1, self.out_channel, self.out_spatio)
+        data = data.view(-1, self.out_channel, 1)
 
         return data
