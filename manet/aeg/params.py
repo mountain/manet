@@ -23,7 +23,8 @@ class Param:
         return self.construct(key)[handler.long()]
 
     def handler(self: P, data: Tensor) -> Tensor:
-        return th.sigmoid(data) * self.num_points
+        return (th.atan(data) / th.pi + 0.5) * self.num_points
+        # return th.sigmoid(data) * self.num_points
 
     def begin_end_of(self: P, handler: Tensor) -> Tuple[Tensor, Tensor, Tensor]:
         bgn = handler.floor().long()
@@ -76,3 +77,5 @@ class CubicHermiteParam(Param):
         q4 = (t ** 3 - t ** 2) * m1
 
         return q1 + q2 + q3 + q4
+
+
