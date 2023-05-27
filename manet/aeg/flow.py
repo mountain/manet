@@ -5,7 +5,7 @@ import torch.nn as nn
 from torch import Tensor
 from typing import TypeVar, Callable, Union, List, Tuple
 
-from manet.aeg.params import CubicHermiteParam
+from manet.aeg.params import CubicHermiteParam, PiecewiseLinearParam
 from manet.nn.iter import IterativeMap
 from manet.tools.ploter import plot_iterative_function, plot_image, plot_histogram
 from manet.tools.profiler import Profiler
@@ -16,7 +16,7 @@ Lf = TypeVar('Lf', bound='LearnableFunction')
 class LearnableFunction(IterativeMap, Profiler):
     dkey: str = 'lf'
 
-    def __init__(self: Lf, in_channel: int = 1, out_channel: int = 1,
+    def __init__(self: Lf, in_channel: int = 1, out_channel: int = 1, params: str = 'cubic',
                  num_steps: int = 3, num_points: int = 5, length: float = 1.0, dkey: str = None) -> None:
         IterativeMap.__init__(self, num_steps=num_steps)
         Profiler.__init__(self, dkey=dkey)
@@ -30,17 +30,23 @@ class LearnableFunction(IterativeMap, Profiler):
         self.size = None
         self.num_points = num_points
         self.length = length
-        self.params = CubicHermiteParam(self, num_points=num_points, initializers={
-            'velocity': th.cat((
-                th.linspace(0, 1, num_points).view(1, num_points),
-                th.ones(num_points).view(1, num_points) * 2 * th.pi / num_points
-            ), dim=0),
-            'angles': th.cat((
-                th.linspace(0, 2 * th.pi, num_points).view(1, num_points),
-                th.ones(num_points).view(1, num_points) * 2 * th.pi / num_points
-            ), dim=0),
-        })
         self.maxval = np.sinh(self.length)
+        if params == 'cubic':
+            self.params = CubicHermiteParam(self, num_points=num_points, initializers={
+                'velocity': th.cat((
+                    th.linspace(0, 1, num_points).view(1, num_points),
+                    th.ones(num_points).view(1, num_points) * 2 * th.pi / num_points
+                ), dim=0),
+                'angles': th.cat((
+                    th.linspace(0, 2 * th.pi, num_points).view(1, num_points),
+                    th.ones(num_points).view(1, num_points) * 2 * th.pi / num_points
+                ), dim=0),
+            })
+        else: # params == 'linear'
+            self.params = PiecewiseLinearParam(self, num_points=num_points, initializers={
+                'velocity': th.linspace(0, 1, num_points).view(1, num_points),
+                'angles': th.linspace(0, 2 * th.pi, num_points).view(1, num_points),
+            })
 
     @plot_iterative_function(dkey)
     def before_forward(self: Lf, data: Tensor) -> Tensor:
