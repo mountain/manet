@@ -48,7 +48,7 @@ class LearnableFunction(IterativeMap, Profiler):
 
         data = data.view(-1, self.in_channel, 1)
         data = th.permute(data, [0, 2, 1]).reshape(-1, self.in_channel)
-        data = th.matmul(data, self.channel_transform)
+        data = th.matmul(data, self.ch_transform)
         data = data.view(-1, 1, self.out_channel)
 
         self.size = data.size()
@@ -74,7 +74,7 @@ class LearnableFunction(IterativeMap, Profiler):
         # data = th.matmul(data, self.sp_transform)
 
         data = th.permute(data, [0, 2, 1]).reshape(-1, 1)
-        data = th.matmul(data, self.spatio_transform)
+        data = th.matmul(data, self.sp_transform)
         data = data.view(-1, self.out_channel, 1)
 
         return data
