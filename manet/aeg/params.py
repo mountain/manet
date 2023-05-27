@@ -15,8 +15,6 @@ class Param:
         super().__init__()
         self.num_points = num_points
         self.module = module
-        self.alpha = nn.Parameter(th.ones(1, 1, 1))
-        self.beta = nn.Parameter(th.zeros(1, 1, 1))
         if initializers is not None:
             for k, v in initializers.items():
                 self._construct(k, v)
@@ -25,7 +23,7 @@ class Param:
         return self.construct(key)[handler.long()]
 
     def handler(self: P, data: Tensor) -> Tensor:
-        return th.sigmoid(data * self.alpha + self.beta) * self.num_points
+        return th.sigmoid(data) * self.num_points
 
     def begin_end_of(self: P, handler: Tensor) -> Tuple[Tensor, Tensor, Tensor]:
         bgn = handler.floor().long()
