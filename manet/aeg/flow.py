@@ -42,10 +42,10 @@ class LearnableFunction(IterativeMap, Profiler):
                     th.ones(num_points).view(1, num_points) * 2 * th.pi / num_points
                 ), dim=0),
             })
-        else: # params == 'linear'
+        else:  # params == 'linear'
             self.params = PiecewiseLinearParam(self, num_points=num_points, initializers={
-                'velocity': th.linspace(0, 1, num_points).view(1, num_points),
-                'angles': th.linspace(0, 2 * th.pi, num_points).view(1, num_points),
+                'velocity': th.linspace(0, 1, num_points).view(num_points),
+                'angles': th.linspace(0, 2 * th.pi, num_points).view(num_points),
             })
 
     @plot_iterative_function(dkey)
