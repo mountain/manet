@@ -1,13 +1,13 @@
 import torch as th
 
 from demo.brach.model import TraceNet
-from manet.mac import MLP, MacMatrixUnit
+from manet.mac import MLP, MacSplineUnit
 
 
 class BRModel3(TraceNet):
     def __init__(self):
         super().__init__()
-        self.mlp = MLP(3, [1], mac_unit=MacMatrixUnit)
+        self.mlp = MLP(3, [1], mac_unit=MacSplineUnit)
 
     def init(self, width, x, y):
         pass

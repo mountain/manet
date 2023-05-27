@@ -4,10 +4,10 @@ from manet.aeg.flow import LearnableFunction
 from demo.brach.model import TraceNet
 
 
-class BRModel4(TraceNet):
+class BRModel5(TraceNet):
     def __init__(self):
         super().__init__()
-        self.lf = LearnableFunction(in_channel=3, out_channel=1, params='linear')
+        self.lf = LearnableFunction(in_channel=3, out_channel=1, params='cubic')
 
     def init(self, width, x, y):
         pass
@@ -17,4 +17,4 @@ class BRModel4(TraceNet):
 
 
 def _model_():
-    return BRModel4()
+    return BRModel5()

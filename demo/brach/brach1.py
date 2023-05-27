@@ -1,19 +1,19 @@
 import torch as th
 
-from manet.aeg.flow import LearnableFunction
+from manet.mac import MLP
 from demo.brach.model import TraceNet
 
 
 class BRModel1(TraceNet):
     def __init__(self):
         super().__init__()
-        self.lf = LearnableFunction(in_channel=3, out_channel=1)
+        self.mlp = MLP(3, [1])
 
     def init(self, width, x, y):
         pass
 
     def trace(self, width, x, y):
-        return self.lf(th.cat((x, y, width), dim=1).view(-1, 3, 1))
+        return self.mlp(th.cat((x, y, width), dim=1).view(-1, 3, 1)).view(-1, 1, 1)
 
 
 def _model_():
