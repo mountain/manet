@@ -71,7 +71,9 @@ class AbstractMacUnit(nn.Module):
                  ) -> Tuple[Tensor, Tensor, Tensor]:
 
         # calculate the index of the accessor
-        index = th.sigmoid(data) * self.num_points
+        # index = th.sigmoid(data) * self.num_points
+        index = (th.atan(data) / th.pi + 0.5) * self.num_points
+
         bgn = index.floor().long()
         end = (index + 1).floor().long()
         bgn = (bgn * (bgn + 1 < self.num_points) + (bgn - 1) * (bgn + 1 >= self.num_points)) * (bgn >= 0)
