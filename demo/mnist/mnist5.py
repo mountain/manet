@@ -1,7 +1,6 @@
 from torch import nn
 
 from manet.mac import Reshape, MLP
-from manet.aeg.flow import LearnableFunction
 from manet.nn.model import MNISTModel
 
 # A learnable non-linearity functions with the help of gradient formula from arithmetical expression geometry.
@@ -17,16 +16,19 @@ class MNModel5(MNISTModel):
         super().__init__()
         self.recognizer = nn.Sequential(
             nn.Conv2d(1, 5, kernel_size=5, padding=2),
-            LearnableFunction(),
+            MLP(1, [1]),
+            Reshape(5, 28, 28),
             nn.MaxPool2d(2),
             nn.Conv2d(5, 15, kernel_size=5, padding=2),
-            LearnableFunction(),
+            MLP(1, [1]),
+            Reshape(15, 14, 14),
             nn.MaxPool2d(2),
             nn.Conv2d(15, 45, kernel_size=5, padding=2),
-            LearnableFunction(),
+            MLP(1, [1]),
+            Reshape(45, 7, 7),
             nn.MaxPool2d(2),
             nn.Conv2d(45, 135, kernel_size=3, padding=1),
-            LearnableFunction(),
+            MLP(1, [1]),
             Reshape(135 * 3 * 3),
             MLP(135 * 9, [10]),
             Reshape(10),
