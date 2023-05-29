@@ -17,15 +17,15 @@ from torch import Tensor
 
 
 def alg1(x: float | Tensor) -> float | Tensor:
-    return x / (1 + th.abs(x)) + 0.5
+    return (x / (1 + th.abs(x)) + 1) / 2
 
 
 def natan(x: float | Tensor) -> float | Tensor:
-    return th.atan(x * th.pi / 2) / th.pi * 2 + 0.5
+    return (th.atan(x * th.pi / 2) / th.pi * 2 + 1) / 2
 
 
 def alg2(x: float | Tensor) -> float | Tensor:
-    return x / th.sqrt(1 + x * x) + 0.5
+    return (x / th.sqrt(1 + x * x) + 1) / 2
 
 
 def gd(x: float | Tensor) -> float | Tensor:
@@ -33,18 +33,18 @@ def gd(x: float | Tensor) -> float | Tensor:
 
 
 def ngd(x: float | Tensor) -> float | Tensor:
-    return gd(x * th.pi / 2) / th.pi * 2 + 0.5
+    return (gd(x * th.pi / 2) / th.pi * 2 + 1) / 2
 
 
 def ntanh(x: float | Tensor) -> float | Tensor:
-    return th.tanh(x) + 0.5
+    return (th.tanh(x) + 1) / 2
 
 
 c = np.sqrt(np.pi) / 2
 
 
 def nerf(x: float | Tensor) -> float | Tensor:
-    return th.erf(x * c) + 0.5
+    return (th.erf(x * c) + 1) / 2
 
 
 functions = {
