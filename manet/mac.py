@@ -73,7 +73,7 @@ class AbstractMacUnit(nn.Module):
         # index = th.sigmoid(data) * self.num_points
         import manet.func.sigmoid as sgmd
         # index = sgmd.alg2(data / th.pi * 2) * self.num_points
-        index = sgmd.gd(data) * self.num_points
+        index = sgmd.ngd(data) * self.num_points
         # index = sgmd.nerf(data / th.pi * 2) * self.num_points
 
         bgn = index.floor().long()
