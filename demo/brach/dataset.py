@@ -31,6 +31,6 @@ class TrainDataset(Dataset):
         return 2048
 
     def __getitem__(self, index):
-        rng = 20 * np.random.rand(1)[0]
+        rng = 1 + 19 * np.random.rand(1)[0]
         return np.array((rng, 2), dtype=np.float32), 0
         # return np.array((10, 2), dtype=np.float32), 0
