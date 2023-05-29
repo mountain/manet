@@ -44,6 +44,9 @@ class AbstractMacUnit(nn.Module):
 
         self.channel_dim, self.spatio_dim = self.calculate()
 
+        self.alpha = nn.Parameter(
+            th.normal(0, 1, (1,)).view(1, 1, 1)
+        )
         # the learnable parameters which govern the MAC unit
         self.angles = nn.Parameter(
             th.linspace(0, 2 * th.pi, num_points).view(1, 1, num_points)
@@ -73,7 +76,7 @@ class AbstractMacUnit(nn.Module):
         # calculate the index of the accessor
         # index = th.sigmoid(data) * self.num_points
         import manet.func.sigmoid as sgmd
-        index = sgmd.natan(data) * self.num_points
+        index = sgmd.natan(self.alpha * data) * self.num_points
 
         bgn = index.floor().long()
         bgn = bgn * (bgn >= 0)
