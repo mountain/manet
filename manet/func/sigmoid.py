@@ -16,8 +16,7 @@ from torch import Tensor
 #   - nerf: Normalized error function
 
 
-
-def algb_1(x: float | Tensor) -> float | Tensor:
+def alg1(x: float | Tensor) -> float | Tensor:
     return x / (1 + th.abs(x)) + 0.5
 
 
@@ -25,7 +24,7 @@ def natan(x: float | Tensor) -> float | Tensor:
     return th.atan(x * th.pi / 2) / th.pi * 2 + 0.5
 
 
-def algb_2(x: float | Tensor) -> float | Tensor:
+def alg2(x: float | Tensor) -> float | Tensor:
     return x / th.sqrt(1 + x * x) + 0.5
 
 
@@ -49,9 +48,9 @@ def nerf(x: float | Tensor) -> float | Tensor:
 
 
 functions = {
-    'algb1': algb_1,
+    'alg1': alg1,
     'natan': natan,
-    'algb2': algb_2,
+    'alg2': alg2,
     'ngd': ngd,
     'ntanh': ntanh,
     'nerf': nerf
