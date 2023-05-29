@@ -43,10 +43,6 @@ class AbstractMacUnit(nn.Module):
         self.out_spatio = out_spatio
 
         self.channel_dim, self.spatio_dim = self.calculate()
-
-        self.coeff = nn.Parameter(
-            th.normal(0, 1, size=(1, 3, self.channel_dim))
-        )
         # the learnable parameters which govern the MAC unit
         self.angles = nn.Parameter(
             th.linspace(0, 2 * th.pi, num_points).view(1, 1, num_points)
@@ -76,13 +72,9 @@ class AbstractMacUnit(nn.Module):
         # calculate the index of the accessor
         # index = th.sigmoid(data) * self.num_points
         import manet.func.sigmoid as sgmd
-        index1 = sgmd.alg2(data / th.pi * 2) * self.num_points
-        index2 = sgmd.ngd(data / th.pi * 2) * self.num_points
-        index3 = sgmd.nerf(data / th.pi * 2) * self.num_points
-
-        coeff = th.matmul(self.coeff, data.view(-1, self.channel_dim, 1))
-        coeff = th.softmax(coeff, dim=1)
-        index = (coeff[:, 0:1] * index1 + coeff[:, 1:2] * index2 + coeff[:, 2:3] * index3) / 3
+        index = sgmd.alg2(data) * self.num_points
+        # index = sgmd.ngd(data / th.pi * 2) * self.num_points
+        # index = sgmd.nerf(data / th.pi * 2) * self.num_points
 
         bgn = index.floor().long()
         bgn = bgn * (bgn >= 0)
