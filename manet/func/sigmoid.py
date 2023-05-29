@@ -8,11 +8,11 @@ from torch import Tensor
 # The sigmoid functions are used to map the output of the network to a value between 0 and 1.
 #
 # The sigmoid functions are ordered by their curve steepness. The first is the most steep one.
-#   - algb_1: Algebraic sigmoid function
+#   - alg1: Algebraic sigmoid function
 #   - natan: Normalized arctangent
-#   - algb_2: Algebraic sigmoid function
+#   - alg2: Algebraic sigmoid function
 #   - ngd: Normalized Gudermannian function
-#   - tanh: hyperbolic tangent
+#   - ntanh: hyperbolic tangent
 #   - nerf: Normalized error function
 
 
