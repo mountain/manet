@@ -76,9 +76,8 @@ class AbstractMacUnit(nn.Module):
         index = sgmd.gd(data) * self.num_points
 
         bgn = index.floor().long()
-        end = (index + 1).floor().long()
-        bgn = (bgn * (bgn + 1 < self.num_points) + (bgn - 1) * (bgn + 1 >= self.num_points)) * (bgn >= 0)
-        end = (end * (end < self.num_points) + (end - 1) * (end == self.num_points)) * (end >= 0)
+        bgn = (bgn * (bgn <= self.num_points - 2) + (bgn - 1) * (bgn == self.num_points - 1) + (bgn - 2) * (bgn > self.num_points - 1)) * (bgn >= 0)
+        end = bgn + 1
 
         return index, bgn, end
 
