@@ -73,7 +73,7 @@ class AbstractMacUnit(nn.Module):
         # calculate the index of the accessor
         # index = th.sigmoid(data) * self.num_points
         import manet.func.sigmoid as sgmd
-        index = sgmd.alg1(data) * self.num_points
+        index = sgmd.natan(data) * self.num_points
 
         bgn = index.floor().long()
         bgn = bgn * (bgn >= 0)
