@@ -4,8 +4,7 @@ import lightning as pl
 from torch import nn
 from torch.nn import functional as F
 
-from manet.aeg import ZigzagFunction
-from manet.mac import MLP, MacSplineUnit, MacMatrixUnit, Reshape
+from manet.mac import MLP, Reshape
 
 
 class Fashion1(pl.LightningModule):
