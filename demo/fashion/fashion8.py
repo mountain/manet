@@ -45,11 +45,11 @@ class Fashion6(pl.LightningModule):
         self.mlp = MLP(810, [10])
         self.lsm = nn.LogSoftmax(dim=1)
 
-        self.tb_logger = None
-        self.learnable_function0.logger = None
-        self.learnable_function1.logger = None
-        self.learnable_function2.logger = None
-        self.learnable_function3.logger = None
+        # self.tb_logger = None
+        # self.learnable_function0.logger = None
+        # self.learnable_function1.logger = None
+        # self.learnable_function2.logger = None
+        # self.learnable_function3.logger = None
 
     def backward(self, loss, *args, **kwargs):
         loss.backward(*args, **kwargs, retain_graph=True)
@@ -103,57 +103,57 @@ class Fashion6(pl.LightningModule):
         return loss
 
     def validation_step(self, val_batch, batch_idx):
-        if batch_idx % 100 == 0:
-            self.learnable_function0.debug = True
-            self.learnable_function1.debug = True
-            self.learnable_function2.debug = True
-            self.learnable_function3.debug = True
-            self.learnable_function4.debug = True
-            self.learnable_function5.debug = True
-            self.learnable_function6.debug = True
-            self.learnable_function7.debug = True
+        # if batch_idx % 100 == 0:
+        #     self.learnable_function0.debug = True
+        #     self.learnable_function1.debug = True
+        #     self.learnable_function2.debug = True
+        #     self.learnable_function3.debug = True
+        #     self.learnable_function4.debug = True
+        #     self.learnable_function5.debug = True
+        #     self.learnable_function6.debug = True
+        #     self.learnable_function7.debug = True
 
-            self.learnable_function0.global_step += 1
-            self.learnable_function1.global_step += 1
-            self.learnable_function2.global_step += 1
-            self.learnable_function3.global_step += 1
-            self.learnable_function4.global_step += 1
-            self.learnable_function5.global_step += 1
-            self.learnable_function6.global_step += 1
-            self.learnable_function7.global_step += 1
+        #     self.learnable_function0.global_step += 1
+        #     self.learnable_function1.global_step += 1
+        #     self.learnable_function2.global_step += 1
+        #     self.learnable_function3.global_step += 1
+        #     self.learnable_function4.global_step += 1
+        #     self.learnable_function5.global_step += 1
+        #     self.learnable_function6.global_step += 1
+        #     self.learnable_function7.global_step += 1
 
-            import lightning.pytorch.loggers as pl_loggers
-            tb_logger = None
-            for logger in self.trainer.loggers:
-                if isinstance(logger, pl_loggers.TensorBoardLogger):
-                    tb_logger = logger.experiment
-                    break
-            if tb_logger is None:
-                raise ValueError('TensorBoard Logger not found')
+        #     import lightning.pytorch.loggers as pl_loggers
+        #     tb_logger = None
+        #     for logger in self.trainer.loggers:
+        #         if isinstance(logger, pl_loggers.TensorBoardLogger):
+        #             tb_logger = logger.experiment
+        #             break
+        #     if tb_logger is None:
+        #         raise ValueError('TensorBoard Logger not found')
 
-            self.tb_logger = tb_logger
-            self.learnable_function0.logger = tb_logger
-            self.learnable_function1.logger = tb_logger
-            self.learnable_function2.logger = tb_logger
-            self.learnable_function3.logger = tb_logger
-            self.learnable_function4.logger = tb_logger
-            self.learnable_function5.logger = tb_logger
-            self.learnable_function6.logger = tb_logger
-            self.learnable_function7.logger = tb_logger
+        #     self.tb_logger = tb_logger
+        #     self.learnable_function0.logger = tb_logger
+        #     self.learnable_function1.logger = tb_logger
+        #     self.learnable_function2.logger = tb_logger
+        #     self.learnable_function3.logger = tb_logger
+        #     self.learnable_function4.logger = tb_logger
+        #     self.learnable_function5.logger = tb_logger
+        #     self.learnable_function6.logger = tb_logger
+        #     self.learnable_function7.logger = tb_logger
 
         x, y = val_batch
         x = x.view(-1, 1, 28, 28)
 
-        if batch_idx % 100 == 0:
-            y_true = y[:self.learnable_function0.num_samples]
-            self.learnable_function0.labels = y_true
-            self.learnable_function1.labels = y_true
-            self.learnable_function2.labels = y_true
-            self.learnable_function3.labels = y_true
-            self.learnable_function4.labels = y_true
-            self.learnable_function5.labels = y_true
-            self.learnable_function6.labels = y_true
-            self.learnable_function7.labels = y_true
+        # if batch_idx % 100 == 0:
+        #     y_true = y[:self.learnable_function0.num_samples]
+        #     self.learnable_function0.labels = y_true
+        #     self.learnable_function1.labels = y_true
+        #     self.learnable_function2.labels = y_true
+        #     self.learnable_function3.labels = y_true
+        #     self.learnable_function4.labels = y_true
+        #     self.learnable_function5.labels = y_true
+        #     self.learnable_function6.labels = y_true
+        #     self.learnable_function7.labels = y_true
 
         z, x_hat = self(x)
         loss_classify = F.nll_loss(z, y)
@@ -165,26 +165,26 @@ class Fashion6(pl.LightningModule):
 
         pred = z.data.max(1, keepdim=True)[1]
         correct = pred.eq(y.data.view_as(pred)).sum() / y.size()[0]
-        self.log('correctness', correct, prog_bar=True)
+        self.log('correct_rate', correct, prog_bar=True)
         self.labeled_loss += loss.item() * y.size()[0]
         self.labeled_correct += correct.item() * y.size()[0]
         self.counter += y.size()[0]
 
-        if batch_idx % 100 == 0:
-            imgs = x[:10]
-            y_true = y[:10]
-            y_pred = pred[:10]
-            self.log_tb_images('Ground', (imgs, y_true, y_pred, self.learnable_function0.global_step))
-            self.log_tb_images('Recovery', (x_hat, y_true, y_pred, self.learnable_function0.global_step))
+        # if batch_idx % 100 == 0:
+        #     imgs = x[:10]
+        #     y_true = y[:10]
+        #     y_pred = pred[:10]
+        #     self.log_tb_images('Ground', (imgs, y_true, y_pred, self.learnable_function0.global_step))
+        #     self.log_tb_images('Recovery', (x_hat, y_true, y_pred, self.learnable_function0.global_step))
 
-        self.learnable_function0.debug = False
-        self.learnable_function1.debug = False
-        self.learnable_function2.debug = False
-        self.learnable_function3.debug = False
-        self.learnable_function4.debug = False
-        self.learnable_function5.debug = False
-        self.learnable_function6.debug = False
-        self.learnable_function7.debug = False
+        # self.learnable_function0.debug = False
+        # self.learnable_function1.debug = False
+        # self.learnable_function2.debug = False
+        # self.learnable_function3.debug = False
+        # self.learnable_function4.debug = False
+        # self.learnable_function5.debug = False
+        # self.learnable_function6.debug = False
+        # self.learnable_function7.debug = False
 
     def test_step(self, test_batch, batch_idx):
         x, y = test_batch
@@ -192,7 +192,7 @@ class Fashion6(pl.LightningModule):
         z = self(x)
         pred = z.data.max(1, keepdim=True)[1]
         correct = pred.eq(y.data.view_as(pred)).sum() / y.size()[0]
-        self.log('correct', correct, prog_bar=True)
+        self.log('correct_rate', correct, prog_bar=True)
 
     def on_save_checkpoint(self, checkpoint) -> None:
         import pickle, glob, os
