@@ -1,13 +1,10 @@
-import numpy as np
 import torch as th
 import lightning as pl
 
 from torch import nn
 from torch.nn import functional as F
-from torchvision.ops import MLP
 
-from manet.aeg import LearnableFunction
-from manet.mac import Reshape
+from manet.mac import Reshape, MLP
 
 
 class Fashion6(pl.LightningModule):
@@ -24,14 +21,14 @@ class Fashion6(pl.LightningModule):
         self.upsample2 = nn.Upsample(scale_factor=7 / 3, mode='nearest')
         self.upsample3 = nn.Upsample(scale_factor=3 / 1, mode='nearest')
 
-        self.learnable_function0 = LearnableFunction(debug_key='lf0')
-        self.learnable_function1 = LearnableFunction(debug_key='lf1')
-        self.learnable_function2 = LearnableFunction(debug_key='lf2')
-        self.learnable_function3 = LearnableFunction(debug_key='lf3')
-        self.learnable_function4 = LearnableFunction(debug_key='lf4')
-        self.learnable_function5 = LearnableFunction(debug_key='lf5')
-        self.learnable_function6 = LearnableFunction(debug_key='lf6')
-        self.learnable_function7 = LearnableFunction(debug_key='lf7')
+        self.learnable_function0 = MLP(1, [1])
+        self.learnable_function1 = MLP(1, [1])
+        self.learnable_function2 = MLP(1, [1])
+        self.learnable_function3 = MLP(1, [1])
+        self.learnable_function4 = MLP(1, [1])
+        self.learnable_function5 = MLP(1, [1])
+        self.learnable_function6 = MLP(1, [1])
+        self.learnable_function7 = MLP(1, [1])
 
         self.conv0 = nn.Conv2d(1, 10, kernel_size=5, padding=2)
         self.conv1 = nn.Conv2d(10, 30, kernel_size=3, padding=1)
@@ -58,33 +55,33 @@ class Fashion6(pl.LightningModule):
         loss.backward(*args, **kwargs, retain_graph=True)
 
     def forward(self, x):
-        x0 = self.conv0(x)
-        x0 = self.learnable_function0(x0)
-        x1 = self.dnsample(x0)
-        x1 = self.conv1(x1)
-        x1 = self.learnable_function1(x1)
-        x2 = self.dnsample(x1)
-        x2 = self.conv2(x2)
-        x2 = self.learnable_function2(x2)
-        x3 = self.dnsample(x2)
-        x3 = self.conv3(x3)
-        x3 = self.learnable_function3(x3)
-        x4 = self.dnsample(x3)
-        x4 = self.conv4(x4)
-        x4 = self.learnable_function4(x4)
+        x0 = self.conv0(x).view(-1, 1, 1)
+        x0 = self.learnable_function0(x0).view(-1, 10, 28, 28)
+        x1 = self.dnsample(x0).view(-1, 10, 14, 14)
+        x1 = self.conv1(x1).view(-1, 1, 1)
+        x1 = self.learnable_function1(x1).view(-1, 30, 14, 14)
+        x2 = self.dnsample(x1).view(-1, 30, 7, 7)
+        x2 = self.conv2(x2).view(-1, 1, 1)
+        x2 = self.learnable_function2(x2).view(-1, 90, 7, 7)
+        x3 = self.dnsample(x2).view(-1, 90, 3, 3)
+        x3 = self.conv3(x3).view(-1, 1, 1)
+        x3 = self.learnable_function3(x3).view(-1, 270, 3, 3)
+        x4 = self.dnsample(x3).view(-1, 270, 1, 1)
+        x4 = self.conv4(x4).view(-1, 1, 1)
+        x4 = self.learnable_function4(x4).view(-1, 810, 1, 1)
 
         x5 = self.upsample3(x4)
         x5 = th.cat([x5, x3], dim=1)
-        x5 = self.conv5(x5)
-        x5 = self.learnable_function5(x5)
+        x5 = self.conv5(x5).view(-1, 1, 1)
+        x5 = self.learnable_function5(x5).view(-1, 360, 3, 3)
         x6 = self.upsample2(x5)
         x6 = th.cat([x6, x2], dim=1)
-        x6 = self.conv6(x6)
-        x6 = self.learnable_function6(x6)
+        x6 = self.conv6(x6).view(-1, 1, 1)
+        x6 = self.learnable_function6(x6).view(-1, 150, 7, 7)
         x7 = self.upsample1(x6)
         x7 = th.cat([x7, x1], dim=1)
-        x7 = self.conv7(x7)
-        x7 = self.learnable_function7(x7)
+        x7 = self.conv7(x7).view(-1, 1, 1)
+        x7 = self.learnable_function7(x7).view(-1, 60, 14, 14)
         x8 = self.upsample0(x7)
         x8 = self.conv8(x8)
 
