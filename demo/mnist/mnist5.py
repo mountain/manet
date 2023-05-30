@@ -8,7 +8,7 @@ from manet.nn.model import MNISTModel
 #
 # Result:
 # The loss was dropped from 2.30, and the accuracy was better.
-# accuracy = ?????
+# accuracy = 0.99090
 
 
 class MNModel5(MNISTModel):
