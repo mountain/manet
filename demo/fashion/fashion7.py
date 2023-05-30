@@ -4,10 +4,8 @@ import lightning as pl
 
 from torch import nn
 from torch.nn import functional as F
-from torchvision.ops import MLP
 
-from manet.aeg import LearnableFunction
-from manet.mac import Reshape
+from manet.mac import Reshape, MLP
 
 
 class Fashion6(pl.LightningModule):
@@ -24,11 +22,11 @@ class Fashion6(pl.LightningModule):
         self.upsample2 = nn.Upsample(scale_factor=7 / 3, mode='nearest')
         self.upsample3 = nn.Upsample(scale_factor=3 / 1, mode='nearest')
 
-        self.learnable_function0 = LearnableFunction(debug_key='lf0')
-        self.learnable_function1 = LearnableFunction(debug_key='lf1')
-        self.learnable_function2 = LearnableFunction(debug_key='lf2')
-        self.learnable_function3 = LearnableFunction(debug_key='lf3')
-        self.learnable_function4 = LearnableFunction(debug_key='lf4')
+        self.learnable_function0 = MLP(1, [1])
+        self.learnable_function1 = MLP(1, [1])
+        self.learnable_function2 = MLP(1, [1])
+        self.learnable_function3 = MLP(1, [1])
+        self.learnable_function4 = MLP(1, [1])
         self.learnable_function5 = nn.ReLU()
         self.learnable_function6 = nn.ReLU()
         self.learnable_function7 = nn.ReLU()
@@ -48,11 +46,11 @@ class Fashion6(pl.LightningModule):
         self.mlp = MLP(405, [10])
         self.lsm = nn.LogSoftmax(dim=1)
 
-        self.tb_logger = None
-        self.learnable_function0.logger = None
-        self.learnable_function1.logger = None
-        self.learnable_function2.logger = None
-        self.learnable_function3.logger = None
+        # self.tb_logger = None
+        # self.learnable_function0.logger = None
+        # self.learnable_function1.logger = None
+        # self.learnable_function2.logger = None
+        # self.learnable_function3.logger = None
 
     def backward(self, loss, *args, **kwargs):
         loss.backward(*args, **kwargs, retain_graph=True)
@@ -106,44 +104,44 @@ class Fashion6(pl.LightningModule):
         return loss
 
     def validation_step(self, val_batch, batch_idx):
-        if batch_idx % 100 == 0:
-            self.learnable_function0.debug = True
-            self.learnable_function1.debug = True
-            self.learnable_function2.debug = True
-            self.learnable_function3.debug = True
-            self.learnable_function4.debug = True
-
-            self.learnable_function0.global_step += 1
-            self.learnable_function1.global_step += 1
-            self.learnable_function2.global_step += 1
-            self.learnable_function3.global_step += 1
-
-            import lightning.pytorch.loggers as pl_loggers
-            tb_logger = None
-            for logger in self.trainer.loggers:
-                if isinstance(logger, pl_loggers.TensorBoardLogger):
-                    tb_logger = logger.experiment
-                    break
-            if tb_logger is None:
-                raise ValueError('TensorBoard Logger not found')
-
-            self.tb_logger = tb_logger
-            self.learnable_function0.logger = tb_logger
-            self.learnable_function1.logger = tb_logger
-            self.learnable_function2.logger = tb_logger
-            self.learnable_function3.logger = tb_logger
-            self.learnable_function4.logger = tb_logger
+        # if batch_idx % 100 == 0:
+        #     self.learnable_function0.debug = True
+        #     self.learnable_function1.debug = True
+        #     self.learnable_function2.debug = True
+        #     self.learnable_function3.debug = True
+        #     self.learnable_function4.debug = True
+        #
+        #     self.learnable_function0.global_step += 1
+        #     self.learnable_function1.global_step += 1
+        #     self.learnable_function2.global_step += 1
+        #     self.learnable_function3.global_step += 1
+        #
+        #     import lightning.pytorch.loggers as pl_loggers
+        #     tb_logger = None
+        #     for logger in self.trainer.loggers:
+        #         if isinstance(logger, pl_loggers.TensorBoardLogger):
+        #             tb_logger = logger.experiment
+        #             break
+        #     if tb_logger is None:
+        #         raise ValueError('TensorBoard Logger not found')
+        #
+        #     self.tb_logger = tb_logger
+        #     self.learnable_function0.logger = tb_logger
+        #     self.learnable_function1.logger = tb_logger
+        #     self.learnable_function2.logger = tb_logger
+        #     self.learnable_function3.logger = tb_logger
+        #     self.learnable_function4.logger = tb_logger
 
         x, y = val_batch
         x = x.view(-1, 1, 28, 28)
 
-        if batch_idx % 100 == 0:
-            y_true = y[:self.learnable_function0.num_samples]
-            self.learnable_function0.labels = y_true
-            self.learnable_function1.labels = y_true
-            self.learnable_function2.labels = y_true
-            self.learnable_function3.labels = y_true
-            self.learnable_function4.labels = y_true
+        # if batch_idx % 100 == 0:
+        #     y_true = y[:self.learnable_function0.num_samples]
+        #     self.learnable_function0.labels = y_true
+        #     self.learnable_function1.labels = y_true
+        #     self.learnable_function2.labels = y_true
+        #     self.learnable_function3.labels = y_true
+        #     self.learnable_function4.labels = y_true
 
         z, x_hat = self(x)
         loss_classify = F.nll_loss(z, y)
@@ -160,18 +158,18 @@ class Fashion6(pl.LightningModule):
         self.labeled_correct += correct.item() * y.size()[0]
         self.counter += y.size()[0]
 
-        if batch_idx % 100 == 0:
-            imgs = x[:10]
-            y_true = y[:10]
-            y_pred = pred[:10]
-            self.log_tb_images('Ground', (imgs, y_true, y_pred, self.learnable_function0.global_step))
-            self.log_tb_images('Recovery', (x_hat, y_true, y_pred, self.learnable_function0.global_step))
+        # if batch_idx % 100 == 0:
+        #     imgs = x[:10]
+        #     y_true = y[:10]
+        #     y_pred = pred[:10]
+        #     self.log_tb_images('Ground', (imgs, y_true, y_pred, self.learnable_function0.global_step))
+        #     self.log_tb_images('Recovery', (x_hat, y_true, y_pred, self.learnable_function0.global_step))
 
-        self.learnable_function0.debug = False
-        self.learnable_function1.debug = False
-        self.learnable_function2.debug = False
-        self.learnable_function3.debug = False
-        self.learnable_function4.debug = False
+        # self.learnable_function0.debug = False
+        # self.learnable_function1.debug = False
+        # self.learnable_function2.debug = False
+        # self.learnable_function3.debug = False
+        # self.learnable_function4.debug = False
 
     def test_step(self, test_batch, batch_idx):
         x, y = test_batch
