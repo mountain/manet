@@ -339,6 +339,15 @@ class MacSplineUnit(SplineUnit):
         return self.reduction(data)
 
 
+class Reshape(nn.Module):
+    def __init__(self, *shape) -> None:
+        super().__init__()
+        self.shape = shape
+
+    def forward(self, x):
+        return x.view(-1, *self.shape)
+
+
 class MLP(nn.Sequential):
     def __init__(
         self,
@@ -361,6 +370,21 @@ class MLP(nn.Sequential):
         super().__init__(*layers)
 
 
+class Accumulated(nn.Module):
+    def __init__(
+        self, *args, **kwargs
+    ) -> None:
+        self.args = args
+        self.kwargs = kwargs
+        super().__init__(**kwargs)
+
+    def forward(self, *args, **kwargs):
+        result = 0
+        for layer in self.args:
+            result = result + layer(*args, **kwargs)
+        return result
+
+
 class MMLP(nn.Sequential):
     def __init__(
         self,
@@ -375,40 +399,12 @@ class MMLP(nn.Sequential):
         layers = []
         in_dim = in_channels
         for hidden_dim in hidden_channels:
+            accumulated = []
             for num_points in mac_points:
-                layers.append(mac_unit(
+                accumulated.append(mac_unit(
                     in_dim, hidden_dim, spatio_dim, spatio_dim, mac_steps, mac_length / mac_steps, num_points
                 ))
                 in_dim = hidden_dim
+            layers.append(Accumulated(*accumulated))
         layers.append(nn.Flatten())
         super().__init__(*layers)
-
-
-class Classification(nn.Module):
-    def __init__(
-        self,
-        num_class: int,
-        length: float,
-    ) -> None:
-        super().__init__()
-        self.num_class = num_class
-        self.length = length
-        theta = th.linspace(0, 2 * th.pi, 2 * num_class + 1)[1::2]
-        values = (th.exp(length * th.sin(theta)) - 1) / th.tan(theta)
-        self.values = values.view(1, num_class, 1, 1)
-        self.matrix = nn.Parameter(
-            th.normal(0, 1, (1, num_class, num_class))
-        )
-
-    def forward(self, x):
-        err = ((x - self.values) ** 2).view(-1, 10)
-        return th.matmul(err, self.matrix)
-
-
-class Reshape(nn.Module):
-    def __init__(self, *shape) -> None:
-        super().__init__()
-        self.shape = shape
-
-    def forward(self, x):
-        return x.view(-1, *self.shape)
