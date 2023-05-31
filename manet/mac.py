@@ -5,9 +5,10 @@ import torch.nn as nn
 from torch import Tensor
 from typing import List, TypeVar, Tuple, Type
 
-A = TypeVar('A', bound='AbstractMacUnit')
+A = TypeVar('A', bound='AbstractUnit')
 T = TypeVar('T', bound='MacTensorUnit')
 M = TypeVar('M', bound='MacMatrixUnit')
+S = TypeVar('S', bound='MacSplineUnit')
 P = TypeVar('P', bound='MLP')
 
 
@@ -276,7 +277,7 @@ class MacMatrixUnit(AbstractUnit):
 
 
 class MacSplineUnit(SplineUnit):
-    def __init__(self: M,
+    def __init__(self: S,
                  in_channel: int,
                  out_channel: int,
                  in_spatio: int = 1,
@@ -290,7 +291,7 @@ class MacSplineUnit(SplineUnit):
         self.channel_dim, self.spatio_dim = self.calculate()
         self.length = num_steps * step_length
 
-    def calculate(self: T) -> Tuple[int, int]:
+    def calculate(self: S) -> Tuple[int, int]:
         channel_dim, self.in_channel_factor, self.out_channel_factor = _exchangeable_multiplier_(
             self.in_channel, self.out_channel
         )
@@ -299,22 +300,22 @@ class MacSplineUnit(SplineUnit):
         )
         return channel_dim, spatio_dim
 
-    def expansion(self: T, data: Tensor) -> Tensor:
+    def expansion(self: S, data: Tensor) -> Tensor:
         data = data.view(-1, self.in_channel, 1, self.in_spatio, 1)
         data = data * self.in_weight.view(1, self.in_channel, self.in_channel_factor, self.in_spatio, self.in_spatio_factor)
         data = data + self.in_bias.view(1, self.in_channel, self.in_channel_factor, self.in_spatio, self.in_spatio_factor)
         return data.view(-1, self.channel_dim, self.spatio_dim)
 
-    def attention(self: T, data: Tensor) -> Tensor:
+    def attention(self: S, data: Tensor) -> Tensor:
         data = data.view(-1, self.channel_dim, self.spatio_dim)
         data = data * self.out_weight + self.out_bias
         return th.sigmoid(data)
 
-    def reduction(self: T, data: Tensor) -> Tensor:
+    def reduction(self: S, data: Tensor) -> Tensor:
         data = data.view(-1, self.out_channel_factor, self.out_channel, self.out_spatio_factor, self.out_spatio)
         return th.sum(data, dim=(1, 3))
 
-    def forward(self: T,
+    def forward(self: S,
                 data: Tensor
                 ) -> Tensor:
 
@@ -334,7 +335,7 @@ class MLP(nn.Sequential):
         mac_steps: int = 3,
         mac_length: float = 1.0,
         mac_points: int = 5,
-        mac_unit: Type[AbstractMacUnit] = MacTensorUnit
+        mac_unit: Type[AbstractUnit] = MacTensorUnit
     ) -> None:
         layers = []
         in_dim = in_channels
