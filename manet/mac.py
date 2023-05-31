@@ -21,7 +21,7 @@ def _exchangeable_multiplier_(factor1: int, factor2: int) -> Tuple[int, int, int
     return lcm, lcm // factor1, lcm // factor2
 
 
-class AbstractMacUnit(nn.Module):
+class AbstractUnit(nn.Module):
     def __init__(self: A,
                  in_channel: int,
                  out_channel: int,
@@ -107,7 +107,7 @@ class AbstractMacUnit(nn.Module):
         return (velo * th.cos(angels) + data * velo * th.sin(angels)) * self.step_length
 
 
-class SplineMacUnit(AbstractMacUnit):
+class SplineUnit(AbstractUnit):
     def __init__(self: A,
                  in_channel: int,
                  out_channel: int,
@@ -155,15 +155,16 @@ class SplineMacUnit(AbstractMacUnit):
              data: Tensor
              ) -> Tensor:
 
-        accessor = self.accessor(data)
-        velo = self.access2nd(self.velocity, self.dvelocity, accessor)
-        angels = self.access2nd(self.angles, self.dangles, accessor)
+        accessor = self.accessor(data, 'ngd')
+        angels = self.access2nd(self.angles, accessor)
+        accessor = self.accessor(data, 'nerf')
+        velo = self.access2nd(self.velocity, accessor)
 
         # by the flow equation of the arithmetic expression geometry
         return velo * th.cos(angels) + data * velo * th.sin(angels)
 
 
-class MacTensorUnit(AbstractMacUnit):
+class MacTensorUnit(AbstractUnit):
     def __init__(self: T,
                  in_channel: int,
                  out_channel: int,
@@ -226,7 +227,7 @@ class MacTensorUnit(AbstractMacUnit):
         return self.reduction(data)
 
 
-class MacMatrixUnit(AbstractMacUnit):
+class MacMatrixUnit(AbstractUnit):
     def __init__(self: M,
                  in_channel: int,
                  out_channel: int,
@@ -274,7 +275,7 @@ class MacMatrixUnit(AbstractMacUnit):
         return data
 
 
-class MacSplineUnit(SplineMacUnit):
+class MacSplineUnit(SplineUnit):
     def __init__(self: M,
                  in_channel: int,
                  out_channel: int,
@@ -289,36 +290,39 @@ class MacSplineUnit(SplineMacUnit):
         self.channel_dim, self.spatio_dim = self.calculate()
         self.length = num_steps * step_length
 
-        self.channel_transform = nn.Parameter(
-            th.normal(0, 1, (1, self.in_channel, self.out_channel))
-        )
-        self.spatio_transform = nn.Parameter(
-            th.normal(0, 1, (1, self.in_spatio, self.out_spatio))
-        )
-
     def calculate(self: T) -> Tuple[int, int]:
-        channel_dim = self.in_channel * self.out_channel
-        spatio_dim = self.in_spatio * self.out_spatio
+        channel_dim, self.in_channel_factor, self.out_channel_factor = _exchangeable_multiplier_(
+            self.in_channel, self.out_channel
+        )
+        spatio_dim, self.in_spatio_factor, self.out_spatio_factor = _exchangeable_multiplier_(
+            self.in_spatio, self.out_spatio
+        )
         return channel_dim, spatio_dim
+
+    def expansion(self: T, data: Tensor) -> Tensor:
+        data = data.view(-1, self.in_channel, 1, self.in_spatio, 1)
+        data = data * self.in_weight.view(1, self.in_channel, self.in_channel_factor, self.in_spatio, self.in_spatio_factor)
+        data = data + self.in_bias.view(1, self.in_channel, self.in_channel_factor, self.in_spatio, self.in_spatio_factor)
+        return data.view(-1, self.channel_dim, self.spatio_dim)
+
+    def attention(self: T, data: Tensor) -> Tensor:
+        data = data.view(-1, self.channel_dim, self.spatio_dim)
+        data = data * self.out_weight + self.out_bias
+        return th.sigmoid(data)
+
+    def reduction(self: T, data: Tensor) -> Tensor:
+        data = data.view(-1, self.out_channel_factor, self.out_channel, self.out_spatio_factor, self.out_spatio)
+        return th.sum(data, dim=(1, 3))
 
     def forward(self: T,
                 data: Tensor
                 ) -> Tensor:
 
-        data = data.contiguous() * self.length
-
-        data = data.view(-1, self.in_channel, self.in_spatio)
-        data = th.permute(data, [0, 2, 1]).reshape(-1, self.in_channel)
-        data = th.matmul(data, self.channel_transform)
-        data = data.view(-1, self.in_spatio, self.out_channel)
-
+        data = self.expansion(data)
         data = self.nonlinear(data)
+        data = data * self.attention(data)
 
-        data = th.permute(data, [0, 2, 1]).reshape(-1, self.in_spatio)
-        data = th.matmul(data, self.spatio_transform)
-        data = data.view(-1, self.out_channel, self.out_spatio)
-
-        return data / self.length
+        return self.reduction(data)
 
 
 class MLP(nn.Sequential):
