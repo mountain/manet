@@ -99,7 +99,7 @@ class AbstractMacUnit(nn.Module):
 
         accessor = self.accessor(data, 'ntanh')
         velo = self.access(self.velocity, accessor)
-        accessor = self.accessor(data, 'ngd')
+        accessor = self.accessor(data, 'nerf')
         angels = self.access(self.angles, accessor)
 
         # by the flow equation of the arithmetic expression geometry
