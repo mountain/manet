@@ -157,9 +157,9 @@ class SplineUnit(AbstractUnit):
              ) -> Tensor:
 
         accessor = self.accessor(data, 'ngd')
-        angels = self.access2nd(self.angles, accessor)
+        angels = self.access2nd(self.angles, self.dangles, accessor)
         accessor = self.accessor(data, 'nerf')
-        velo = self.access2nd(self.velocity, accessor)
+        velo = self.access2nd(self.velocity, self.dvelocity, accessor)
 
         # by the flow equation of the arithmetic expression geometry
         return velo * th.cos(angels) + data * velo * th.sin(angels)
