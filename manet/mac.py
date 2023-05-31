@@ -291,6 +291,19 @@ class MacSplineUnit(SplineUnit):
         self.channel_dim, self.spatio_dim = self.calculate()
         self.length = num_steps * step_length
 
+        self.in_weight = nn.Parameter(
+            th.normal(0, 1, (1, self.channel_dim, self.spatio_dim))
+        )
+        self.in_bias = nn.Parameter(
+            th.normal(0, 1, (1, self.channel_dim, self.spatio_dim))
+        )
+        self.out_weight = nn.Parameter(
+            th.normal(0, 1, (1, self.channel_dim, self.spatio_dim))
+        )
+        self.out_bias = nn.Parameter(
+            th.normal(0, 1, (1, self.channel_dim, self.spatio_dim))
+        )
+
     def calculate(self: S) -> Tuple[int, int]:
         channel_dim, self.in_channel_factor, self.out_channel_factor = _exchangeable_multiplier_(
             self.in_channel, self.out_channel
