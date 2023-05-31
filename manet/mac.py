@@ -374,13 +374,13 @@ class Accumulated(nn.Module):
     def __init__(
         self, *args, **kwargs
     ) -> None:
-        self.args = args
+        self.layers = args
         self.kwargs = kwargs
         super().__init__(**kwargs)
 
     def forward(self, *args, **kwargs):
         result = 0
-        for layer in self.args:
+        for layer in self.layers:
             result = result + layer(*args, **kwargs)
         return result
 
@@ -405,6 +405,6 @@ class MMLP(nn.Sequential):
                 accumulated.append(mac_unit(
                     in_dim, hidden_dim, spatio_dim, spatio_dim, mac_steps, mac_length / mac_steps, num_points
                 ))
-                in_dim = hidden_dim
             layers.append(Accumulated(*accumulated))
+            in_dim = hidden_dim
         super().__init__(*layers)
