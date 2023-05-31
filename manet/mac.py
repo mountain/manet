@@ -211,8 +211,7 @@ class MacTensorUnit(AbstractUnit):
     def attention(self: T, data: Tensor) -> Tensor:
         data = data.view(-1, self.channel_dim, self.spatio_dim)
         data = data * self.out_weight + self.out_bias
-        import manet.func.sigmoid as sgmd
-        return sgmd.nerf(data)
+        return th.sigmoid(data)
 
     def reduction(self: T, data: Tensor) -> Tensor:
         data = data.view(-1, self.out_channel_factor, self.out_channel, self.out_spatio_factor, self.out_spatio)
