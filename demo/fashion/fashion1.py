@@ -16,21 +16,21 @@ class Fashion1(pl.LightningModule):
         self.labeled_correct = 0
         self.recognizer = nn.Sequential(
             nn.Conv2d(1, 5, kernel_size=5, padding=2),
-            MMLP(1, [1], mac_steps=3, mac_length=1),
+            MMLP(1, [1], mac_steps=1, mac_length=1),
             Reshape(5, 28, 28),
             nn.MaxPool2d(2),
             nn.Conv2d(5, 15, kernel_size=5, padding=2),
-            MMLP(1, [1], mac_steps=3, mac_length=1),
+            MMLP(1, [1], mac_steps=1, mac_length=1),
             Reshape(15, 14, 14),
             nn.MaxPool2d(2),
             nn.Conv2d(15, 45, kernel_size=5, padding=2),
-            MMLP(1, [1], mac_steps=3, mac_length=1),
+            MMLP(1, [1], mac_steps=1, mac_length=1),
             Reshape(45, 7, 7),
             nn.MaxPool2d(2),
             nn.Conv2d(45, 135, kernel_size=3, padding=1),
-            MMLP(1, [1], mac_steps=3, mac_length=1),
+            MMLP(1, [1], mac_steps=1, mac_length=1),
             Reshape(135 * 3 * 3),
-            MMLP(135 * 9, [10], mac_steps=3, mac_length=1),
+            MMLP(135 * 9, [10], mac_steps=1, mac_length=1),
             Reshape(10),
             nn.LogSoftmax(dim=1)
         )
