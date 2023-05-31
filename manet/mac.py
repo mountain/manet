@@ -46,11 +46,12 @@ class AbstractMacUnit(nn.Module):
 
         self.channel_dim, self.spatio_dim = self.calculate()
         # the learnable parameters which govern the MAC unit
+        num_vpoints = int(num_points * multiplier)
         self.angles = nn.Parameter(
             th.linspace(0, 2 * th.pi, num_points).view(1, 1, num_points)
         )
         self.velocity = nn.Parameter(
-            th.linspace(0, 1, int(num_points * multiplier)).view(1, 1, num_points)
+            th.linspace(0, 1, num_vpoints).view(1, 1, num_vpoints)
         )
 
     def calculate(self: T) -> Tuple[int, int]:
@@ -77,11 +78,12 @@ class AbstractMacUnit(nn.Module):
         # index = th.sigmoid(data) * self.num_points
         import manet.func.sigmoid as sgmd
         index = sgmd.functions[func](data) * multiplier * self.num_points
+        num_points = int(self.num_points * multiplier)
 
         bgn = index.floor().long()
         bgn = bgn * (bgn >= 0)
-        bgn = bgn * (bgn <= self.num_points - 2) + (bgn - 1) * (bgn > self.num_points - 2)
-        bgn = bgn * (bgn <= self.num_points - 2) + (bgn - 1) * (bgn > self.num_points - 2)
+        bgn = bgn * (bgn <= num_points - 2) + (bgn - 1) * (bgn > num_points - 2)
+        bgn = bgn * (bgn <= num_points - 2) + (bgn - 1) * (bgn > num_points - 2)
         end = bgn + 1
 
         return index, bgn, end
