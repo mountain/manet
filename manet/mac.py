@@ -28,7 +28,7 @@ class AbstractMacUnit(nn.Module):
                  in_spatio: int = 1,
                  out_spatio: int = 1,
                  num_steps: int = 3,
-                 multiplier: float = 2.71323,
+                 multiplier: float = 1.0,
                  step_length: float = 0.33333,
                  num_points: int = 5,
                  ) -> None:
@@ -104,7 +104,7 @@ class AbstractMacUnit(nn.Module):
 
         accessor = self.accessor(data, 'ngd', 1.0)
         angels = self.access(self.angles, accessor)
-        accessor = self.accessor(data, 'nerf', self.multiplier)
+        accessor = self.accessor(data, 'alg1', self.multiplier)
         velo = self.access(self.velocity, accessor)
 
         # by the flow equation of the arithmetic expression geometry
