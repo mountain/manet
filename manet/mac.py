@@ -28,7 +28,6 @@ class AbstractMacUnit(nn.Module):
                  in_spatio: int = 1,
                  out_spatio: int = 1,
                  num_steps: int = 3,
-                 multiplier: float = 1.0,
                  step_length: float = 0.33333,
                  num_points: int = 5,
                  ) -> None:
@@ -38,7 +37,6 @@ class AbstractMacUnit(nn.Module):
         self.num_steps = num_steps
         self.step_length = step_length
         self.num_points = num_points
-        self.multiplier = multiplier
         self.in_channel = in_channel
         self.out_channel = out_channel
         self.in_spatio = in_spatio
@@ -46,12 +44,11 @@ class AbstractMacUnit(nn.Module):
 
         self.channel_dim, self.spatio_dim = self.calculate()
         # the learnable parameters which govern the MAC unit
-        num_vpoints = int(num_points * multiplier)
         self.angles = nn.Parameter(
             th.linspace(0, 2 * th.pi, num_points).view(1, 1, num_points)
         )
         self.velocity = nn.Parameter(
-            th.linspace(0, 1, num_vpoints).view(1, 1, num_vpoints)
+            th.linspace(0, 1, num_points).view(1, 1, num_points)
         )
 
     def calculate(self: T) -> Tuple[int, int]:
@@ -71,14 +68,13 @@ class AbstractMacUnit(nn.Module):
     def accessor(self: T,
                  data: Tensor,
                  func: str = 'ngd',
-                 multiplier: float = 1.0
                  ) -> Tuple[Tensor, Tensor, Tensor]:
 
         # calculate the index of the accessor
         # index = th.sigmoid(data) * self.num_points
         import manet.func.sigmoid as sgmd
-        index = sgmd.functions[func](data) * multiplier * self.num_points
-        num_points = int(self.num_points * multiplier)
+        num_points = self.num_points
+        index = sgmd.functions[func](data) * num_points
 
         bgn = index.floor().long()
         bgn = bgn * (bgn >= 0)
