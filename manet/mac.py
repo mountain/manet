@@ -97,9 +97,9 @@ class AbstractMacUnit(nn.Module):
              data: Tensor
              ) -> Tensor:
 
-        accessor = self.accessor(data, 'ntanh')
-        velo = self.access(self.velocity, accessor)
         accessor = self.accessor(data, 'nerf')
+        velo = self.access(self.velocity, accessor)
+        accessor = self.accessor(data, 'ngd')
         angels = self.access(self.angles, accessor)
 
         # by the flow equation of the arithmetic expression geometry
