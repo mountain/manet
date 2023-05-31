@@ -407,4 +407,5 @@ class MMLP(nn.Sequential):
                 ))
             layers.append(Accumulated(*accumulated))
             in_dim = hidden_dim
+        layers.append(nn.Flatten())
         super().__init__(*layers)
