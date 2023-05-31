@@ -67,14 +67,13 @@ class AbstractMacUnit(nn.Module):
 
     def accessor(self: T,
                  data: Tensor,
+                 func: str = 'ngd'
                  ) -> Tuple[Tensor, Tensor, Tensor]:
 
         # calculate the index of the accessor
         # index = th.sigmoid(data) * self.num_points
         import manet.func.sigmoid as sgmd
-        # index = sgmd.alg2(data / th.pi * 2) * self.num_points
-        index = sgmd.ngd(data) * self.num_points
-        # index = sgmd.nerf(data / th.pi * 2) * self.num_points
+        index = sgmd.functions[func](data) * self.num_points
 
         bgn = index.floor().long()
         bgn = bgn * (bgn >= 0)
@@ -98,8 +97,9 @@ class AbstractMacUnit(nn.Module):
              data: Tensor
              ) -> Tensor:
 
-        accessor = self.accessor(data)
+        accessor = self.accessor(data, 'ntanh')
         velo = self.access(self.velocity, accessor)
+        accessor = self.accessor(data, 'ngd')
         angels = self.access(self.angles, accessor)
 
         # by the flow equation of the arithmetic expression geometry
