@@ -403,7 +403,7 @@ class MMLP(nn.Sequential):
             accumulated = []
             for num_points in mac_points:
                 accumulated.append(mac_unit(
-                    in_dim, hidden_dim, spatio_dim, spatio_dim, mac_steps, mac_length / mac_steps, num_points
+                    in_dim, hidden_dim, spatio_dim, spatio_dim, mac_steps, mac_length / mac_steps / num_points, num_points
                 ))
             layers.append(Accumulated(*accumulated))
             in_dim = hidden_dim
