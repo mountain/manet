@@ -361,6 +361,29 @@ class MLP(nn.Sequential):
         super().__init__(*layers)
 
 
+class MMLP(nn.Sequential):
+    def __init__(
+        self,
+        in_channels: int,
+        hidden_channels: List[int],
+        spatio_dim: int = 1,
+        mac_steps: int = 3,
+        mac_length: float = 1.0,
+        mac_points: Tuple[int] = (2, 3, 5, 7, 11),
+        mac_unit: Type[AbstractUnit] = MacTensorUnit
+    ) -> None:
+        layers = []
+        in_dim = in_channels
+        for hidden_dim in hidden_channels:
+            for num_points in mac_points:
+                layers.append(mac_unit(
+                    in_dim, hidden_dim, spatio_dim, spatio_dim, mac_steps, mac_length / mac_steps, num_points
+                ))
+                in_dim = hidden_dim
+        layers.append(nn.Flatten())
+        super().__init__(*layers)
+
+
 class Classification(nn.Module):
     def __init__(
         self,
