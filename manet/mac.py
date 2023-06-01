@@ -402,7 +402,7 @@ class MMLP(nn.Sequential):
         for hidden_dim in hidden_channels:
             accumulated = []
             for ix, num_points in enumerate(mac_points):
-                delta = mac_length / mac_steps / np.log(num_points)
+                delta = mac_length / mac_steps / np.log(num_points) * ix * ix
                 accumulated.append(mac_unit(
                     in_dim, hidden_dim, spatio_dim, spatio_dim, mac_steps, delta ** ix, num_points
                 ))
