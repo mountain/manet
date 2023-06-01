@@ -401,9 +401,10 @@ class MMLP(nn.Sequential):
         layers.append(nn.Flatten())
         for hidden_dim in hidden_channels:
             accumulated = []
-            for num_points in mac_points:
+            for ix, num_points in enumerate(mac_points):
+                delta = mac_length / mac_steps / np.log(num_points)
                 accumulated.append(mac_unit(
-                    in_dim, hidden_dim, spatio_dim, spatio_dim, mac_steps, mac_length / mac_steps / num_points, num_points
+                    in_dim, hidden_dim, spatio_dim, spatio_dim, mac_steps, delta ** ix, num_points
                 ))
             layers.append(Accumulated(*accumulated))
             in_dim = hidden_dim
