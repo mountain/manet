@@ -393,7 +393,8 @@ class MMLP(nn.Sequential):
         spatio_dim: int = 1,
         mac_steps: int = 3,
         mac_length: float = 1.0,
-        mac_points: Tuple[int] = (5, int(5 * np.e), int(5 * np.e * np.e), int(5 * np.e * np.e * np.e), int(5 * np.e * np.e * np.e * np.e)),
+        mac_points: Tuple[int] = (5, int(5 * np.e), int(5 * np.e * np.e), int(5 * np.e * np.e * np.e),
+                                  int(5 * np.e * np.e * np.e * np.e), int(5 * np.e * np.e * np.e * np.e * np.e)),
         mac_unit: Type[AbstractUnit] = MacTensorUnit
     ) -> None:
         layers = []
