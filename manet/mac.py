@@ -393,7 +393,7 @@ class MMLP(nn.Sequential):
         spatio_dim: int = 1,
         mac_steps: int = 3,
         mac_length: float = 1.0,
-        mac_points: Tuple[int] = (5, int(5 * np.e), int(5 * np.e * np.e)),
+        mac_points: Tuple[int] = (5, int(5 * np.e), int(5 * np.e * np.e), int(5 * np.e * np.e * np.e), int(5 * np.e * np.e * np.e * np.e)),
         mac_unit: Type[AbstractUnit] = MacTensorUnit
     ) -> None:
         layers = []
@@ -402,7 +402,7 @@ class MMLP(nn.Sequential):
         for hidden_dim in hidden_channels:
             accumulated = []
             for ix, num_points in enumerate(mac_points):
-                delta = mac_length / mac_steps / np.log(num_points) * ix * ix
+                delta = mac_length / mac_steps / np.log(num_points)
                 accumulated.append(mac_unit(
                     in_dim, hidden_dim, spatio_dim, spatio_dim, mac_steps, delta ** ix, num_points
                 ))
