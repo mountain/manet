@@ -398,7 +398,6 @@ class MMLP(nn.Sequential):
     ) -> None:
         layers = []
         in_dim = in_channels
-        layers.append(nn.Flatten())
         for hidden_dim in hidden_channels:
             for ix, num_points in enumerate(mac_points):
                 delta = mac_length / mac_steps / np.log(num_points)
