@@ -13,7 +13,7 @@ opt = parser.parse_args()
 if torch.cuda.is_available():
     accelerator = 'gpu'
 elif torch.backends.mps.is_available():
-    accelerator = 'mps'
+    accelerator = 'cpu'
 else:
     accelerator = 'cpu'
 
@@ -66,7 +66,7 @@ if __name__ == '__main__':
 
     # training
     print('construct trainer...')
-    trainer = pl.Trainer(accelerator=accelerator, precision=32, max_epochs=opt.n_epochs, log_every_n_steps=1,
+    trainer = pl.Trainer(max_epochs=opt.n_epochs, log_every_n_steps=1,
                          callbacks=[EarlyStopping(monitor="correctness", mode="max", patience=30)])
 
     import importlib
