@@ -196,7 +196,7 @@ class Fashion0(MNISTModel):
         )
 
     def configure_optimizers(self):
-        return th.optim.AdamW(self.parameters(), lr=self.learning_rate)
+        return th.optim.Adam(self.parameters(), lr=self.learning_rate)
 
     def forward(self, x):
         return self.recognizer(x)
