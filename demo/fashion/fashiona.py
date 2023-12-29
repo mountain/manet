@@ -193,8 +193,12 @@ class FashionA(MNISTModel):
         self.nmlp6 = MLP(1, [1], steps=2, length=1, points=5)
         self.shap6 = Reshape(135, 3, 3)
         self.conv7 = nn.Conv2d(135, 135, kernel_size=3, padding=1)
-        self.nmlp7 = MLP(135 * 3 * 3, [10], steps=2, length=1, points=5)
-        self.shap7 = Reshape(10)
+        self.nmlp7 = MLP(1, [1], steps=2, length=1, points=5)
+        self.shap7 = Reshape(135, 3, 3)
+        self.mxpl4 = nn.MaxPool2d(2)
+
+        self.nmlp8 = MLP(270, [10], steps=2, length=1, points=5)
+        self.shap8 = Reshape(10)
         self.lsftx = nn.LogSoftmax(dim=1)
 
     def forward(self, x):
@@ -228,7 +232,10 @@ class FashionA(MNISTModel):
         z = self.conv7(z)
         z = self.nmlp7(z)
         z = self.shap7(z)
+        y = self.mxpl4(y + z)
 
+        z = self.nmlp8(y)
+        z = self.shap8(z)
         return self.lsftx(z)
 
 
