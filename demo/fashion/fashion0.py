@@ -195,9 +195,6 @@ class Fashion0(MNISTModel):
             nn.LogSoftmax(dim=1)
         )
 
-    def configure_optimizers(self):
-        return th.optim.Adam(self.parameters(), lr=self.learning_rate)
-
     def forward(self, x):
         return self.recognizer(x)
 
