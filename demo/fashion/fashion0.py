@@ -169,12 +169,21 @@ class Fashion0(MNISTModel):
             nn.Conv2d(1, 5, kernel_size=5, padding=2),
             MLP(1, [1], steps=2, length=1, points=5),
             Reshape(5, 28, 28),
+            nn.Conv2d(5, 5, kernel_size=3, padding=1),
+            MLP(1, [1], steps=2, length=1, points=5),
+            Reshape(5, 28, 28),
             nn.MaxPool2d(2),
             nn.Conv2d(5, 15, kernel_size=3, padding=1),
             MLP(1, [1], steps=2, length=1, points=5),
             Reshape(15, 14, 14),
+            nn.Conv2d(15, 15, kernel_size=3, padding=1),
+            MLP(1, [1], steps=2, length=1, points=5),
+            Reshape(15, 14, 14),
             nn.MaxPool2d(2),
             nn.Conv2d(15, 45, kernel_size=3, padding=1),
+            MLP(1, [1], steps=2, length=1, points=5),
+            Reshape(45, 7, 7),
+            nn.Conv2d(45, 45, kernel_size=3, padding=1),
             MLP(1, [1], steps=2, length=1, points=5),
             Reshape(45, 7, 7),
             nn.MaxPool2d(2),
@@ -185,6 +194,9 @@ class Fashion0(MNISTModel):
             Reshape(10),
             nn.LogSoftmax(dim=1)
         )
+
+    def configure_optimizers(self):
+        return th.optim.AdamW(self.parameters(), lr=self.learning_rate)
 
     def forward(self, x):
         return self.recognizer(x)
