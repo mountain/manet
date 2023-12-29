@@ -13,12 +13,9 @@ opt = parser.parse_args()
 if torch.cuda.is_available():
     accelerator = 'gpu'
 elif torch.backends.mps.is_available():
-    accelerator = 'cpu'
+    accelerator = 'mps'
 else:
     accelerator = 'cpu'
-
-
-torch.set_float32_matmul_precision('medium')
 
 
 if __name__ == '__main__':
