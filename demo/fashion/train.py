@@ -63,9 +63,9 @@ if __name__ == '__main__':
                                  ]))
 
 
-    train_loader = DataLoader(mnist_train, shuffle=True, batch_size=opt.batch, num_workers=8)
-    val_loader = DataLoader(mnist_test, batch_size=opt.batch, num_workers=8)
-    test_loader = DataLoader(mnist_test, batch_size=opt.batch, num_workers=8)
+    train_loader = DataLoader(mnist_train, shuffle=True, batch_size=opt.batch, num_workers=8, persistent_workers=True)
+    val_loader = DataLoader(mnist_test, batch_size=opt.batch, num_workers=8, persistent_workers=True)
+    test_loader = DataLoader(mnist_test, batch_size=opt.batch, num_workers=8, persistent_workers=True)
 
     # training
     print('construct trainer...')
