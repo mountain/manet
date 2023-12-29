@@ -1,13 +1,13 @@
 import torch as th
-import lightning as pl
-
 from torch import nn
-from torch.nn import functional as F
-
 from manet.nn.model import MNISTModel
 
 from torch import Tensor
 from typing import List, TypeVar, Tuple, Type
+
+import torch._dynamo
+
+torch._dynamo.config.suppress_errors = True
 
 
 U = TypeVar('U', bound='Unit')
