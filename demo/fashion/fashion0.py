@@ -111,6 +111,7 @@ class Unit(nn.Module):
         self.flag = self.in_channel * self.in_spatio > self.out_channel * self.out_spatio
         return channel_dim, spatio_dim
 
+    @th.compile
     def forward(self: U,
                 data: Tensor
                 ) -> Tensor:
