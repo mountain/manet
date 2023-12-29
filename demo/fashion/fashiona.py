@@ -197,7 +197,7 @@ class FashionA(MNISTModel):
         self.shap7 = Reshape(135, 3, 3)
         self.mxpl4 = nn.MaxPool2d(2)
 
-        self.nmlp8 = MLP(270, [10], steps=2, length=1, points=5)
+        self.nmlp8 = MLP(405, [10], steps=2, length=1, points=5)
         self.shap8 = Reshape(10)
         self.lsftx = nn.LogSoftmax(dim=1)
 
