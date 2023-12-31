@@ -180,6 +180,8 @@ class FashionB(MNISTModel):
         self.conv1 = nn.Conv2d(5, 5, kernel_size=3, padding=1)
         self.nmlp1 = MLP(1, [1], steps=2, length=1, points=5)
         self.shap1 = Reshape(5, 28, 28)
+        self.mlpr1 = MLP(1, [1], steps=2, length=1, points=5)
+        self.shpr1 = Reshape(5, 28, 28)
         self.mxpl1 = nn.MaxPool2d(2)
 
         self.conv2 = nn.Conv2d(5, 15, kernel_size=3, padding=1)
@@ -188,6 +190,8 @@ class FashionB(MNISTModel):
         self.conv3 = nn.Conv2d(15, 15, kernel_size=3, padding=1)
         self.nmlp3 = MLP(1, [1], steps=2, length=1, points=5)
         self.shap3 = Reshape(15, 14, 14)
+        self.mlpr2 = MLP(1, [1], steps=2, length=1, points=5)
+        self.shpr2 = Reshape(15, 14, 14)
         self.mxpl2 = nn.MaxPool2d(2)
 
         self.conv4 = nn.Conv2d(15, 45, kernel_size=3, padding=1)
@@ -196,6 +200,8 @@ class FashionB(MNISTModel):
         self.conv5 = nn.Conv2d(45, 45, kernel_size=3, padding=1)
         self.nmlp5 = MLP(1, [1], steps=2, length=1, points=5)
         self.shap5 = Reshape(45, 7, 7)
+        self.mlpr3 = MLP(1, [1], steps=2, length=1, points=5)
+        self.shpr3 = Reshape(45, 7, 7)
         self.mxpl3 = nn.MaxPool2d(2)
 
         self.conv6 = nn.Conv2d(45, 135, kernel_size=3, padding=1)
@@ -204,6 +210,8 @@ class FashionB(MNISTModel):
         self.conv7 = nn.Conv2d(135, 135, kernel_size=3, padding=1)
         self.nmlp7 = MLP(1, [1], steps=2, length=1, points=5)
         self.shap7 = Reshape(135, 3, 3)
+        self.mlpr4 = MLP(1, [1], steps=2, length=1, points=5)
+        self.shpr4 = Reshape(135, 3, 3)
         self.mxpl4 = nn.MaxPool2d(2)
 
         self.nmlp8 = MLP(405, [10], steps=2, length=1, points=5)
@@ -217,7 +225,7 @@ class FashionB(MNISTModel):
         z = self.conv1(z)
         z = self.nmlp1(z)
         z = self.shap1(z)
-        y = self.mxpl1(y + z)
+        y = self.mxpl1(self.shpr1(self.mlpr1(y)) + z)
 
         y = self.conv2(y)
         z = self.nmlp2(y)
@@ -225,7 +233,7 @@ class FashionB(MNISTModel):
         z = self.conv3(z)
         z = self.nmlp3(z)
         z = self.shap3(z)
-        y = self.mxpl2(y + z)
+        y = self.mxpl2(self.shpr2(self.mlpr2(y)) + z)
 
         y = self.conv4(y)
         z = self.nmlp4(y)
@@ -233,7 +241,7 @@ class FashionB(MNISTModel):
         z = self.conv5(z)
         z = self.nmlp5(z)
         z = self.shap5(z)
-        y = self.mxpl3(y + z)
+        y = self.mxpl3(self.shpr31(self.mlpr3(y)) + z)
 
         y = self.conv6(y)
         z = self.nmlp6(y)
@@ -241,7 +249,7 @@ class FashionB(MNISTModel):
         z = self.conv7(z)
         z = self.nmlp7(z)
         z = self.shap7(z)
-        y = self.mxpl4(y + z)
+        y = self.mxpl4(self.shpr4(self.mlpr4(y)) + z)
 
         z = self.nmlp8(y)
         z = self.shap8(z)
