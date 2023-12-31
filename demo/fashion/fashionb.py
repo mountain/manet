@@ -241,7 +241,7 @@ class FashionB(MNISTModel):
         z = self.conv5(z)
         z = self.nmlp5(z)
         z = self.shap5(z)
-        y = self.mxpl3(self.shpr31(self.mlpr3(y)) + z)
+        y = self.mxpl3(self.shpr3(self.mlpr3(y)) + z)
 
         y = self.conv6(y)
         z = self.nmlp6(y)
