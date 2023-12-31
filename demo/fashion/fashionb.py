@@ -214,7 +214,7 @@ class FashionB(MNISTModel):
         self.mlpr4 = MLP(1, [1], steps=2, length=1, points=5)
         self.shpr4 = Reshape(135, 3, 3)
 
-        self.nmlp8 = tv.ops.MLP([135 * 9, 10])
+        self.nmlp8 = tv.ops.MLP(135 * 9, [10])
         self.lsftx = nn.LogSoftmax(dim=1)
 
     def forward(self, x):
