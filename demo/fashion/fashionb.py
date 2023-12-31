@@ -1,4 +1,5 @@
 import torch as th
+import torchvision as tv
 from torch import nn
 from manet.nn.model import MNISTModel
 
@@ -212,10 +213,8 @@ class FashionB(MNISTModel):
         self.shap7 = Reshape(135, 3, 3)
         self.mlpr4 = MLP(1, [1], steps=2, length=1, points=5)
         self.shpr4 = Reshape(135, 3, 3)
-        self.mxpl4 = nn.MaxPool2d(2)
 
-        self.nmlp8 = MLP(135, [10], steps=2, length=1, points=5)
-        self.shap8 = Reshape(10)
+        self.nmlp8 = tv.ops.MLP([135 * 9, 10])
         self.lsftx = nn.LogSoftmax(dim=1)
 
     def forward(self, x):
@@ -249,10 +248,9 @@ class FashionB(MNISTModel):
         z = self.conv7(z)
         z = self.nmlp7(z)
         z = self.shap7(z)
-        y = self.mxpl4(self.shpr4(self.mlpr4(y)) + z)
+        y = self.shpr4(self.mlpr4(y)) + z
 
         z = self.nmlp8(y)
-        z = self.shap8(z)
         return self.lsftx(z)
 
     def configure_optimizers(self):
