@@ -255,6 +255,9 @@ class FashionB(MNISTModel):
         z = self.shap8(z)
         return self.lsftx(z)
 
+    def configure_optimizers(self):
+        return th.optim.AdamW(self.parameters(), lr=self.learning_rate)
+
 
 def _model_():
     return FashionB()
