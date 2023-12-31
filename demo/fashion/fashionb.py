@@ -213,6 +213,7 @@ class FashionB(MNISTModel):
         self.shap7 = Reshape(135, 3, 3)
         self.mlpr4 = MLP(1, [1], steps=2, length=1, points=5)
         self.shpr4 = Reshape(135, 3, 3)
+        self.shpr5 = Reshape(135 * 3 * 3)
 
         self.nmlp8 = tv.ops.MLP(135 * 9, [10])
         self.lsftx = nn.LogSoftmax(dim=1)
@@ -249,7 +250,7 @@ class FashionB(MNISTModel):
         z = self.nmlp7(z)
         z = self.shap7(z)
         y = self.shpr4(self.mlpr4(y)) + z
-        y = y.flatten()
+        y = self.shpr5(y)
 
         z = self.nmlp8(y)
         return self.lsftx(z)
