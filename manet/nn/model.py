@@ -17,7 +17,7 @@ class BaseModel(ltn.LightningModule):
         raise NotImplementedError
 
     def configure_optimizers(self):
-        return th.optim.Adam(self.parameters(), lr=self.learning_rate)
+        return [th.optim.Adam(self.parameters(), lr=self.learning_rate)]
 
 
 class MNISTModel(BaseModel):
