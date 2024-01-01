@@ -16,32 +16,26 @@ from torch import Tensor
 #   - nerf: Normalized error function
 
 
-@th.compile
 def alg1(x: float | Tensor) -> float | Tensor:
     return (x / (1 + th.abs(x)) + 1) / 2
 
 
-@th.compile
 def natan(x: float | Tensor) -> float | Tensor:
     return (th.atan(x * th.pi / 2) / th.pi * 2 + 1) / 2
 
 
-@th.compile
 def alg2(x: float | Tensor) -> float | Tensor:
     return (x / th.sqrt(1 + x * x) + 1) / 2
 
 
-@th.compile
 def gd(x: float | Tensor) -> float | Tensor:
     return 2 * th.atan(th.tanh(x / 2))
 
 
-@th.compile
 def ngd(x: float | Tensor) -> float | Tensor:
     return (gd(x * th.pi / 2) / th.pi * 2 + 1) / 2
 
 
-@th.compile
 def ntanh(x: float | Tensor) -> float | Tensor:
     return (th.tanh(x) + 1) / 2
 
@@ -49,7 +43,6 @@ def ntanh(x: float | Tensor) -> float | Tensor:
 c = np.sqrt(np.pi) / 2
 
 
-@th.compile
 def nerf(x: float | Tensor) -> float | Tensor:
     return (th.erf(x * c) + 1) / 2
 
