@@ -1,7 +1,8 @@
 import torch as th
+import torchvision as tv
+
 from torch import nn
 from manet.nn.model import MNISTModel
-
 from torch import Tensor
 from typing import List, TypeVar, Tuple, Type
 
@@ -167,31 +168,30 @@ class Fashion0(MNISTModel):
         super().__init__()
         self.recognizer = nn.Sequential(
             nn.Conv2d(1, 5, kernel_size=5, padding=2),
-            MLP(1, [1], steps=2, length=1, points=5),
+            MLP(1, [1], steps=5, length=1, points=128),
             Reshape(5, 28, 28),
             nn.Conv2d(5, 5, kernel_size=3, padding=1),
-            MLP(1, [1], steps=2, length=1, points=5),
+            MLP(1, [1], steps=5, length=1, points=128),
             Reshape(5, 28, 28),
             nn.MaxPool2d(2),
             nn.Conv2d(5, 15, kernel_size=3, padding=1),
-            MLP(1, [1], steps=2, length=1, points=5),
+            MLP(1, [1], steps=5, length=1, points=128),
             Reshape(15, 14, 14),
             nn.Conv2d(15, 15, kernel_size=3, padding=1),
-            MLP(1, [1], steps=2, length=1, points=5),
+            MLP(1, [1], steps=5, length=1, points=128),
             Reshape(15, 14, 14),
             nn.MaxPool2d(2),
             nn.Conv2d(15, 45, kernel_size=3, padding=1),
-            MLP(1, [1], steps=2, length=1, points=5),
+            MLP(1, [1], steps=5, length=1, points=128),
             Reshape(45, 7, 7),
             nn.Conv2d(45, 45, kernel_size=3, padding=1),
-            MLP(1, [1], steps=2, length=1, points=5),
+            MLP(1, [1], steps=5, length=1, points=128),
             Reshape(45, 7, 7),
             nn.MaxPool2d(2),
             nn.Conv2d(45, 135, kernel_size=3, padding=1),
-            MLP(1, [1], steps=2, length=1, points=5),
+            MLP(1, [1], steps=5, length=1, points=128),
             Reshape(135 * 3 * 3),
-            MLP(135 * 9, [10], steps=2, length=1, points=5),
-            Reshape(10),
+            tv.ops.MLP(135 * 9, [10]),
             nn.LogSoftmax(dim=1)
         )
 
