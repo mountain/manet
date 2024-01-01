@@ -62,13 +62,11 @@ class Unit(nn.Module):
     def reduction(self: U, data: Tensor) -> Tensor:
         raise NotImplemented()
 
-    @th.compile
     def nonlinear(self: U, data: Tensor) -> Tensor:
         for ix in range(self.num_steps):
             data = data + self.step(data) * self.step_length
         return data
 
-    @th.compile
     def accessor(self: U,
                  data: Tensor,
                  func: str = 'ngd',
@@ -88,7 +86,6 @@ class Unit(nn.Module):
 
         return index, bgn, end
 
-    @th.compile
     def access(self: U,
                memory: Tensor,
                accessor: Tuple[Tensor, Tensor, Tensor]
@@ -99,7 +96,6 @@ class Unit(nn.Module):
         memory = memory.flatten(0)
         return (1 - pos) * memory[bgn] + pos * memory[end]
 
-    @th.compile
     def step(self: U,
              data: Tensor
              ) -> Tensor:
@@ -118,7 +114,6 @@ class Unit(nn.Module):
         self.flag = self.in_channel * self.in_spatio > self.out_channel * self.out_spatio
         return channel_dim, spatio_dim
 
-    @th.compile
     def forward(self: U,
                 data: Tensor
                 ) -> Tensor:
