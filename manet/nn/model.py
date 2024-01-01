@@ -10,9 +10,6 @@ class BaseModel(ltn.LightningModule):
         super().__init__()
         self.learning_rate = 1e-3
 
-    def backward(self, loss, *args, **kwargs):
-        loss.backward(*args, **kwargs)
-
     def forward(self, x):
         raise NotImplementedError
 
