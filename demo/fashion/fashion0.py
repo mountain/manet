@@ -23,7 +23,7 @@ class LNon(nn.Module):
         self.num_points = points
 
         self.theta = nn.Parameter(
-            th.linspace(-1, 1, points).view(1, 1, points)
+            th.linspace(0, 2, points).view(1, 1, points)
         )
         self.velocity = nn.Parameter(
             th.linspace(0, 1, points).view(1, 1, points)
