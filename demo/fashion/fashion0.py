@@ -79,14 +79,14 @@ class LNon(nn.Module):
 
         data = data.view(-1, 1, 1)
         data = th.permute(data, [0, 2, 1]).reshape(-1, 1)
-        data = data * self.channel_transform
+        data = th.matmul(data, self.channel_transform)
         data = data.view(-1, 1, 1)
 
         for ix in range(self.num_steps):
             data = data + self.step(data) * self.step_length
 
         data = th.permute(data, [0, 2, 1]).reshape(-1, 1)
-        data = data * self.spatio_transform
+        data = th.matmul(data, self.spatio_transform)
         data = data.view(-1, 1, 1)
 
         return data.view(*shape)
