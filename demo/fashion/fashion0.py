@@ -70,7 +70,7 @@ class LNon(nn.Module):
         velo = self.access(self.velocity, accessor)
 
         # by the flow equation of the arithmetic expression geometry
-        return velo * (th.cos(angels) + data * th.sin(angels)) * self.step_length
+        return data + velo * (th.cos(angels) + data * th.sin(angels)) * self.step_length
 
     def forward(self: U,
                 data: Tensor
