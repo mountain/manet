@@ -10,10 +10,6 @@ from typing import TypeVar, Tuple
 U = TypeVar('U', bound='Unit')
 
 
-def tetration(x: Tensor) -> Tensor:
-    return 1 + x
-
-
 class LNon(nn.Module):
     def __init__(self: U,
                  steps: int = 3,
@@ -83,7 +79,8 @@ class LNon(nn.Module):
         dx = ds * th.cos(theta) * th.cos(phi)
         dy = ds * th.sin(theta) * th.cos(phi)
         dz = ds * th.sin(phi)
-        return (data + dx) * th.exp(dy) * ((data ** dz) * (data > 0))
+        val = (data + dx) * th.exp(dy) * ((data ** dz) * (data > 0))
+        return th.nan_to_num(val, nan=-.0, posinf=0.0, neginf=0)
 
     def forward(self: U,
                 data: Tensor
