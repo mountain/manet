@@ -28,6 +28,12 @@ class LNon(nn.Module):
         self.velocity = nn.Parameter(
             th.linspace(0, 1, points).view(1, 1, points)
         )
+        self.channel_transform = nn.Parameter(
+            th.normal(0, 1, (1, 1, 1))
+        )
+        self.spatio_transform = nn.Parameter(
+            th.normal(0, 1, (1, 1, 1))
+        )
 
     def accessor(self: U,
                  data: Tensor,
@@ -71,8 +77,21 @@ class LNon(nn.Module):
                 ) -> Tensor:
         shape = data.size()
         data = data.flatten(0)
+
+        data = data.view(-1, 1, 1)
+        data = th.permute(data, [0, 2, 1]).reshape(-1, 1)
+        data = th.matmul(data, self.channel_transform)
+        data = data.view(-1, 1, 1)
+        data = data.flatten(0)
+
         for ix in range(self.num_steps):
             data = data + self.step(data) * self.step_length
+
+        data = th.permute(data, [0, 2, 1]).reshape(-1, 1)
+        data = th.matmul(data, self.spatio_transform)
+        data = data.view(-1, 1, 1)
+        data = data.flatten(0)
+
         return data.view(*shape)
 
 
