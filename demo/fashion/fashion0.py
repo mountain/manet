@@ -1,87 +1,45 @@
 import torch as th
-import torchvision as tv
+import manet.func.sigmoid as sgmd
 
 from torch import nn
 from manet.nn.model import MNISTModel
 from torch import Tensor
-from typing import List, TypeVar, Tuple, Type
-
-import torch._dynamo
-
-torch._dynamo.config.suppress_errors = True
+from typing import TypeVar, Tuple
 
 
 U = TypeVar('U', bound='Unit')
 
 
-class Unit(nn.Module):
+class LNon(nn.Module):
     def __init__(self: U,
-                 in_channel: int,
-                 out_channel: int,
-                 in_spatio: int = 1,
-                 out_spatio: int = 1,
-                 num_steps: int = 3,
-                 step_length: float = 0.33333,
-                 num_points: int = 5,
+                 steps: int = 3,
+                 length: float = 0.33333,
+                 points: int = 5,
                  ) -> None:
         super().__init__()
 
-        # the hyperparameters
-        self.num_steps = num_steps
-        self.step_length = step_length
-        self.num_points = num_points
-        self.in_channel = in_channel
-        self.out_channel = out_channel
-        self.in_spatio = in_spatio
-        self.out_spatio = out_spatio
+        self.num_steps = steps
+        self.step_length = length
+        self.num_points = points
 
-        self.channel_dim, self.spatio_dim = self.calculate()
-        # the learnable parameters which govern the unit
         self.angles = nn.Parameter(
-            th.linspace(0, 2 * th.pi, num_points).view(1, 1, num_points)
+            th.linspace(0, 2 * th.pi, points).view(1, 1, points)
         )
         self.velocity = nn.Parameter(
-            th.linspace(0, 1, num_points).view(1, 1, num_points)
+            th.linspace(0, 1, points).view(1, 1, points)
         )
-
-        self.channel_dim, self.spatio_dim = self.calculate()
-
-        self.channel_transform = nn.Parameter(
-            th.normal(0, 1, (1, self.in_channel, self.out_channel))
-        )
-        self.spatio_transform = nn.Parameter(
-            th.normal(0, 1, (1, self.in_spatio, self.out_spatio))
-        )
-
-    def calculate(self: U) -> Tuple[int, int]:
-        raise NotImplemented()
-
-    def expansion(self: U, data: Tensor) -> Tensor:
-        raise NotImplemented()
-
-    def reduction(self: U, data: Tensor) -> Tensor:
-        raise NotImplemented()
-
-    def nonlinear(self: U, data: Tensor) -> Tensor:
-        for ix in range(self.num_steps):
-            data = data + self.step(data) * self.step_length
-        return data
 
     def accessor(self: U,
                  data: Tensor,
                  func: str = 'ngd',
                  ) -> Tuple[Tensor, Tensor, Tensor]:
 
-        # calculate the index of the accessor
-        # index = th.sigmoid(data) * self.num_points
-        import manet.func.sigmoid as sgmd
-        num_points = self.num_points
-        index = sgmd.functions[func](data) * num_points
+        index = sgmd.functions[func](data) * self.num_points
 
         bgn = index.floor().long()
         bgn = bgn * (bgn >= 0)
-        bgn = bgn * (bgn <= num_points - 2) + (bgn - 1) * (bgn > num_points - 2)
-        bgn = bgn * (bgn <= num_points - 2) + (bgn - 1) * (bgn > num_points - 2)
+        bgn = bgn * (bgn <= self.num_points - 2) + (bgn - 1) * (bgn > self.num_points - 2)
+        bgn = bgn * (bgn <= self.num_points - 2) + (bgn - 1) * (bgn > self.num_points - 2)
         end = bgn + 1
 
         return index, bgn, end
@@ -93,7 +51,7 @@ class Unit(nn.Module):
 
         index, bgn, end = accessor
         pos = index - bgn
-        memory = memory.flatten(0)
+        memory = memory.flatten(1)
         return (1 - pos) * memory[bgn] + pos * memory[end]
 
     def step(self: U,
@@ -108,60 +66,14 @@ class Unit(nn.Module):
         # by the flow equation of the arithmetic expression geometry
         return (velo * th.cos(angels) + data * velo * th.sin(angels)) * self.step_length
 
-    def calculate(self: U) -> Tuple[int, int]:
-        channel_dim = self.in_channel * self.out_channel
-        spatio_dim = self.in_spatio * self.out_spatio
-        self.flag = self.in_channel * self.in_spatio > self.out_channel * self.out_spatio
-        return channel_dim, spatio_dim
-
     def forward(self: U,
                 data: Tensor
                 ) -> Tensor:
-        data = data.contiguous()
-
-        data = data.view(-1, self.in_channel, self.in_spatio)
-        data = th.permute(data, [0, 2, 1]).reshape(-1, self.in_channel)
-        data = th.matmul(data, self.channel_transform)
-        data = data.view(-1, self.in_spatio, self.out_channel)
-
-        data = self.nonlinear(data)
-
-        data = th.permute(data, [0, 2, 1]).reshape(-1, self.in_spatio)
-        data = th.matmul(data, self.spatio_transform)
-        data = data.view(-1, self.out_channel, self.out_spatio)
-
-        return data
-
-
-class MLP(nn.Sequential):
-    def __init__(
-        self,
-        in_channels: int,
-        hidden_channels: List[int],
-        spatio_dim: int = 1,
-        steps: int = 3,
-        length: float = 1.0,
-        points: int = 5,
-        unit: Type[Unit] = Unit
-    ) -> None:
-        layers = []
-        in_dim = in_channels
-        for hidden_dim in hidden_channels:
-            layers.append(unit(
-                in_dim, hidden_dim, spatio_dim, spatio_dim, steps, length / steps, points
-            ))
-            in_dim = hidden_dim
-        layers.append(nn.Flatten())
-        super().__init__(*layers)
-
-
-class Reshape(nn.Module):
-    def __init__(self, *shape) -> None:
-        super().__init__()
-        self.shape = shape
-
-    def forward(self, x):
-        return x.view(-1, *self.shape)
+        shape = data.size()
+        data = data.flatten(1)
+        for ix in range(self.num_steps):
+            data = data + self.step(data) * self.step_length
+        return data.view(-1, *shape)
 
 
 class Fashion0(MNISTModel):
@@ -169,26 +81,21 @@ class Fashion0(MNISTModel):
         super().__init__()
         self.recognizer = nn.Sequential(
             nn.Conv2d(1, 5, kernel_size=7, padding=3),
-            MLP(1, [1], steps=4, length=1, points=216),
-            Reshape(5, 28, 28),
+            LNon(steps=4, length=1, points=216),
             nn.MaxPool2d(2),
             nn.Conv2d(5, 15, kernel_size=3, padding=1),
-            MLP(1, [1], steps=4, length=1, points=216),
-            Reshape(15, 14, 14),
+            LNon(steps=4, length=1, points=216),
             nn.Conv2d(15, 15, kernel_size=3, padding=1),
-            MLP(1, [1], steps=4, length=1, points=216),
-            Reshape(15, 14, 14),
+            LNon(steps=4, length=1, points=216),
             nn.MaxPool2d(2),
             nn.Conv2d(15, 45, kernel_size=3, padding=1),
-            MLP(1, [1], steps=4, length=1, points=216),
-            Reshape(45, 7, 7),
+            LNon(steps=4, length=1, points=216),
             nn.Conv2d(45, 45, kernel_size=3, padding=1),
-            MLP(1, [1], steps=4, length=1, points=216),
-            Reshape(45, 7, 7),
+            LNon(steps=4, length=1, points=216),
             nn.MaxPool2d(2),
             nn.Conv2d(45, 135, kernel_size=3, padding=1),
-            MLP(1, [1], steps=4, length=1, points=216),
-            Reshape(135 * 3 * 3),
+            LNon(steps=4, length=1, points=216),
+            nn.Flatten(),
             nn.Linear(135 * 9, 10),
             nn.LogSoftmax(dim=1)
         )
