@@ -23,7 +23,7 @@ class LNon(nn.Module):
         self.num_points = points
 
         self.theta = nn.Parameter(
-            th.linspace(0, 2, points).view(1, 1, points)
+            th.linspace(0, 4 * th.pi, points).view(1, 1, points)
         )
         self.velocity = nn.Parameter(
             th.linspace(0, 1, points).view(1, 1, points)
@@ -65,9 +65,9 @@ class LNon(nn.Module):
              ) -> Tensor:
 
         accessor = self.accessor(data, 'ngd')
-        theta = self.access(self.theta, accessor) * th.pi
+        theta = self.access(self.theta, accessor)
         accessor = self.accessor(data, 'nerf')
-        velo = (1 + self.access(self.velocity, accessor)) / 2
+        velo = self.access(self.velocity, accessor)
 
         # by the flow equation of the arithmetic expression geometry
         ds = velo * self.step_length
