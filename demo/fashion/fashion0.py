@@ -67,7 +67,7 @@ class LNon(nn.Module):
         accessor = self.accessor(data, 'ngd')
         theta = self.access(self.theta, accessor) * th.pi
         accessor = self.accessor(data, 'nerf')
-        velo = self.access(self.velocity, accessor)
+        velo = (1 + self.access(self.velocity, accessor)) / 2
 
         # by the flow equation of the arithmetic expression geometry
         ds = velo * self.step_length
