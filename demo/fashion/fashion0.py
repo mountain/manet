@@ -26,7 +26,7 @@ class LNon(nn.Module):
             th.linspace(-1, 1, points).view(1, 1, points)
         )
         self.velocity = nn.Parameter(
-            th.linspace(-1, 1, points).view(1, 1, points)
+            th.linspace(0, 1, points).view(1, 1, points)
         )
         self.channel_transform = nn.Parameter(
             th.normal(0, 1, (1, 1, 1))
@@ -74,7 +74,7 @@ class LNon(nn.Module):
         dx = ds * th.cos(theta)
         dy = ds * th.sin(theta)
         val = (data + dx) * th.exp(dy)
-        return th.nan_to_num(val, nan=0.0, posinf=0.0, neginf=0.0)
+        return val
 
     def forward(self: U,
                 data: Tensor
