@@ -26,13 +26,13 @@ class LNon(nn.Module):
             th.linspace(0, 2 * th.pi, points).view(1, 1, points)
         )
         self.velocity = nn.Parameter(
-            th.linspace(0, 1, points).view(1, 1, points)
+            th.linspace(0, 2, points).view(1, 1, points)
         )
         self.channel_transform = nn.Parameter(
-            th.normal(0, 1, (1, 1, 1))
+            th.normal(0, 2, (1, 1, 1))
         )
         self.spatio_transform = nn.Parameter(
-            th.normal(0, 1, (1, 1, 1))
+            th.normal(0, 2, (1, 1, 1))
         )
 
     def accessor(self: U,
