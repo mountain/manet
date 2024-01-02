@@ -80,8 +80,8 @@ class LNon(nn.Module):
 
         # by the flow equation of the arithmetic expression geometry
         ds = velo * self.step_length
-        dx = ds * th.cos(theta) * th.sin(phi)
-        dy = ds * th.sin(theta) * th.sin(phi)
+        dx = ds * th.cos(theta) * th.cos(phi)
+        dy = ds * th.sin(theta) * th.cos(phi)
         dz = ds * th.sin(phi)
         return th.exp((th.log(data + dx) + dy) * (1 + dz))
 
