@@ -23,13 +23,13 @@ class LNon(nn.Module):
         self.num_points = points
 
         self.phi = nn.Parameter(
-            th.linspace(- th.pi, th.pi, points).view(1, 1, points)
+            th.linspace(- 1, 1, points).view(1, 1, points)
         )
         self.theta = nn.Parameter(
-            th.linspace(0, 2 * th.pi, points).view(1, 1, points)
+            th.linspace(- 1, 1, points).view(1, 1, points)
         )
         self.velocity = nn.Parameter(
-            th.linspace(0, 1, points).view(1, 1, points)
+            th.linspace(-1, 1, points).view(1, 1, points)
         )
         self.channel_transform = nn.Parameter(
             th.normal(0, 1, (1, 1, 1))
@@ -68,9 +68,9 @@ class LNon(nn.Module):
              ) -> Tensor:
 
         accessor = self.accessor(data, 'ntanh')
-        phi = self.access(self.phi, accessor)
+        phi = self.access(self.phi, accessor) * th.pi / 2
         accessor = self.accessor(data, 'ngd')
-        theta = self.access(self.theta, accessor)
+        theta = self.access(self.theta, accessor) * th.pi
         accessor = self.accessor(data, 'nerf')
         velo = self.access(self.velocity, accessor)
 
