@@ -169,8 +169,6 @@ class Fashion0(MNISTModel):
         super().__init__()
         self.recognizer = nn.Sequential(
             nn.Conv2d(1, 5, kernel_size=5, padding=2),
-            tv.ops.MLP(5, [28, 28]),
-            nn.Conv2d(5, 5, kernel_size=3, padding=1),
             MLP(1, [1], steps=4, length=1, points=216),
             Reshape(5, 28, 28),
             nn.MaxPool2d(2),
