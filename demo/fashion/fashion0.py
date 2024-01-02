@@ -80,8 +80,12 @@ class LNon(nn.Module):
         data = data.contiguous()
         data = data.view(-1, 1, 1)
 
+        data = data * self.channel_transform
+
         for ix in range(self.num_steps):
             data = self.step(data)
+
+        data = data * self.spatio_transform
 
         return data.view(*shape)
 
