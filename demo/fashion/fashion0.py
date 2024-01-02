@@ -189,7 +189,7 @@ class Fashion0(MNISTModel):
             nn.Conv2d(45, 135, kernel_size=3, padding=1),
             MLP(1, [1], steps=4, length=1, points=216),
             Reshape(135 * 3 * 3),
-            tv.ops.MLP(135 * 9, [10]),
+            nn.Linear(135 * 9, 10),
             nn.LogSoftmax(dim=1)
         )
 
