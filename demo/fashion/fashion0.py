@@ -76,7 +76,6 @@ class LNon(nn.Module):
                 data: Tensor
                 ) -> Tensor:
         shape = data.size()
-        data = data.flatten(0)
 
         data = data.view(-1, 1, 1)
         data = th.permute(data, [0, 2, 1]).reshape(-1, 1)
