@@ -79,7 +79,7 @@ class LNon(nn.Module):
         dx = ds * th.cos(theta) * th.cos(phi)
         dy = ds * th.sin(theta) * th.cos(phi)
         dz = ds * th.sin(phi)
-        val = (data + dx) * th.exp(dy) * ((data ** dz) * (data > 0))
+        val = (data + dx) * th.exp(dy) * (data ** dz)
         return th.nan_to_num(val, nan=0.0, posinf=0.0, neginf=0.0)
 
     def forward(self: U,
