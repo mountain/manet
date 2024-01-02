@@ -73,7 +73,7 @@ class LNon(nn.Module):
         ds = velo * self.step_length
         dx = ds * th.cos(theta)
         dy = ds * th.sin(theta)
-        val = (data + dx) * th.exp(dy)
+        val = data * (1 + dy) + dx
         return val
 
     def forward(self: U,
