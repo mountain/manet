@@ -80,16 +80,8 @@ class LNon(nn.Module):
         data = data.contiguous()
         data = data.view(-1, 1, 1)
 
-        # data = th.permute(data, [0, 2, 1]).reshape(-1, 1)
-        # data = th.matmul(data, self.channel_transform)
-        # data = data.view(-1, 1, 1)
-
         for ix in range(self.num_steps):
             data = self.step(data)
-
-        # data = th.permute(data, [0, 2, 1]).reshape(-1, 1)
-        # data = th.matmul(data, self.spatio_transform)
-        # data = data.view(-1, 1, 1)
 
         return data.view(*shape)
 
@@ -99,24 +91,24 @@ class Fashion0(MNISTModel):
         super().__init__()
         self.recognizer = nn.Sequential(
             nn.Conv2d(1, 5, kernel_size=7, padding=3),
-            LNon(steps=5, length=1, points=512),
+            LNon(steps=3, length=1, points=512),
             nn.Conv2d(5, 5, kernel_size=3, padding=1),
-            LNon(steps=5, length=1, points=512),
+            LNon(steps=3, length=1, points=512),
             nn.MaxPool2d(2),
             nn.Conv2d(5, 15, kernel_size=3, padding=1),
-            LNon(steps=5, length=1, points=256),
+            LNon(steps=3, length=1, points=256),
             nn.Conv2d(15, 15, kernel_size=3, padding=1),
-            LNon(steps=5, length=1, points=256),
+            LNon(steps=3, length=1, points=256),
             nn.MaxPool2d(2),
             nn.Conv2d(15, 45, kernel_size=3, padding=1),
-            LNon(steps=5, length=1, points=128),
+            LNon(steps=3, length=1, points=128),
             nn.Conv2d(45, 45, kernel_size=3, padding=1),
-            LNon(steps=5, length=1, points=128),
+            LNon(steps=3, length=1, points=128),
             nn.MaxPool2d(2),
             nn.Conv2d(45, 135, kernel_size=3, padding=1),
-            LNon(steps=5, length=1, points=128),
+            LNon(steps=3, length=1, points=128),
             nn.Conv2d(135, 135, kernel_size=3, padding=1),
-            LNon(steps=5, length=1, points=128),
+            LNon(steps=3, length=1, points=128),
             nn.Flatten(),
             nn.Linear(135 * 9, 10),
             nn.LogSoftmax(dim=1)
