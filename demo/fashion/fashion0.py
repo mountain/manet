@@ -26,13 +26,13 @@ class LNon(nn.Module):
             th.linspace(0, 2 * th.pi, points).view(1, 1, points)
         )
         self.velocity = nn.Parameter(
-            th.linspace(0, 2, points).view(1, 1, points)
+            th.linspace(0, 1, points).view(1, 1, points)
         )
         self.channel_transform = nn.Parameter(
-            th.normal(0, 2, (1, 1, 1))
+            th.normal(0, 1, (1, 1, 1))
         )
         self.spatio_transform = nn.Parameter(
-            th.normal(0, 2, (1, 1, 1))
+            th.normal(0, 1, (1, 1, 1))
         )
 
     def accessor(self: U,
@@ -70,7 +70,7 @@ class LNon(nn.Module):
         velo = self.access(self.velocity, accessor)
 
         # by the flow equation of the arithmetic expression geometry
-        return (velo * th.cos(angels) + data * velo * th.sin(angels)) * self.step_length
+        return velo * (th.cos(angels) + data * th.sin(angels)) * self.step_length
 
     def forward(self: U,
                 data: Tensor
@@ -85,7 +85,7 @@ class LNon(nn.Module):
         data = data.view(-1, 1, 1)
 
         for ix in range(self.num_steps):
-            data = data + self.step(data) * self.step_length
+            data = self.step(data)
 
         data = th.permute(data, [0, 2, 1]).reshape(-1, 1)
         data = th.matmul(data, self.spatio_transform)
