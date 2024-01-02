@@ -51,7 +51,7 @@ class LNon(nn.Module):
 
         index, bgn, end = accessor
         pos = index - bgn
-        memory = memory.flatten(1)
+        memory = memory.flatten(0)
         return (1 - pos) * memory[bgn] + pos * memory[end]
 
     def step(self: U,
@@ -70,10 +70,10 @@ class LNon(nn.Module):
                 data: Tensor
                 ) -> Tensor:
         shape = data.size()
-        data = data.flatten(1)
+        data = data.flatten(0)
         for ix in range(self.num_steps):
             data = data + self.step(data) * self.step_length
-        return data.view(-1, *shape)
+        return data.view(*shape)
 
 
 class Fashion0(MNISTModel):
