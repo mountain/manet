@@ -76,8 +76,12 @@ class LNon(nn.Module):
                 data: Tensor
                 ) -> Tensor:
         shape = data.size()
-
+        data = data.flatten(1)
         data = data.view(-1, 1, 1)
+
+        for ix in range(self.num_steps):
+            data = data + self.step(data) * self.step_length
+
         data = th.permute(data, [0, 2, 1]).reshape(-1, 1)
         data = th.matmul(data, self.channel_transform)
         data = data.view(-1, 1, 1)
