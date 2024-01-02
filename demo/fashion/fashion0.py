@@ -22,11 +22,8 @@ class LNon(nn.Module):
         self.step_length = length
         self.num_points = points
 
-        self.phi = nn.Parameter(
-            th.linspace(- 1, 1, points).view(1, 1, points)
-        )
         self.theta = nn.Parameter(
-            th.linspace(- 1, 1, points).view(1, 1, points)
+            th.linspace(-1, 1, points).view(1, 1, points)
         )
         self.velocity = nn.Parameter(
             th.linspace(-1, 1, points).view(1, 1, points)
@@ -67,8 +64,6 @@ class LNon(nn.Module):
              data: Tensor
              ) -> Tensor:
 
-        accessor = self.accessor(data, 'ntanh')
-        phi = self.access(self.phi, accessor) * th.pi / 2
         accessor = self.accessor(data, 'ngd')
         theta = self.access(self.theta, accessor) * th.pi
         accessor = self.accessor(data, 'nerf')
@@ -76,10 +71,9 @@ class LNon(nn.Module):
 
         # by the flow equation of the arithmetic expression geometry
         ds = velo * self.step_length
-        dx = ds * th.cos(theta) * th.cos(phi)
-        dy = ds * th.sin(theta) * th.cos(phi)
-        dz = ds * th.sin(phi)
-        val = (data + dx) * th.exp(dy) * (data ** dz)
+        dx = ds * th.cos(theta)
+        dy = ds * th.sin(theta)
+        val = (data + dx) * th.exp(dy)
         return th.nan_to_num(val, nan=0.0, posinf=0.0, neginf=0.0)
 
     def forward(self: U,
