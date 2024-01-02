@@ -10,6 +10,10 @@ from typing import TypeVar, Tuple
 U = TypeVar('U', bound='Unit')
 
 
+def tetration(x: Tensor) -> Tensor:
+    return 1 + x
+
+
 class LNon(nn.Module):
     def __init__(self: U,
                  steps: int = 3,
@@ -22,7 +26,10 @@ class LNon(nn.Module):
         self.step_length = length
         self.num_points = points
 
-        self.angles = nn.Parameter(
+        self.phi = nn.Parameter(
+            th.linspace(- th.pi, th.pi, points).view(1, 1, points)
+        )
+        self.theta = nn.Parameter(
             th.linspace(0, 2 * th.pi, points).view(1, 1, points)
         )
         self.velocity = nn.Parameter(
@@ -64,14 +71,19 @@ class LNon(nn.Module):
              data: Tensor
              ) -> Tensor:
 
+        accessor = self.accessor(data, 'ntanh')
+        phi = self.access(self.phi, accessor)
         accessor = self.accessor(data, 'ngd')
-        angels = self.access(self.angles, accessor)
+        theta = self.access(self.theta, accessor)
         accessor = self.accessor(data, 'nerf')
         velo = self.access(self.velocity, accessor)
 
         # by the flow equation of the arithmetic expression geometry
         ds = velo * self.step_length
-        return (data + ds * th.cos(angels)) * th.exp(ds * th.sin(angels))
+        dx = ds * th.cos(theta) * th.sin(phi)
+        dy = ds * th.sin(theta) * th.sin(phi)
+        dz = ds * th.sin(phi)
+        return th.exp((th.log(data + dx) + dy) * (1 + dz))
 
     def forward(self: U,
                 data: Tensor
