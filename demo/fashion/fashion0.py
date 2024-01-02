@@ -83,7 +83,7 @@ class LNon(nn.Module):
         dx = ds * th.cos(theta) * th.cos(phi)
         dy = ds * th.sin(theta) * th.cos(phi)
         dz = ds * th.sin(phi)
-        return th.exp((th.log(data + dx) + dy) * (1 + dz))
+        return (data + dx) * th.exp(dy) * (data ** dz)
 
     def forward(self: U,
                 data: Tensor
