@@ -124,7 +124,7 @@ class Fashion0(MNISTModel):
         x = F.max_pool2d(x, 2)
         x = self.conv3(x)
         x = self.lnon3(x)
-        x = x.view(-1, 135 * 9)
+        x = x.flatten(1)
         x = self.fc(x)
         x = F.log_softmax(x, dim=1)
         return x
