@@ -130,7 +130,7 @@ class Fashion0(MNISTModel):
         y = y + z
         y = y.view(-1, 135 * 9)
         y = self.fc(y)
-        y = self.lsftmx(y)
+        y = th.log_softmax(y, dim=1)
         return y
 
 
