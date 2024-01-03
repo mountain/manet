@@ -139,6 +139,7 @@ class Fashion0(MNISTModel):
         z = self.lnon22(x)
         z = self.lnon2(x * y + z)
         x = F.max_pool2d(z, 2)
+        x = self.conv3(x)
         y = self.lnon31(x)
         z = self.lnon32(x)
         z = self.lnon3(x * y + z)
