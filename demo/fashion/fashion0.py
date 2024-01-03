@@ -38,10 +38,9 @@ class LNon(nn.Module):
 
     def accessor(self: U,
                  data: Tensor,
-                 func: str = 'ngd',
                  ) -> Tuple[Tensor, Tensor, Tensor]:
 
-        index = sgmd.functions[func](data) * self.num_points
+        index = th.sigmoid(data) * self.num_points
 
         bgn = index.floor().long()
         bgn = bgn * (bgn >= 0)
@@ -65,9 +64,8 @@ class LNon(nn.Module):
              data: Tensor
              ) -> Tensor:
 
-        accessor = self.accessor(data, 'ngd')
+        accessor = self.accessor(data)
         theta = self.access(self.theta, accessor)
-        accessor = self.accessor(data, 'nerf')
         velo = self.access(self.velocity, accessor)
 
         # by the flow equation of the arithmetic expression geometry
@@ -104,48 +102,35 @@ class LNon(nn.Module):
 class Fashion0(MNISTModel):
     def __init__(self):
         super().__init__()
-        self.conv0 = nn.Conv2d(1, 5, kernel_size=7, padding=3)
-        self.conv01 = nn.Conv2d(5, 5, kernel_size=3, padding=1)
-        self.conv02 = nn.Conv2d(5, 5, kernel_size=3, padding=1)
+        self.conv0 = nn.Conv2d(1, 10, kernel_size=7, padding=3)
         self.lnon0 = LNon(steps=1, length=1, points=120)
-        self.conv1 = nn.Conv2d(5, 15, kernel_size=3, padding=1)
-        self.conv11 = nn.Conv2d(15, 15, kernel_size=3, padding=1)
-        self.conv12 = nn.Conv2d(15, 15, kernel_size=3, padding=1)
+        self.conv1 = nn.Conv2d(10, 30, kernel_size=3, padding=1)
         self.lnon1 = LNon(steps=1, length=1, points=120)
-        self.conv2 = nn.Conv2d(15, 45, kernel_size=3, padding=1)
-        self.conv21 = nn.Conv2d(45, 45, kernel_size=3, padding=1)
-        self.conv22 = nn.Conv2d(45, 45, kernel_size=3, padding=1)
+        self.conv2 = nn.Conv2d(30, 90, kernel_size=3, padding=1)
         self.lnon2 = LNon(steps=1, length=1, points=120)
-        self.conv3 = nn.Conv2d(45, 135, kernel_size=3, padding=1)
-        self.conv31 = nn.Conv2d(135, 135, kernel_size=3, padding=1)
-        self.conv32 = nn.Conv2d(135, 135, kernel_size=3, padding=1)
+        self.conv3 = nn.Conv2d(90, 270, kernel_size=3, padding=1)
         self.lnon3 = LNon(steps=1, length=1, points=120)
-        self.fc = nn.Linear(135 * 9, 10)
+        self.fc = nn.Linear(270 * 9, 10)
 
     def forward(self, x):
         x = self.conv0(x)
-        y = th.sigmoid(self.conv01(x)) + 0.5
-        z = self.conv02(x)
-        z = self.lnon0(x * y + z)
-        x = F.max_pool2d(z, 2)
+        x = self.lnon0(x)
+        x = F.max_pool2d(x, 2)
         x = self.conv1(x)
-        y = th.sigmoid(self.conv11(x)) + 0.5
-        z = self.conv12(x)
-        z = self.lnon1(x * y + z)
-        x = F.max_pool2d(z, 2)
+        x = self.lnon01(x)
+        x = F.max_pool2d(x, 2)
         x = self.conv2(x)
-        y = th.sigmoid(self.conv21(x)) + 0.5
-        z = self.conv22(x)
-        z = self.lnon2(x * y + z)
-        x = F.max_pool2d(z, 2)
+        x = self.lnon2(x)
+        x = F.max_pool2d(x, 2)
         x = self.conv3(x)
-        y = th.sigmoid(self.conv31(x)) + 0.5
-        z = self.conv32(x)
-        z = self.lnon3(x * y + z)
-        z = z.view(-1, 135 * 9)
-        z = self.fc(z)
-        z = F.log_softmax(z, dim=1)
-        return z
+        x = self.lnon3(x)
+        x = x.view(-1, 135 * 9)
+        x = self.fc(x)
+        x = F.log_softmax(x, dim=1)
+        return x
+
+    def configure_optimizers(self):
+        return [th.optim.AdamW(self.parameters(), lr=self.learning_rate)]
 
 
 def _model_():
