@@ -105,16 +105,16 @@ class Fashion0(MNISTModel):
         super().__init__()
         self.recognizer = nn.Sequential(
             nn.Conv2d(1, 10, kernel_size=7, padding=3),
-            LNon(steps=2, length=1, points=60),
+            LNon(steps=2, length=1, points=120),
             nn.MaxPool2d(2),
             nn.Conv2d(10, 30, kernel_size=3, padding=1),
-            LNon(steps=2, length=1, points=60),
+            LNon(steps=2, length=1, points=120),
             nn.MaxPool2d(2),
             nn.Conv2d(30, 90, kernel_size=3, padding=1),
-            LNon(steps=2, length=1, points=60),
+            LNon(steps=2, length=1, points=120),
             nn.MaxPool2d(2),
             nn.Conv2d(90, 270, kernel_size=3, padding=1),
-            LNon(steps=2, length=1, points=60),
+            LNon(steps=2, length=1, points=120),
             nn.Flatten(),
             nn.Linear(270 * 9, 10),
             nn.LogSoftmax(dim=1)
