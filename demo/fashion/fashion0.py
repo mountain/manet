@@ -128,7 +128,7 @@ class Fashion0(MNISTModel):
         y = self.conv3(y)
         z = self.lnon3(y)
         y = y + z
-        y = y.view(-1, 270 * 9)
+        y = y.view(-1, 135 * 9)
         y = self.fc(y)
         y = self.lsftmx(y)
         return y
