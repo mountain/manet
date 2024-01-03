@@ -1,7 +1,8 @@
 import torch as th
+import torch.nn.functional as F
+import torch.nn as nn
 import manet.func.sigmoid as sgmd
 
-from torch import nn
 from manet.nn.model import MNISTModel
 from torch import Tensor
 from typing import TypeVar, Tuple
@@ -103,25 +104,34 @@ class LNon(nn.Module):
 class Fashion0(MNISTModel):
     def __init__(self):
         super().__init__()
-        self.recognizer = nn.Sequential(
-            nn.Conv2d(1, 10, kernel_size=7, padding=3),
-            LNon(steps=2, length=1, points=120),
-            nn.MaxPool2d(2),
-            nn.Conv2d(10, 30, kernel_size=3, padding=1),
-            LNon(steps=2, length=1, points=120),
-            nn.MaxPool2d(2),
-            nn.Conv2d(30, 90, kernel_size=3, padding=1),
-            LNon(steps=2, length=1, points=120),
-            nn.MaxPool2d(2),
-            nn.Conv2d(90, 270, kernel_size=3, padding=1),
-            LNon(steps=2, length=1, points=120),
-            nn.Flatten(),
-            nn.Linear(270 * 9, 10),
-            nn.LogSoftmax(dim=1)
-        )
+        self.conv0 = nn.Conv2d(1, 5, kernel_size=7, padding=3)
+        self.lnon0 = LNon(steps=2, length=1, points=120)
+        self.conv1 = nn.Conv2d(5, 15, kernel_size=3, padding=1)
+        self.lnon1 = LNon(steps=2, length=1, points=120)
+        self.conv2 = nn.Conv2d(15, 45, kernel_size=3, padding=1)
+        self.lnon2 = LNon(steps=2, length=1, points=120)
+        self.conv3 = nn.Conv2d(45, 135, kernel_size=3, padding=1)
+        self.lnon3 = LNon(steps=2, length=1, points=120)
+        self.fc = nn.Linear(135 * 9, 10)
+        self.lsftmx = nn.LogSoftmax(dim=1)
 
     def forward(self, x):
-        return self.recognizer(x)
+        y = self.conv0(x)
+        z = self.lnon0(y)
+        y = F.max_pool2d(y + z, 2)
+        y = self.conv1(y)
+        z = self.lnon1(y)
+        y = F.max_pool2d(y + z, 2)
+        y = self.conv2(y)
+        z = self.lnon2(y)
+        y = F.max_pool2d(y + z, 2)
+        y = self.conv3(y)
+        z = self.lnon3(y)
+        y = y + z
+        y = y.view(-1, 270 * 9)
+        y = self.fc(y)
+        y = self.lsftmx(y)
+        return y
 
 
 def _model_():
