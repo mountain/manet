@@ -102,7 +102,7 @@ class LNon(nn.Module):
 class Fashion0(MNISTModel):
     def __init__(self):
         super().__init__()
-        self.conv0 = nn.Conv2d(1, 5, kernel_size=5, padding=2)
+        self.conv0 = nn.Conv2d(1, 5, kernel_size=7, padding=3)
         self.lnon0 = LNon(steps=1, length=1, points=120)
         self.conv1 = nn.Conv2d(5, 15, kernel_size=3, padding=1)
         self.lnon1 = LNon(steps=1, length=1, points=120)
