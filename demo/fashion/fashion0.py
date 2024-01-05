@@ -102,15 +102,15 @@ class LNon(nn.Module):
 class Fashion0(MNISTModel):
     def __init__(self):
         super().__init__()
-        self.conv0 = nn.Conv2d(1, 6, kernel_size=9, padding=4)
+        self.conv0 = nn.Conv2d(1, 12, kernel_size=12, padding=4)
         self.lnon0 = LNon(steps=1, length=1, points=120)
-        self.conv1 = nn.Conv2d(6, 12, kernel_size=3, padding=1)
+        self.conv1 = nn.Conv2d(12, 12, kernel_size=3, padding=1)
         self.lnon1 = LNon(steps=1, length=1, points=120)
         self.conv2 = nn.Conv2d(12, 24, kernel_size=1, padding=0)
         self.lnon2 = LNon(steps=1, length=1, points=120)
-        self.conv3 = nn.Conv2d(24, 48, kernel_size=1, padding=0)
+        self.conv3 = nn.Conv2d(24, 24, kernel_size=1, padding=0)
         self.lnon3 = LNon(steps=1, length=1, points=120)
-        self.fc = nn.Linear(48 * 9, 10)
+        self.fc = nn.Linear(24 * 9, 10)
 
     def forward(self, x):
         x = self.conv0(x)
