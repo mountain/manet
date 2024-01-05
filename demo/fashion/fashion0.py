@@ -104,7 +104,7 @@ class Fashion0(MNISTModel):
         super().__init__()
         self.conv0 = nn.Conv2d(1, 5, kernel_size=5, padding=2)
         self.lnon0 = LNon(steps=1, length=1, points=120)
-        self.conv1 = nn.Conv2d(5, 15, kernel_size=1, padding=0)
+        self.conv1 = nn.Conv2d(5, 15, kernel_size=3, padding=1)
         self.lnon1 = LNon(steps=1, length=1, points=120)
         self.conv2 = nn.Conv2d(15, 45, kernel_size=1, padding=0)
         self.lnon2 = LNon(steps=1, length=1, points=120)
