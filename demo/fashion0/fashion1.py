@@ -134,4 +134,4 @@ class Fashion1(MNISTModel):
 
 
 def _model_():
-    return Fashion0()
+    return Fashion1()
