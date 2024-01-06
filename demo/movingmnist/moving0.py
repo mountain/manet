@@ -118,19 +118,21 @@ class MovingMNISTModel(BaseModel):
         self.labeled_loss = 0
 
     def training_step(self, train_batch, batch_idx):
-        x, y = train_batch
+        batch = train_batch.view(-1, 20, 64, 64)
+        x, y = batch[:, :10], batch[:, 10:]
         x = x.view(-1, 10, 64, 64)
-        z = self(x)
+        z = self.forward(x)
         loss = F.mse_loss(z, y)
 
         self.log('train_loss', loss, prog_bar=True)
         return loss
 
     def validation_step(self, val_batch, batch_idx):
-        x, y = val_batch
+        batch = val_batch.view(-1, 20, 64, 64)
+        x, y = batch[:, :10], batch[:, 10:]
         x = x.view(-1, 10, 64, 64)
 
-        z = self(x)
+        z = self.forward(x)
         loss = F.mse_loss(z, y)
         self.log('val_loss', loss, prog_bar=True)
 
@@ -138,9 +140,10 @@ class MovingMNISTModel(BaseModel):
         self.counter += y.size()[0]
 
     def test_step(self, test_batch, batch_idx):
-        x, y = test_batch
+        batch = test_batch.view(-1, 20, 64, 64)
+        x, y = batch[:, :10], batch[:, 10:]
         x = x.view(-1, 10, 64, 64)
-        z = self(x)
+        z = self.forward(x)
         loss = F.mse_loss(z, y)
         self.log('test_loss', loss, prog_bar=True)
 
