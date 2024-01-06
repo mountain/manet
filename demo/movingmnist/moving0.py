@@ -139,24 +139,14 @@ class Moving0(ltn.LightningModule):
     def training_step(self, train_batch, batch_idx):
         batch = train_batch.view(-1, 20, 64, 64)
         x, y = batch[:, :10], batch[:, 10:]
-        x = x.view(-1, 10, 64, 64)
-        x0 = th.ones_like(x) * 0.5
-        x1 = th.ones_like(x) * 0.5
-        x = th.cat([x0, x, x0], dim=-1)
-        y0 = th.ones_like(x) * 0.5
-        y1 = th.ones_like(x) * 0.5
-        x = th.cat([y0, x, y1], dim=-2)
-        z = self.forward(x)[:, :, 1:-1, 1:-1]
+        z = self.forward(x)
         loss = F.mse_loss(z, y)
-
         self.log('train_loss', loss, prog_bar=True)
         return loss
 
     def validation_step(self, val_batch, batch_idx):
         batch = val_batch.view(-1, 20, 64, 64)
         x, y = batch[:, :10], batch[:, 10:]
-        x = x.view(-1, 10, 64, 64)
-
         z = self.forward(x)
         loss = F.mse_loss(z, y)
         self.log('val_loss', loss, prog_bar=True)
@@ -190,6 +180,15 @@ class Moving0(ltn.LightningModule):
         return [th.optim.Adam(self.parameters(), lr=self.learning_rate)]
 
     def forward(self, x):
+        x = x.view(-1, 10, 64, 64)
+        x0 = th.ones_like(x) * 0.5
+        x1 = th.ones_like(x) * 0.5
+        x = th.cat([x0, x, x0], dim=-1)
+        y0 = th.ones_like(x) * 0.5
+        y1 = th.ones_like(x) * 0.5
+        x = th.cat([y0, x, y1], dim=-2)
+        x = x.view(-1, 10, 66, 66)
+
         x0 = self.conv0(x)
         x0 = self.lnon0(x0)
         x1 = self.dnsample(x0)  # 64 -> 32
@@ -236,7 +235,8 @@ class Moving0(ltn.LightningModule):
         xc = self.convc(xc)
         xc = self.lnonc(xc)
 
-        return xc
+        x = xc[:, :, 1:-1, 1:-1]
+        return x
 
 
 def _model_():
