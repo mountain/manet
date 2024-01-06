@@ -142,10 +142,10 @@ class Moving0(ltn.LightningModule):
         x = x.view(-1, 10, 64, 64)
         x0 = th.ones_like(x) * 0.5
         x1 = th.ones_like(x) * 0.5
-        x = th.cat([x0, x, x0], dim=1)
+        x = th.cat([x0, x, x0], dim=-1)
         y0 = th.ones_like(x) * 0.5
         y1 = th.ones_like(x) * 0.5
-        x = th.cat([y0, x, y1], dim=1)
+        x = th.cat([y0, x, y1], dim=-2)
         z = self.forward(x)[:, :, 1:-1, 1:-1]
         loss = F.mse_loss(z, y)
 
