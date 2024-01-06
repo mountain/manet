@@ -1,7 +1,7 @@
 import torch as th
 import torch.nn.functional as F
 import torch.nn as nn
-import pytorch_lightning as ltn
+import lightning as ltn
 
 from torch import Tensor
 from typing import TypeVar, Tuple
@@ -101,6 +101,7 @@ class LNon(nn.Module):
 class Moving0(ltn.LightningModule):
     def __init__(self):
         super().__init__()
+
         self.learning_rate = 1e-3
         self.counter = 0
         self.labeled_loss = 0
