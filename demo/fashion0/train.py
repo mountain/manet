@@ -74,11 +74,11 @@ if __name__ == '__main__':
     mdl = importlib.import_module('demo.fashion0.%s' % opt.model, package=None)
     model = mdl._model_()
 
-    # fname = 'seed.ckpt'
-    # with open(fname, 'rb') as f:
-    #     import pickle
-    #     checkpoint = pickle.load(f)
-    #     model.load_state_dict(checkpoint['state_dict'], strict=False)
+    fname = 'seed.ckpt'
+    with open(fname, 'rb') as f:
+         import pickle
+         checkpoint = pickle.load(f)
+         model.load_state_dict(checkpoint['state_dict'], strict=False)
 
     print('training...')
     trainer.fit(model, train_loader, val_loader)
