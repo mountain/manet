@@ -110,7 +110,7 @@ class Fashion0(MNISTModel):
         self.lnon2 = LNon(steps=1, length=1, points=3)
         self.conv3 = nn.Conv2d(25, 25, kernel_size=1, padding=0)
         self.lnon3 = LNon(steps=1, length=1, points=3)
-        self.fc = nn.Linear(15 * 9, 10)
+        self.fc = nn.Linear(25 * 9, 10)
 
     def forward(self, x):
         x = self.conv0(x)
