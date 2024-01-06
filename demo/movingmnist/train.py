@@ -68,7 +68,7 @@ if __name__ == '__main__':
     # training
     print('construct trainer...')
     trainer = pl.Trainer(max_epochs=opt.n_epochs, log_every_n_steps=1,
-                         callbacks=[EarlyStopping(monitor="loss", mode="max", patience=30)])
+                         callbacks=[EarlyStopping(monitor="val_loss", mode="max", patience=30)])
 
     import importlib
     print('construct model...')
