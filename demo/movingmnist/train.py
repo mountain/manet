@@ -22,7 +22,6 @@ if __name__ == '__main__':
 
     print('loading data...')
     from torch.utils.data import DataLoader
-    from torch.utils.data import random_split
     from torchvision.datasets import MovingMNIST
     from torchvision import transforms
 
@@ -44,11 +43,13 @@ if __name__ == '__main__':
     print('mean: %f, std: %f' % (mean, std))
 
     mnist_train = MovingMNIST('datasets', split='train', download=True, transform=transforms.Compose([
+                                   transforms.Lambda(lambda x: x.float()),
                                    transforms.Normalize(
                                      (mean,), (std,))
                                  ]))
 
     mnist_test = MovingMNIST('datasets', split='test', download=True, transform=transforms.Compose([
+                                   transforms.Lambda(lambda x: x.float()),
                                    transforms.Normalize(
                                      (mean,), (std,))
                                  ]))
