@@ -76,8 +76,7 @@ if __name__ == '__main__':
 
     fname = 'seed.ckpt'
     with open(fname, 'rb') as f:
-         import pickle
-         checkpoint = pickle.load(f)
+         checkpoint = torch.load(f, weights_only=True)
          model.load_state_dict(checkpoint['state_dict'], strict=False)
 
     print('training...')
