@@ -18,6 +18,10 @@ else:
     accelerator = 'cpu'
 
 
+def to_float(x):
+    return x.float()
+
+
 if __name__ == '__main__':
 
     print('loading data...')
@@ -43,15 +47,12 @@ if __name__ == '__main__':
     print('mean: %f, std: %f' % (mean, std))
 
 
-    def to_float(x):
-        return x.float()
-
-
     mnist_train = MovingMNIST('datasets', split='train', download=True, transform=transforms.Compose([
                                    transforms.Lambda(to_float),
                                    transforms.Normalize(
                                      (mean,), (std,))
                                  ]))
+
 
     mnist_test = MovingMNIST('datasets', split='test', download=True, transform=transforms.Compose([
                                    transforms.Lambda(to_float),
