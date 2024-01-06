@@ -179,7 +179,7 @@ class Moving0(ltn.LightningModule):
         fname = 'best-%s' % record
         with open(fname, 'bw') as f:
             th.save(checkpoint, f)
-        for ix, ckpt in enumerate(sorted(glob.glob('best-*.ckpt'), reverse=True)):
+        for ix, ckpt in enumerate(sorted(glob.glob('best-*.ckpt'))):
             if ix > 5:
                 os.unlink(ckpt)
         self.counter = 0
