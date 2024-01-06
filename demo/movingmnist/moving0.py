@@ -1,9 +1,8 @@
 import torch as th
 import torch.nn.functional as F
 import torch.nn as nn
-import manet.func.sigmoid as sgmd
+import pytorch_lightning as ltn
 
-from manet.nn.model import MNISTModel
 from torch import Tensor
 from typing import TypeVar, Tuple
 
