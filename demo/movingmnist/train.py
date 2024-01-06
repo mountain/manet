@@ -27,7 +27,7 @@ if __name__ == '__main__':
     from torchvision import transforms
 
 
-    mnist_raw = MovingMNIST('datasets', train=True, download=True, transform=transforms.Compose([
+    mnist_raw = MovingMNIST('datasets', split=None, download=True, transform=transforms.Compose([
                                    transforms.ToTensor()
                                  ]))
     raw_loader = DataLoader(mnist_raw, shuffle=False, batch_size=opt.batch, num_workers=8)
@@ -47,13 +47,13 @@ if __name__ == '__main__':
     std = torch.sqrt(vairance / counter).item()
     print('mean: %f, std: %f' % (mean, std))
 
-    mnist_train = MovingMNIST('datasets', train=True, download=True, transform=transforms.Compose([
+    mnist_train = MovingMNIST('datasets', split='train', download=True, transform=transforms.Compose([
                                    transforms.ToTensor(),
                                    transforms.Normalize(
                                      (mean,), (std,))
                                  ]))
 
-    mnist_test = MovingMNIST('datasets', train=False, download=True, transform=transforms.Compose([
+    mnist_test = MovingMNIST('datasets', split='test', download=True, transform=transforms.Compose([
                                    transforms.ToTensor(),
                                    transforms.Normalize(
                                      (mean,), (std,))
