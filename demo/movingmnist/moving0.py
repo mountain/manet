@@ -98,23 +98,47 @@ class LNon(nn.Module):
         return data.view(*shape)
 
 
-class BaseModel(ltn.LightningModule):
+class Moving0(ltn.LightningModule):
     def __init__(self):
         super().__init__()
         self.learning_rate = 1e-3
-
-    def forward(self, x):
-        raise NotImplementedError
-
-    def configure_optimizers(self):
-        return [th.optim.Adam(self.parameters(), lr=self.learning_rate)]
-
-
-class MovingMNISTModel(BaseModel):
-    def __init__(self):
-        super().__init__()
         self.counter = 0
         self.labeled_loss = 0
+        self.dnsample = nn.MaxPool2d(2)
+        self.upsample0 = nn.Upsample(scale_factor=64 / 32, mode='nearest')
+        self.upsample1 = nn.Upsample(scale_factor=32 / 16, mode='nearest')
+        self.upsample2 = nn.Upsample(scale_factor=16 / 8, mode='nearest')
+        self.upsample3 = nn.Upsample(scale_factor=8 / 4, mode='nearest')
+        self.upsample4 = nn.Upsample(scale_factor=4 / 2, mode='nearest')
+        self.upsample5 = nn.Upsample(scale_factor=2 / 1, mode='nearest')
+
+        self.conv0 = nn.Conv2d(10, 20, kernel_size=7, padding=3)
+        self.lnon0 = LNon(steps=1, length=1, points=8)
+        self.conv1 = nn.Conv2d(20, 20, kernel_size=3, padding=1)
+        self.lnon1 = LNon(steps=1, length=1, points=8)
+        self.conv2 = nn.Conv2d(20, 20, kernel_size=1, padding=0)
+        self.lnon2 = LNon(steps=1, length=1, points=8)
+        self.conv3 = nn.Conv2d(20, 20, kernel_size=1, padding=0)
+        self.lnon3 = LNon(steps=1, length=1, points=8)
+        self.conv4 = nn.Conv2d(20, 20, kernel_size=1, padding=0)
+        self.lnon4 = LNon(steps=1, length=1, points=8)
+        self.conv5 = nn.Conv2d(20, 20, kernel_size=1, padding=0)
+        self.lnon5 = LNon(steps=1, length=1, points=8)
+        self.conv6 = nn.Conv2d(20, 20, kernel_size=1, padding=0)
+        self.lnon6 = LNon(steps=1, length=1, points=8)
+
+        self.conv7 = nn.Conv2d(40, 20, kernel_size=1, padding=0)
+        self.lnon7 = LNon(steps=1, length=1, points=8)
+        self.conv8 = nn.Conv2d(40, 20, kernel_size=1, padding=0)
+        self.lnon8 = LNon(steps=1, length=1, points=8)
+        self.conv9 = nn.Conv2d(40, 20, kernel_size=1, padding=0)
+        self.lnon9 = LNon(steps=1, length=1, points=8)
+        self.conva = nn.Conv2d(40, 20, kernel_size=1, padding=0)
+        self.lnona = LNon(steps=1, length=1, points=8)
+        self.convb = nn.Conv2d(40, 20, kernel_size=1, padding=0)
+        self.lnonb = LNon(steps=1, length=1, points=8)
+        self.convc = nn.Conv2d(40, 10, kernel_size=1, padding=0)
+        self.lnonc = LNon(steps=1, length=1, points=8)
 
     def training_step(self, train_batch, batch_idx):
         batch = train_batch.view(-1, 20, 64, 64)
@@ -160,45 +184,8 @@ class MovingMNISTModel(BaseModel):
         self.counter = 0
         self.labeled_loss = 0
 
-
-class Moving0(MovingMNISTModel):
-    def __init__(self):
-        super().__init__()
-        self.dnsample = nn.MaxPool2d(2)
-        self.upsample0 = nn.Upsample(scale_factor=64 / 32, mode='nearest')
-        self.upsample1 = nn.Upsample(scale_factor=32 / 16, mode='nearest')
-        self.upsample2 = nn.Upsample(scale_factor=16 / 8, mode='nearest')
-        self.upsample3 = nn.Upsample(scale_factor=8 / 4, mode='nearest')
-        self.upsample4 = nn.Upsample(scale_factor=4 / 2, mode='nearest')
-        self.upsample5 = nn.Upsample(scale_factor=2 / 1, mode='nearest')
-
-        self.conv0 = nn.Conv2d(10, 20, kernel_size=7, padding=3)
-        self.lnon0 = LNon(steps=1, length=1, points=8)
-        self.conv1 = nn.Conv2d(20, 20, kernel_size=3, padding=1)
-        self.lnon1 = LNon(steps=1, length=1, points=8)
-        self.conv2 = nn.Conv2d(20, 20, kernel_size=1, padding=0)
-        self.lnon2 = LNon(steps=1, length=1, points=8)
-        self.conv3 = nn.Conv2d(20, 20, kernel_size=1, padding=0)
-        self.lnon3 = LNon(steps=1, length=1, points=8)
-        self.conv4 = nn.Conv2d(20, 20, kernel_size=1, padding=0)
-        self.lnon4 = LNon(steps=1, length=1, points=8)
-        self.conv5 = nn.Conv2d(20, 20, kernel_size=1, padding=0)
-        self.lnon5 = LNon(steps=1, length=1, points=8)
-        self.conv6 = nn.Conv2d(20, 20, kernel_size=1, padding=0)
-        self.lnon6 = LNon(steps=1, length=1, points=8)
-
-        self.conv7 = nn.Conv2d(40, 20, kernel_size=1, padding=0)
-        self.lnon7 = LNon(steps=1, length=1, points=8)
-        self.conv8 = nn.Conv2d(40, 20, kernel_size=1, padding=0)
-        self.lnon8 = LNon(steps=1, length=1, points=8)
-        self.conv9 = nn.Conv2d(40, 20, kernel_size=1, padding=0)
-        self.lnon9 = LNon(steps=1, length=1, points=8)
-        self.conva = nn.Conv2d(40, 20, kernel_size=1, padding=0)
-        self.lnona = LNon(steps=1, length=1, points=8)
-        self.convb = nn.Conv2d(40, 20, kernel_size=1, padding=0)
-        self.lnonb = LNon(steps=1, length=1, points=8)
-        self.convc = nn.Conv2d(40, 10, kernel_size=1, padding=0)
-        self.lnonc = LNon(steps=1, length=1, points=8)
+    def configure_optimizers(self):
+        return [th.optim.Adam(self.parameters(), lr=self.learning_rate)]
 
     def forward(self, x):
         x0 = self.conv0(x)
@@ -248,9 +235,6 @@ class Moving0(MovingMNISTModel):
         xc = self.lnonc(xc)
 
         return xc
-
-    def configure_optimizers(self):
-        return [th.optim.Adam(self.parameters(), lr=self.learning_rate)]
 
 
 def _model_():
