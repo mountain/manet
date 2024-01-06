@@ -107,6 +107,7 @@ class Moving0(ltn.LightningModule):
         self.labeled_loss = 0
         self.dnsample = nn.MaxPool2d(2)
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
+        self.upsample1 = nn.Upsample(scale_factor=33/16, mode='nearest')
 
         self.conv0 = nn.Conv2d(10, 20, kernel_size=7, padding=3)
         self.lnon0 = LNon(steps=1, length=1, points=60)
@@ -183,7 +184,7 @@ class Moving0(ltn.LightningModule):
         x = x.view(-1, 10, 64, 64)
         x0 = th.ones_like(x) * 0.5
         x1 = th.ones_like(x) * 0.5
-        x = th.cat([x0, x, x0], dim=-1)
+        x = th.cat([x0, x, x1], dim=-1)
         y0 = th.ones_like(x) * 0.5
         y1 = th.ones_like(x) * 0.5
         x = th.cat([y0, x, y1], dim=-2)
@@ -210,27 +211,27 @@ class Moving0(ltn.LightningModule):
         x6 = self.conv6(x6)
         x6 = self.lnon6(x6)
 
-        x7 = self.upsample(x6)
+        x7 = self.upsample(x6)  # 1 -> 2
         x7 = th.cat([x7, x5], dim=1)
         x7 = self.conv7(x7)
         x7 = self.lnon7(x7)
-        x8 = self.upsample(x7)
+        x8 = self.upsample(x7)  # 2 -> 4
         x8 = th.cat([x8, x4], dim=1)
         x8 = self.conv8(x8)
         x8 = self.lnon8(x8)
-        x9 = self.upsample(x8)
+        x9 = self.upsample(x8)  # 4 -> 8
         x9 = th.cat([x9, x3], dim=1)
         x9 = self.conv9(x9)
         x9 = self.lnon9(x9)
-        xa = self.upsample(x9)
+        xa = self.upsample(x9)  # 8 -> 16
         xa = th.cat([xa, x2], dim=1)
         xa = self.conva(xa)
         xa = self.lnona(xa)
-        xb = self.upsample(xa)
+        xb = self.upsample1(xa)  # 16 -> 33
         xb = th.cat([xb, x1], dim=1)
         xb = self.convb(xb)
         xb = self.lnonb(xb)
-        xc = self.upsample(xb)
+        xc = self.upsample(xb)  # 33 -> 66
         xc = th.cat([xc, x0], dim=1)
         xc = self.convc(xc)
         xc = self.lnonc(xc)
