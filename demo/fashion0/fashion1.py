@@ -103,13 +103,13 @@ class Fashion1(MNISTModel):
     def __init__(self):
         super().__init__()
         self.conv0 = nn.Conv2d(1, 5, kernel_size=7, padding=3)
-        self.lnon0 = LNon(steps=1, length=1, points=4)
+        self.lnon0 = LNon(steps=1, length=1, points=5)
         self.conv1 = nn.Conv2d(5, 25, kernel_size=3, padding=1)
-        self.lnon1 = LNon(steps=1, length=1, points=4)
+        self.lnon1 = LNon(steps=1, length=1, points=5)
         self.conv2 = nn.Conv2d(25, 25, kernel_size=1, padding=0)
-        self.lnon2 = LNon(steps=1, length=1, points=4)
+        self.lnon2 = LNon(steps=1, length=1, points=5)
         self.conv3 = nn.Conv2d(25, 25, kernel_size=1, padding=0)
-        self.lnon3 = LNon(steps=1, length=1, points=4)
+        self.lnon3 = LNon(steps=1, length=1, points=5)
         self.fc = nn.Linear(25 * 9, 10)
 
     def forward(self, x):
@@ -124,6 +124,7 @@ class Fashion1(MNISTModel):
         x = F.max_pool2d(x, 2)
         x = self.conv3(x)
         x = self.lnon3(x)
+        x = F.max_pool2d(x, 2)
         x = x.flatten(1)
         x = self.fc(x)
         x = F.log_softmax(x, dim=1)
