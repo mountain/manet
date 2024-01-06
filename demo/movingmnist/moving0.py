@@ -191,10 +191,10 @@ class Moving0(ltn.LightningModule):
 
         x0 = self.conv0(x)
         x0 = self.lnon0(x0)
-        x1 = self.dnsample(x0)  # 64 -> 32
+        x1 = self.dnsample(x0)  # 66 -> 33
         x1 = self.conv1(x1)
         x1 = self.lnon1(x1)
-        x2 = self.dnsample(x1)  # 32 -> 16
+        x2 = self.dnsample(x1)  # 33 -> 16
         x2 = self.conv2(x2)
         x2 = self.lnon2(x2)
         x3 = self.dnsample(x2)  # 16 -> 8
