@@ -140,7 +140,13 @@ class Moving0(ltn.LightningModule):
         batch = train_batch.view(-1, 20, 64, 64)
         x, y = batch[:, :10], batch[:, 10:]
         x = x.view(-1, 10, 64, 64)
-        z = self.forward(x)
+        x0 = th.ones_like(x) * 0.5
+        x1 = th.ones_like(x) * 0.5
+        x = th.cat([x0, x, x0], dim=1)
+        y0 = th.ones_like(x) * 0.5
+        y1 = th.ones_like(x) * 0.5
+        x = th.cat([y0, x, y1], dim=1)
+        z = self.forward(x)[:, :, 1:-1, 1:-1]
         loss = F.mse_loss(z, y)
 
         self.log('train_loss', loss, prog_bar=True)
