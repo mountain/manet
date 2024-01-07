@@ -2,7 +2,7 @@ import torch as th
 import torch.nn.functional as F
 import torch.nn as nn
 
-from manet.nn.model import MNISTModel
+from manet.nn.model import CIFARModel
 from torch import Tensor
 from typing import TypeVar, Tuple
 
@@ -98,7 +98,7 @@ class LNon(nn.Module):
         return data.view(*shape)
 
 
-class Cifar0(MNISTModel):
+class Cifar0(CIFARModel):
     def __init__(self):
         super().__init__()
         self.conv0 = nn.Conv2d(3, 25, kernel_size=7, padding=3)
