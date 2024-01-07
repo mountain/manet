@@ -59,8 +59,8 @@ class LNon(nn.Module):
         begin = index.floor().long()
         pos = index - begin
         end = begin + 1
-        begin = begin.clamp(0, param.size(0) - 1)
-        end = end.clamp(0, param.size(0) - 1)
+        begin = begin.clamp(0, param.size(2) - 1)
+        end = end.clamp(0, param.size(2) - 1)
 
         value = (1 - pos) * param[:, :, begin] + pos * param[:, :, end]
         print('begin', begin.size(), begin)
