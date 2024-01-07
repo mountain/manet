@@ -102,13 +102,13 @@ class Cifar0(CIFARModel):
     def __init__(self):
         super().__init__()
         self.conv0 = nn.Conv2d(3, 25, kernel_size=7, padding=3)
-        self.lnon0 = LNon(steps=1, length=1, points=2)
+        self.lnon0 = LNon(steps=1, length=1, points=120)
         self.conv1 = nn.Conv2d(25, 125, kernel_size=3, padding=1)
-        self.lnon1 = LNon(steps=1, length=1, points=2)
+        self.lnon1 = LNon(steps=1, length=1, points=120)
         self.conv2 = nn.Conv2d(125, 125, kernel_size=1, padding=0)
-        self.lnon2 = LNon(steps=1, length=1, points=2)
+        self.lnon2 = LNon(steps=1, length=1, points=120)
         self.conv3 = nn.Conv2d(125, 125, kernel_size=1, padding=0)
-        self.lnon3 = LNon(steps=1, length=1, points=2)
+        self.lnon3 = LNon(steps=1, length=1, points=120)
         self.fc = nn.Linear(125 * 16, 100)
 
     def forward(self, x):
