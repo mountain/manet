@@ -37,10 +37,11 @@ class LNon(nn.Module):
 
         import manet.func.interp as interp
         data = data.flatten(0)
-        dmax, dmin = data.max() + 0.1, data.min() - 0.1
-        grid = th.linspace(dmin, dmax, self.points)
-        histo = th.histogram(data, bins=self.points, range=(dmin, dmax), weight=th.ones_like(grid), density=False)[0].float()
-        accum = th.cumsum(histo, dim=0)
+        dmax, dmin = data.max().item() + 0.1, data.min().item() - 0.1
+        prob, grid = th.histogram(data, bins=self.points, range=(dmin, dmax), density=True)
+        prob = prob / prob.sum()
+        accum = th.cumsum(prob, dim=0) * self.points
+        grid = (grid[1:] + grid[:-1]) / 2
         index = interp.interp1d(grid, accum, data)
         frame = interp.interp1d(accum, grid, th.arange(self.points))
         return frame, index
