@@ -98,6 +98,10 @@ class LNon(nn.Module):
         return data.view(*shape)
 
 
+def recover(x):
+    return x * 51.070168 + 12.562058
+
+
 class Moving0(ltn.LightningModule):
     def __init__(self):
         super().__init__()
@@ -151,6 +155,9 @@ class Moving0(ltn.LightningModule):
         z = self.forward(x)
         loss = F.mse_loss(z, y)
         self.log('val_loss', loss, prog_bar=True)
+
+        mse = F.mse_loss(recover(z), recover(y))
+        self.log('mse', mse, prog_bar=True)
 
         self.labeled_loss += loss.item() * y.size()[0]
         self.counter += y.size()[0]
