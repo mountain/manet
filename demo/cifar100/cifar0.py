@@ -109,7 +109,9 @@ class Cifar0(CIFARModel):
         self.lnon2 = LNon(steps=1, length=1, points=120)
         self.conv3 = nn.Conv2d(125, 125, kernel_size=1, padding=0)
         self.lnon3 = LNon(steps=1, length=1, points=120)
-        self.fc = nn.Linear(125 * 16, 100)
+        self.conv4 = nn.Conv2d(125, 250, kernel_size=1, padding=0)
+        self.lnon4 = LNon(steps=1, length=1, points=120)
+        self.fc = nn.Linear(250 * 4, 100)
 
     def forward(self, x):
         x = self.conv0(x)
@@ -123,6 +125,9 @@ class Cifar0(CIFARModel):
         x = F.max_pool2d(x, 2)
         x = self.conv3(x)
         x = self.lnon3(x)
+        x = F.max_pool2d(x, 2)
+        x = self.conv4(x)
+        x = self.lnon4(x)
         x = x.flatten(1)
         x = self.fc(x)
         x = F.log_softmax(x, dim=1)
