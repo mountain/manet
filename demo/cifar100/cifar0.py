@@ -56,6 +56,7 @@ class LNon(nn.Module):
         begin = index.floor().long()
         pos = index - begin
         end = begin + 1
+        end = end.clamp(0, frame.size(2) - 1)
 
         return (1 - pos) * frame[:, :, begin] + pos * frame[:, :, end]
 
