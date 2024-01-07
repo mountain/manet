@@ -12,7 +12,7 @@ U = TypeVar('U', bound='Unit')
 
 class LNon(nn.Module):
     def __init__(self: U,
-                 groups: int = 5,
+                 groups: int = 1,
                  points: int = 5,
                  ) -> None:
         super().__init__()
