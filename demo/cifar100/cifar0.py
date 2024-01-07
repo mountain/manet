@@ -52,7 +52,6 @@ class LNon(nn.Module):
                ) -> Tensor:
 
         frame, index = accessor
-        frame, index = frame.detach(), index.detach()
         frame = frame.view(1, 1, -1)
         index = index.view(1, 1, -1)
         param = param.view(1, 1, -1)
