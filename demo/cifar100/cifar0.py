@@ -59,10 +59,7 @@ class LNon(nn.Module):
 
         return (1 - pos) * frame[:, :, begin] + pos * frame[:, :, end]
 
-    def step(self: U,
-             data: Tensor,
-             param: Tensor,
-             ) -> Tensor:
+    def step(self: U, data: Tensor) -> Tensor:
 
         accessor = self.accessor(data)
         theta = self.access(accessor)
@@ -89,8 +86,7 @@ class LNon(nn.Module):
         trunk = []
         for ix in range(self.groups):
             data_slice = data[:, ix::self.groups]
-            params_slice = self.params[:, ix:ix+1]
-            trunk.append(self.step(data_slice, params_slice))
+            trunk.append(self.step(data_slice))
         data = th.cat(trunk, dim=1)
 
         data = th.permute(data, [0, 2, 1]).reshape(-1, 1)
