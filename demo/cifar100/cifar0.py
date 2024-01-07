@@ -47,9 +47,7 @@ class LNon(nn.Module):
         return frame, index
 
     @staticmethod
-    def access(param: Tensor,
-               accessor: Tuple[Tensor, Tensor]
-               ) -> Tensor:
+    def access(accessor: Tuple[Tensor, Tensor]) -> Tensor:
 
         frame, index = accessor
         frame = frame.view(1, 1, -1)
@@ -67,8 +65,8 @@ class LNon(nn.Module):
              ) -> Tensor:
 
         accessor = self.accessor(data)
-        theta = self.access(param[0:1], accessor)
-        velo = self.access(param[1:2], accessor)
+        theta = self.access(accessor)
+        velo = self.access(accessor)
 
         ds = velo
         dx = ds * th.cos(theta)
