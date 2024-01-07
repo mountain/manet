@@ -20,6 +20,10 @@ class LNon(nn.Module):
         self.groups = groups
         self.points = points
 
+        theta = th.cat([th.linspace(0, 2 * th.pi, points).view(1, 1, points) for _ in range(groups)], dim=1)
+        velocity = th.cat([th.linspace(0, 1, points).view(1, 1, points) for _ in range(groups)], dim=1)
+        self.params = nn.Parameter(th.cat([theta, velocity], dim=0))
+
         self.channel_transform = nn.Parameter(
             th.normal(0, 1, (1, 1, 1))
         )
@@ -29,6 +33,7 @@ class LNon(nn.Module):
 
     def accessor(self: U,
                  data: Tensor,
+                 param: Tensor,
                  ) -> Tuple[Tensor, Tensor]:
 
         import manet.func.interp as interp
@@ -39,7 +44,7 @@ class LNon(nn.Module):
         accum = th.cumsum(prob, dim=0) * (self.points - 1)
         grid = (grid[1:] + grid[:-1]) / 2
         index = interp.interp1d(grid, accum, data)
-        frame = interp.interp1d(accum, grid, th.arange(self.points))
+        frame = interp.interp1d(accum, param, th.arange(self.points))
         return frame, index
 
     @staticmethod
@@ -56,10 +61,11 @@ class LNon(nn.Module):
 
         return (1 - pos) * frame[:, :, begin] + pos * frame[:, :, end]
 
-    def step(self: U, data: Tensor) -> Tensor:
+    def step(self: U, data: Tensor, param: Tensor) -> Tensor:
 
-        accessor = self.accessor(data)
+        accessor = self.accessor(data, param[0:1])
         theta = self.access(accessor)
+        accessor = self.accessor(data, param[1:2])
         velo = self.access(accessor)
 
         print('theta', theta.size(), theta.min(), theta.max())
@@ -88,7 +94,8 @@ class LNon(nn.Module):
         trunk = []
         for ix in range(self.groups):
             data_slice = data[:, ix::self.groups]
-            trunk.append(self.step(data_slice))
+            param_slice = self.params[:, ix:ix+1]
+            trunk.append(self.step(data_slice, param_slice))
         data = th.cat(trunk, dim=1)
 
         data = th.permute(data, [0, 2, 1]).reshape(-1, 1)
