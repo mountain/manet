@@ -62,13 +62,15 @@ class LNon(nn.Module):
         theta = self.access(accessor)
         velo = self.access(accessor)
 
-        print(theta.size(), theta.min(), theta.max())
-        print(velo.size(), velo.min(), velo.max())
+        print('theta', theta.size(), theta.min(), theta.max())
+        print('velo', velo.size(), velo.min(), velo.max())
 
         ds = velo
         dx = ds * th.cos(theta)
         dy = ds * th.sin(theta)
         val = data * (1 + dy) + dx
+
+        print('val', val.size(), val.min(), val.max())
         return val
 
     def forward(self: U,
