@@ -104,15 +104,15 @@ class LNon(nn.Module):
 class Cifar0(CIFARModel):
     def __init__(self):
         super().__init__()
-        self.conv0 = nn.Conv2d(3, 100, kernel_size=7, padding=3)
-        self.lnon0 = LNon(groups=25, points=10080)
-        self.conv1 = nn.Conv2d(100, 300, kernel_size=3, padding=1)
-        self.lnon1 = LNon(groups=25, points=10080)
-        self.conv2 = nn.Conv2d(300, 900, kernel_size=1, padding=0)
-        self.lnon2 = LNon(groups=25, points=10080)
-        self.conv3 = nn.Conv2d(900, 900, kernel_size=1, padding=0)
-        self.lnon3 = LNon(groups=25, points=10080)
-        self.fc = nn.Linear(900 * 16, 100)
+        self.conv0 = nn.Conv2d(3, 15, kernel_size=7, padding=3)
+        self.lnon0 = LNon(groups=5, points=120)
+        self.conv1 = nn.Conv2d(15, 45, kernel_size=3, padding=1)
+        self.lnon1 = LNon(groups=5, points=120)
+        self.conv2 = nn.Conv2d(45, 135, kernel_size=1, padding=0)
+        self.lnon2 = LNon(groups=5, points=120)
+        self.conv3 = nn.Conv2d(135, 135, kernel_size=1, padding=0)
+        self.lnon3 = LNon(groups=5, points=120)
+        self.fc = nn.Linear(135 * 16, 100)
 
     def forward(self, x):
         x = self.conv0(x)
