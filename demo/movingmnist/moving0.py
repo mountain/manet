@@ -132,43 +132,63 @@ class Moving0(ltn.LightningModule):
         self.lnon7 = LNon(steps=1, length=1, points=60)
         self.conv8 = nn.Conv2d(320, 160, kernel_size=1, padding=0)
         self.lnon8 = LNon(steps=1, length=1, points=60)
-        self.conv9 = nn.Conv2d(320, 80, kernel_size=1, padding=0)
+        self.conv9 = nn.Conv2d(320, 80, kernel_size=3, padding=1)
+        self.conv91 = nn.Conv2d(320, 80, kernel_size=3, padding=1)
+        self.lnon91 = LNon(steps=1, length=1, points=60)
+        self.conv92 = nn.Conv2d(320, 80, kernel_size=3, padding=1)
+        self.lnon92 = LNon(steps=1, length=1, points=60)
         self.lnon9 = LNon(steps=1, length=1, points=60)
-        self.conva = nn.Conv2d(160, 40, kernel_size=1, padding=0)
+        self.conva = nn.Conv2d(160, 40, kernel_size=3, padding=1)
+        self.conva1 = nn.Conv2d(160, 40, kernel_size=3, padding=1)
+        self.lnona1 = LNon(steps=1, length=1, points=60)
+        self.conva2 = nn.Conv2d(160, 40, kernel_size=3, padding=1)
+        self.lnona2 = LNon(steps=1, length=1, points=60)
         self.lnona = LNon(steps=1, length=1, points=60)
-        self.convb = nn.Conv2d(80, 20, kernel_size=1, padding=0)
+        self.convb = nn.Conv2d(80, 20, kernel_size=3, padding=1)
+        self.convb1 = nn.Conv2d(80, 20, kernel_size=3, padding=1)
+        self.lnonb1 = LNon(steps=1, length=1, points=60)
+        self.convb2 = nn.Conv2d(80, 20, kernel_size=3, padding=1)
+        self.lnonb2 = LNon(steps=1, length=1, points=60)
         self.lnonb = LNon(steps=1, length=1, points=60)
-        self.convc = nn.Conv2d(40, 10, kernel_size=1, padding=0)
+        self.convc = nn.Conv2d(40, 20, kernel_size=3, padding=1)
+        self.convc1 = nn.Conv2d(40, 20, kernel_size=3, padding=1)
+        self.lnonc1 = LNon(steps=1, length=1, points=60)
+        self.convc2 = nn.Conv2d(40, 20, kernel_size=3, padding=1)
+        self.lnonc2 = LNon(steps=1, length=1, points=60)
         self.lnonc = LNon(steps=1, length=1, points=60)
 
     def training_step(self, train_batch, batch_idx):
-        batch = train_batch.view(-1, 20, 64, 64)
-        x, y = batch[:, :10], batch[:, 10:]
+        w = train_batch.view(-1, 20, 64, 64)
+        x, y = w[:, :10], w[:, 10:]
         z = self.forward(x)
-        loss = F.mse_loss(z, y)
+        loss = F.mse_loss(z, w)
         self.log('train_loss', loss, prog_bar=True)
+
+        mse = F.mse_loss(recover(z), recover(y))
+        self.log('train_mse', mse, prog_bar=True)
+
         return loss
 
     def validation_step(self, val_batch, batch_idx):
-        batch = val_batch.view(-1, 20, 64, 64)
-        x, y = batch[:, :10], batch[:, 10:]
+        w = val_batch.view(-1, 20, 64, 64)
+        x, y = w[:, :10], w[:, 10:]
         z = self.forward(x)
-        loss = F.mse_loss(z, y)
+        loss = F.mse_loss(z, w)
         self.log('val_loss', loss, prog_bar=True)
 
         mse = F.mse_loss(recover(z), recover(y))
-        self.log('mse', mse, prog_bar=True)
+        self.log('val_mse', mse, prog_bar=True)
 
         self.labeled_loss += loss.item() * y.size()[0]
         self.counter += y.size()[0]
 
     def test_step(self, test_batch, batch_idx):
-        batch = test_batch.view(-1, 20, 64, 64)
-        x, y = batch[:, :10], batch[:, 10:]
+        w = test_batch.view(-1, 20, 64, 64)
+        x, y = w[:, :10], w[:, 10:]
         x = x.view(-1, 10, 64, 64)
         z = self.forward(x)
-        loss = F.mse_loss(z, y)
-        self.log('test_loss', loss, prog_bar=True)
+        mse = F.mse_loss(recover(z), recover(y))
+        self.log('test_mse', mse, prog_bar=True)
 
     def on_save_checkpoint(self, checkpoint) -> None:
         import glob, os
@@ -222,26 +242,47 @@ class Moving0(ltn.LightningModule):
         x7 = th.cat([x7, x5], dim=1)
         x7 = self.conv7(x7)
         x7 = self.lnon7(x7)
+
         x8 = self.upsample(x7)  # 2 -> 4
         x8 = th.cat([x8, x4], dim=1)
         x8 = self.conv8(x8)
         x8 = self.lnon8(x8)
+
         x9 = self.upsample(x8)  # 4 -> 8
-        x9 = th.cat([x9, x3], dim=1)
-        x9 = self.conv9(x9)
-        x9 = self.lnon9(x9)
+        y9 = th.cat([x9, x3], dim=1)
+        x9 = self.conv9(y9)
+        a9 = self.conv91(y9)
+        a9 = self.lnon91(a9)
+        b9 = self.conv92(y9)
+        b9 = self.lnon92(b9)
+        x9 = self.lnon9(a9 * x9 + b9)
+
         xa = self.upsample(x9)  # 8 -> 16
-        xa = th.cat([xa, x2], dim=1)
-        xa = self.conva(xa)
-        xa = self.lnona(xa)
+        ya = th.cat([xa, x2], dim=1)
+        xa = self.conva(ya)
+        aa = self.conva1(ya)
+        aa = self.lnona1(aa)
+        ba = self.conva2(ya)
+        ba = self.lnona2(ba)
+        xa = self.lnona(aa * xa + ba)
+
         xb = self.upsample1(xa)  # 16 -> 33
-        xb = th.cat([xb, x1], dim=1)
-        xb = self.convb(xb)
-        xb = self.lnonb(xb)
+        yb = th.cat([xb, x1], dim=1)
+        xb = self.convb(yb)
+        ab = self.convb1(yb)
+        ab = self.lnonb1(ab)
+        bb = self.convb2(yb)
+        bb = self.lnonb2(bb)
+        xb = self.lnonb(ab * xb + bb)
+
         xc = self.upsample(xb)  # 33 -> 66
-        xc = th.cat([xc, x0], dim=1)
-        xc = self.convc(xc)
-        xc = self.lnonc(xc)
+        yc = th.cat([xc, x0], dim=1)
+        xc = self.convc(yc)
+        ac = self.convc1(yc)
+        ac = self.lnonc1(ac)
+        bc = self.convc2(yc)
+        bc = self.lnonc2(bc)
+        xc = self.lnonc(ac * xc + bc)
 
         x = xc[:, :, 1:-1, 1:-1]
         return x
