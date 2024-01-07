@@ -164,7 +164,7 @@ class Moving0(ltn.LightningModule):
         loss = F.mse_loss(z, w)
         self.log('train_loss', loss, prog_bar=True)
 
-        mse = F.mse_loss(recover(z), recover(y))
+        mse = F.mse_loss(recover(z[:, 10:]), recover(y))
         self.log('train_mse', mse, prog_bar=True)
 
         return loss
@@ -176,7 +176,7 @@ class Moving0(ltn.LightningModule):
         loss = F.mse_loss(z, w)
         self.log('val_loss', loss, prog_bar=True)
 
-        mse = F.mse_loss(recover(z), recover(y))
+        mse = F.mse_loss(recover(z[:, 10:]), recover(y))
         self.log('val_mse', mse, prog_bar=True)
 
         self.labeled_loss += loss.item() * y.size()[0]
@@ -187,7 +187,7 @@ class Moving0(ltn.LightningModule):
         x, y = w[:, :10], w[:, 10:]
         x = x.view(-1, 10, 64, 64)
         z = self.forward(x)
-        mse = F.mse_loss(recover(z), recover(y))
+        mse = F.mse_loss(recover(z[:, 10:]), recover(y))
         self.log('test_mse', mse, prog_bar=True)
 
     def on_save_checkpoint(self, checkpoint) -> None:
