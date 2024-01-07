@@ -64,7 +64,13 @@ class LNon(nn.Module):
         begin = begin.clamp(0, param.size(0) - 1)
         end = end.clamp(0, param.size(0) - 1)
 
-        return (1 - pos) * param[:, :, begin] + pos * param[:, :, end]
+        value = (1 - pos) * param[:, :, begin] + pos * param[:, :, end]
+        print('begin', begin.size(), begin)
+        print('end', end.size(), end)
+        print('pos', pos.size(), pos)
+        print('param', param.size(), param)
+        print('value', value.size(), value)
+        return value
 
     def step(self: U,
              data: Tensor,
