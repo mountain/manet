@@ -52,8 +52,8 @@ class LNon(nn.Module):
                ) -> Tensor:
 
         frame, index = accessor
-        frame = frame.view(1, 1, -1)
-        index = index.view(1, 1, -1)
+        frame = frame.view(-1)
+        index = index.view(-1)
         param = th.addcmul(frame, th.ones_like(param), param, value=1e-3)
 
         begin = index.floor().long()
@@ -62,7 +62,7 @@ class LNon(nn.Module):
         begin = begin.clamp(0, param.size(0) - 1)
         end = end.clamp(0, param.size(0) - 1)
 
-        value = (1 - pos) * param[begin] + pos * param[end]
+        value = (1 - pos) * param[:, :, begin] + pos * param[:, :, end]
         print('begin', begin.size(), begin)
         print('end', end.size(), end)
         print('pos', pos.size(), pos)
