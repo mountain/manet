@@ -52,10 +52,10 @@ class LNon(nn.Module):
                ) -> Tensor:
 
         frame, index = accessor
-        th.addcmul(frame, th.ones_like(param), param, value=0, out=param)
+        th.addcmul(frame, th.zeros_like(param), param, out=param)
 
-        pos = index - index.floor().long()
         begin = index.floor().long()
+        pos = index - begin
         end = begin + 1
 
         return (1 - pos) * param[begin] + pos * param[end]
