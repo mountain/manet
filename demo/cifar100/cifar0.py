@@ -63,8 +63,7 @@ class LNon(nn.Module):
         theta = self.access(param[0:1], accessor)
         velo = self.access(param[1:2], accessor)
 
-        # by the flow equation of the arithmetic expression geometry
-        ds = velo * self.step_length
+        ds = velo
         dx = ds * th.cos(theta)
         dy = ds * th.sin(theta)
         val = data * (1 + dy) + dx
