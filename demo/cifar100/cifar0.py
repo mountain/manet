@@ -52,9 +52,8 @@ class LNon(nn.Module):
                ) -> Tensor:
 
         frame, index = accessor
-        frame = frame.view(-1)
+        frame = frame.view(1, 1, -1)
         index = index.view(-1)
-        # param = th.addcmul(frame, th.ones_like(param), param, value=1e-8)
 
         begin = index.floor().long()
         pos = index - begin
