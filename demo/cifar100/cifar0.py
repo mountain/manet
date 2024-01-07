@@ -39,7 +39,7 @@ class LNon(nn.Module):
         import manet.func.interp as interp
         data = data.flatten(0)
         param = param.flatten(0)
-        dmax, dmin = data.max().item() + 0.1, data.min().item() - 0.1
+        dmax, dmin = data.max(dim=0).item() + 0.1, data.min(dim=0).item() - 0.1
         prob, grid = th.histogram(data, bins=self.points, range=(dmin, dmax), density=True)
         prob = prob / prob.sum()
         accum = th.cumsum(prob, dim=0) * (self.points - 1)
