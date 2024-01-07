@@ -54,7 +54,7 @@ class LNon(nn.Module):
         frame, index = accessor
         frame = frame.view(-1)
         index = index.view(-1)
-        param = th.addcmul(frame, th.ones_like(param), param, value=1e-8)
+        # param = th.addcmul(frame, th.ones_like(param), param, value=1e-8)
 
         begin = index.floor().long()
         pos = index - begin
@@ -62,7 +62,7 @@ class LNon(nn.Module):
         begin = begin.clamp(0, param.size(2) - 1)
         end = end.clamp(0, param.size(2) - 1)
 
-        return (1 - pos) * param[:, :, begin] + pos * param[:, :, end]
+        return (1 - pos) * frame[:, :, begin] + pos * frame[:, :, end]
 
     def step(self: U,
              data: Tensor,
