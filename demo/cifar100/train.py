@@ -33,8 +33,8 @@ if __name__ == '__main__':
     counter, total, vairance = 0, 0, 0
     for raw_batch in raw_loader:
         x, y = raw_batch
-        x = x.view(-1, 1, 28, 28)
-        counter += (28 * 28 * x.shape[0])
+        x = x.view(-1, 3, 32, 32)
+        counter += (32 * 32 * 3 * x.shape[0])
         total += x.sum()
 
     mean = (total / counter).item()
