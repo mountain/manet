@@ -20,10 +20,6 @@ class LNon(nn.Module):
         self.groups = groups
         self.points = points
 
-        theta = th.cat([th.linspace(0, 2 * th.pi, points).view(1, 1, points) for _ in range(groups)], dim=1)
-        velocity = th.cat([th.linspace(0, 1, points).view(1, 1, points) for _ in range(groups)], dim=1)
-        self.params = nn.Parameter(th.cat([theta, velocity], dim=0))
-
         self.channel_transform = nn.Parameter(
             th.normal(0, 1, (1, 1, 1))
         )
