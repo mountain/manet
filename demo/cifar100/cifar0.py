@@ -65,9 +65,9 @@ class LNon(nn.Module):
     def step(self: U, data: Tensor, param: Tensor) -> Tensor:
 
         accessor = self.accessor(data, param[0:1])
-        theta = self.access(accessor)
+        theta = self.access(accessor).reshape(*data.size())
         accessor = self.accessor(data, param[1:2])
-        velo = self.access(accessor)
+        velo = self.access(accessor).reshape(*data.size())
 
         print('data', data.size(), data.min(), data.max())
         print('theta', theta.size(), theta.min(), theta.max())
