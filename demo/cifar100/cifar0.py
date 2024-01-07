@@ -123,7 +123,6 @@ class Cifar0(CIFARModel):
         x = F.max_pool2d(x, 2)
         x = self.conv3(x)
         x = self.lnon3(x)
-        x = F.max_pool2d(x, 2)
         x = x.flatten(1)
         x = self.fc(x)
         x = F.log_softmax(x, dim=1)
