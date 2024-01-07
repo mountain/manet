@@ -38,8 +38,8 @@ class LNon(nn.Module):
         index = th.sigmoid(data) * self.points
         bgn = index.floor().long()
         bgn = bgn * (bgn >= 0)
-        bgn = bgn * (bgn <= self.num_points - 2) + (bgn - 1) * (bgn > self.num_points - 2)
-        bgn = bgn * (bgn <= self.num_points - 2) + (bgn - 1) * (bgn > self.num_points - 2)
+        bgn = bgn * (bgn <= self.points - 2) + (bgn - 1) * (bgn > self.points - 2)
+        bgn = bgn * (bgn <= self.points - 2) + (bgn - 1) * (bgn > self.points - 2)
         end = bgn + 1
 
         return index, bgn, end
