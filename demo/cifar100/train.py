@@ -70,7 +70,7 @@ if __name__ == '__main__':
 
     import importlib
     print('construct model...')
-    mdl = importlib.import_module('demo.cifar.%s' % opt.model, package=None)
+    mdl = importlib.import_module('demo.cifar100.%s' % opt.model, package=None)
     model = mdl._model_()
 
     # fname = 'seed.ckpt'
