@@ -74,10 +74,12 @@ class LNon(nn.Module):
 
         ds = velo
         dx = ds * th.cos(theta)
+        print('dx', dx.size(), dx.min(), dx.max())
         dy = ds * th.sin(theta)
+        print('dy', dy.size(), dy.min(), dy.max())
         val = data * (1 + dy) + dx
-
         print('val', val.size(), val.min(), val.max())
+
         return val
 
     def forward(self: U,
