@@ -33,26 +33,31 @@ class LNon(nn.Module):
 
     def accessor(self: U,
                  data: Tensor,
-                 ) -> Tuple[Tensor, Tensor, Tensor]:
+                 ) -> Tuple[Tensor, Tensor]:
 
-        index = th.sigmoid(data) * self.points
-        bgn = index.floor().long()
-        bgn = bgn * (bgn >= 0)
-        bgn = bgn * (bgn <= self.points - 2) + (bgn - 1) * (bgn > self.points - 2)
-        bgn = bgn * (bgn <= self.points - 2) + (bgn - 1) * (bgn > self.points - 2)
-        end = bgn + 1
-
-        return index, bgn, end
+        import manet.func.interp as interp
+        data = data.flatten(0)
+        dmax, dmin = data.max() + 0.1, data.min() - 0.1
+        grid = th.linspace(dmin, dmax, self.points)
+        histo = th.histogram(data, bins=self.points, range=(dmin, dmax), weight=th.ones_like(grid), density=False)[0].float()
+        accum = th.cumsum(histo, dim=0)
+        index = interp.interp1d(grid, accum, data)
+        frame = interp.interp1d(accum, grid, th.arange(self.points))
+        return frame, index
 
     @staticmethod
     def access(param: Tensor,
-               accessor: Tuple[Tensor, Tensor, Tensor]
+               accessor: Tuple[Tensor, Tensor]
                ) -> Tensor:
 
-        index, bgn, end = accessor
-        pos = index - bgn
-        param = param.flatten(0)
-        return (1 - pos) * param[bgn] + pos * param[end]
+        frame, index = accessor
+        th.addcmul(frame, th.ones_like(param), param, value=0, out=param)
+
+        pos = index - index.floor().long()
+        begin = index.floor().long()
+        end = begin + 1
+
+        return (1 - pos) * param[begin] + pos * param[end]
 
     def step(self: U,
              data: Tensor,
@@ -98,15 +103,15 @@ class LNon(nn.Module):
 class Cifar0(CIFARModel):
     def __init__(self):
         super().__init__()
-        self.conv0 = nn.Conv2d(3, 25, kernel_size=7, padding=3)
-        self.lnon0 = LNon(groups=10, points=120)
-        self.conv1 = nn.Conv2d(25, 100, kernel_size=3, padding=1)
-        self.lnon1 = LNon(groups=10, points=120)
-        self.conv2 = nn.Conv2d(100, 100, kernel_size=1, padding=0)
-        self.lnon2 = LNon(groups=10, points=120)
-        self.conv3 = nn.Conv2d(100, 200, kernel_size=1, padding=0)
-        self.lnon3 = LNon(groups=10, points=120)
-        self.fc = nn.Linear(200 * 16, 100)
+        self.conv0 = nn.Conv2d(3, 100, kernel_size=7, padding=3)
+        self.lnon0 = LNon(groups=25, points=10080)
+        self.conv1 = nn.Conv2d(100, 300, kernel_size=3, padding=1)
+        self.lnon1 = LNon(groups=25, points=10080)
+        self.conv2 = nn.Conv2d(300, 900, kernel_size=1, padding=0)
+        self.lnon2 = LNon(groups=25, points=10080)
+        self.conv3 = nn.Conv2d(900, 900, kernel_size=1, padding=0)
+        self.lnon3 = LNon(groups=25, points=10080)
+        self.fc = nn.Linear(900 * 16, 100)
 
     def forward(self, x):
         x = self.conv0(x)
