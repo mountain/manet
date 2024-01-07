@@ -40,7 +40,7 @@ class LNon(nn.Module):
         dmax, dmin = data.max().item() + 0.1, data.min().item() - 0.1
         prob, grid = th.histogram(data, bins=self.points, range=(dmin, dmax), density=True)
         prob = prob / prob.sum()
-        accum = th.cumsum(prob, dim=0) * self.points
+        accum = th.cumsum(prob, dim=0) * (self.points - 1)
         grid = (grid[1:] + grid[:-1]) / 2
         index = interp.interp1d(grid, accum, data)
         frame = interp.interp1d(accum, grid, th.arange(self.points))
