@@ -12,22 +12,18 @@ U = TypeVar('U', bound='Unit')
 
 class LNon(nn.Module):
     def __init__(self: U,
-                 steps: int = 3,
-                 length: float = 0.33333,
+                 groups: int = 5,
                  points: int = 5,
                  ) -> None:
         super().__init__()
 
-        self.num_steps = steps
-        self.step_length = length
-        self.num_points = points
+        self.groups = groups
+        self.points = points
 
-        self.theta = nn.Parameter(
-            th.linspace(0, 2 * th.pi, points).view(1, 1, points)
-        )
-        self.velocity = nn.Parameter(
-            th.linspace(0, 1, points).view(1, 1, points)
-        )
+        theta = th.cat([th.linspace(0, 2 * th.pi, points).view(1, 1, points) for _ in range(groups)], dim=1)
+        velocity = th.cat([th.linspace(0, 1, points).view(1, 1, points) for _ in range(groups)], dim=1)
+        self.params = nn.Parameter(th.cat([theta, velocity], dim=0))
+
         self.channel_transform = nn.Parameter(
             th.normal(0, 1, (1, 1, 1))
         )
@@ -39,8 +35,7 @@ class LNon(nn.Module):
                  data: Tensor,
                  ) -> Tuple[Tensor, Tensor, Tensor]:
 
-        index = th.sigmoid(data) * self.num_points
-
+        index = th.sigmoid(data) * self.points
         bgn = index.floor().long()
         bgn = bgn * (bgn >= 0)
         bgn = bgn * (bgn <= self.num_points - 2) + (bgn - 1) * (bgn > self.num_points - 2)
@@ -49,23 +44,24 @@ class LNon(nn.Module):
 
         return index, bgn, end
 
-    def access(self: U,
-               memory: Tensor,
+    @staticmethod
+    def access(param: Tensor,
                accessor: Tuple[Tensor, Tensor, Tensor]
                ) -> Tensor:
 
         index, bgn, end = accessor
         pos = index - bgn
-        memory = memory.flatten(0)
-        return (1 - pos) * memory[bgn] + pos * memory[end]
+        param = param.flatten(0)
+        return (1 - pos) * param[bgn] + pos * param[end]
 
     def step(self: U,
-             data: Tensor
+             data: Tensor,
+             param: Tensor,
              ) -> Tensor:
 
         accessor = self.accessor(data)
-        theta = self.access(self.theta, accessor)
-        velo = self.access(self.velocity, accessor)
+        theta = self.access(param[0:1], accessor)
+        velo = self.access(param[1:2], accessor)
 
         # by the flow equation of the arithmetic expression geometry
         ds = velo * self.step_length
@@ -84,15 +80,17 @@ class LNon(nn.Module):
 
         data = th.permute(data, [0, 2, 1]).reshape(-1, 1)
         data = th.matmul(data, self.channel_transform)
-        # data = data * self.channel_transform
         data = data.view(-1, 1, 1)
 
-        for ix in range(self.num_steps):
-            data = self.step(data)
+        trunk = []
+        for ix in range(self.groups):
+            data_slice = data[:, ix::self.groups]
+            params_slice = self.params[:, ix:ix+1]
+            trunk.append(self.step(data_slice, params_slice))
+        data = th.cat(trunk, dim=1)
 
         data = th.permute(data, [0, 2, 1]).reshape(-1, 1)
         data = th.matmul(data, self.spatio_transform)
-        # data = data * self.spatio_transform
         data = data.view(-1, 1, 1)
 
         return data.view(*shape)
@@ -102,13 +100,13 @@ class Cifar0(CIFARModel):
     def __init__(self):
         super().__init__()
         self.conv0 = nn.Conv2d(3, 25, kernel_size=7, padding=3)
-        self.lnon0 = LNon(steps=1, length=1, points=120)
+        self.lnon0 = LNon(groups=10, points=120)
         self.conv1 = nn.Conv2d(25, 125, kernel_size=3, padding=1)
-        self.lnon1 = LNon(steps=1, length=1, points=120)
+        self.lnon1 = LNon(groups=10, points=120)
         self.conv2 = nn.Conv2d(125, 125, kernel_size=1, padding=0)
-        self.lnon2 = LNon(steps=1, length=1, points=120)
+        self.lnon2 = LNon(groups=10, points=120)
         self.conv3 = nn.Conv2d(125, 125, kernel_size=1, padding=0)
-        self.lnon3 = LNon(steps=1, length=1, points=120)
+        self.lnon3 = LNon(groups=10, points=120)
         self.fc = nn.Linear(125 * 16, 100)
 
     def forward(self, x):
