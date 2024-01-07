@@ -56,7 +56,7 @@ class LNon(nn.Module):
         index = index.view(1, 1, -1)
         th.addcmul(frame, th.ones_like(param), param, value=1e-8, out=param)
 
-        begin = (index.floor().long()) * (index < param.size(0) - 1).long() * (index >= 0).long()
+        begin = index.floor().long()
         pos = index - begin
         end = begin + 1
         begin = begin.clamp(0, param.size(0) - 1)
