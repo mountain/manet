@@ -40,7 +40,7 @@ if __name__ == '__main__':
     mean = (total / counter).item()
     for raw_batch in raw_loader:
         x, y = raw_batch
-        x = x.view(-1, 1, 28, 28)
+        x = x.view(-1, 3, 32, 32)
         vairance += ((x - mean).pow(2)).sum()
 
     std = torch.sqrt(vairance / counter).item()
