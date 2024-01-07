@@ -1,7 +1,6 @@
 import torch as th
 import torch.nn.functional as F
 import torch.nn as nn
-import manet.func.sigmoid as sgmd
 
 from manet.nn.model import MNISTModel
 from torch import Tensor
@@ -99,18 +98,18 @@ class LNon(nn.Module):
         return data.view(*shape)
 
 
-class Fashion0(MNISTModel):
+class Cifar0(MNISTModel):
     def __init__(self):
         super().__init__()
-        self.conv0 = nn.Conv2d(1, 5, kernel_size=7, padding=3)
+        self.conv0 = nn.Conv2d(3, 25, kernel_size=7, padding=3)
         self.lnon0 = LNon(steps=1, length=1, points=2)
-        self.conv1 = nn.Conv2d(5, 25, kernel_size=3, padding=1)
+        self.conv1 = nn.Conv2d(25, 125, kernel_size=3, padding=1)
         self.lnon1 = LNon(steps=1, length=1, points=2)
-        self.conv2 = nn.Conv2d(25, 25, kernel_size=1, padding=0)
+        self.conv2 = nn.Conv2d(125, 125, kernel_size=1, padding=0)
         self.lnon2 = LNon(steps=1, length=1, points=2)
-        self.conv3 = nn.Conv2d(25, 25, kernel_size=1, padding=0)
+        self.conv3 = nn.Conv2d(125, 125, kernel_size=1, padding=0)
         self.lnon3 = LNon(steps=1, length=1, points=2)
-        self.fc = nn.Linear(25 * 9, 10)
+        self.fc = nn.Linear(125 * 9, 100)
 
     def forward(self, x):
         x = self.conv0(x)
@@ -129,9 +128,6 @@ class Fashion0(MNISTModel):
         x = F.log_softmax(x, dim=1)
         return x
 
-    def configure_optimizers(self):
-        return [th.optim.AdamW(self.parameters(), lr=self.learning_rate)]
-
 
 def _model_():
-    return Fashion0()
+    return Cifar0()

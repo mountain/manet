@@ -13,7 +13,7 @@ opt = parser.parse_args()
 if torch.cuda.is_available():
     accelerator = 'gpu'
 elif torch.backends.mps.is_available():
-    accelerator = 'cpu'
+    accelerator = 'mps'
 else:
     accelerator = 'cpu'
 
@@ -22,15 +22,14 @@ if __name__ == '__main__':
 
     print('loading data...')
     from torch.utils.data import DataLoader
-    from torch.utils.data import random_split
-    from torchvision.datasets import FashionMNIST
+    from torchvision.datasets import CIFAR100
     from torchvision import transforms
 
 
-    mnist_raw = FashionMNIST('datasets', train=True, download=True, transform=transforms.Compose([
+    cifar_raw = CIFAR100('datasets', train=True, download=True, transform=transforms.Compose([
                                    transforms.ToTensor()
                                  ]))
-    raw_loader = DataLoader(mnist_raw, shuffle=False, batch_size=opt.batch, num_workers=8)
+    raw_loader = DataLoader(cifar_raw, shuffle=False, batch_size=opt.batch, num_workers=8)
     counter, total, vairance = 0, 0, 0
     for raw_batch in raw_loader:
         x, y = raw_batch
@@ -47,22 +46,22 @@ if __name__ == '__main__':
     std = torch.sqrt(vairance / counter).item()
     print('mean: %f, std: %f' % (mean, std))
 
-    mnist_train = FashionMNIST('datasets', train=True, download=True, transform=transforms.Compose([
+    cifar_train = CIFAR100('datasets', train=True, download=True, transform=transforms.Compose([
                                    transforms.ToTensor(),
                                    transforms.Normalize(
                                      (mean,), (std,))
                                  ]))
 
-    mnist_test = FashionMNIST('datasets', train=False, download=True, transform=transforms.Compose([
+    cifar_test = CIFAR100('datasets', train=False, download=True, transform=transforms.Compose([
                                    transforms.ToTensor(),
                                    transforms.Normalize(
                                      (mean,), (std,))
                                  ]))
 
 
-    train_loader = DataLoader(mnist_train, shuffle=True, batch_size=opt.batch, num_workers=8, persistent_workers=True)
-    val_loader = DataLoader(mnist_test, batch_size=opt.batch, num_workers=8, persistent_workers=True)
-    test_loader = DataLoader(mnist_test, batch_size=opt.batch, num_workers=8, persistent_workers=True)
+    train_loader = DataLoader(cifar_train, shuffle=True, batch_size=opt.batch, num_workers=8, persistent_workers=True)
+    val_loader = DataLoader(cifar_test, batch_size=opt.batch, num_workers=8, persistent_workers=True)
+    test_loader = DataLoader(cifar_test, batch_size=opt.batch, num_workers=8, persistent_workers=True)
 
     # training
     print('construct trainer...')
@@ -71,7 +70,7 @@ if __name__ == '__main__':
 
     import importlib
     print('construct model...')
-    mdl = importlib.import_module('demo.fashion.%s' % opt.model, package=None)
+    mdl = importlib.import_module('demo.cifar.%s' % opt.model, package=None)
     model = mdl._model_()
 
     # fname = 'seed.ckpt'
