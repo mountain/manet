@@ -65,6 +65,9 @@ class LNon(nn.Module):
         theta = self.access(accessor)
         velo = self.access(accessor)
 
+        print(theta.size(), theta.min(), theta.max())
+        print(velo.size(), velo.min(), velo.max())
+
         ds = velo
         dx = ds * th.cos(theta)
         dy = ds * th.sin(theta)
