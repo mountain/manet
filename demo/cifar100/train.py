@@ -26,24 +26,26 @@ if __name__ == '__main__':
     from torchvision import transforms
 
 
-    cifar_raw = CIFAR100('datasets', train=True, download=True, transform=transforms.Compose([
-                                   transforms.ToTensor()
-                                 ]))
-    raw_loader = DataLoader(cifar_raw, shuffle=False, batch_size=opt.batch, num_workers=8)
-    counter, total, vairance = 0, 0, 0
-    for raw_batch in raw_loader:
-        x, y = raw_batch
-        x = x.view(-1, 3, 32, 32)
-        counter += (32 * 32 * 3 * x.shape[0])
-        total += x.sum()
+    # cifar_raw = CIFAR100('datasets', train=True, download=True, transform=transforms.Compose([
+    #                                transforms.ToTensor()
+    #                              ]))
+    # raw_loader = DataLoader(cifar_raw, shuffle=False, batch_size=opt.batch, num_workers=8)
+    # counter, total, vairance = 0, 0, 0
+    # for raw_batch in raw_loader:
+    #     x, y = raw_batch
+    #     x = x.view(-1, 3, 32, 32)
+    #     counter += (32 * 32 * 3 * x.shape[0])
+    #     total += x.sum()
+    #
+    # mean = (total / counter).item()
+    # for raw_batch in raw_loader:
+    #     x, y = raw_batch
+    #     x = x.view(-1, 3, 32, 32)
+    #     vairance += ((x - mean).pow(2)).sum()
+    #
+    # std = torch.sqrt(vairance / counter).item()
 
-    mean = (total / counter).item()
-    for raw_batch in raw_loader:
-        x, y = raw_batch
-        x = x.view(-1, 3, 32, 32)
-        vairance += ((x - mean).pow(2)).sum()
-
-    std = torch.sqrt(vairance / counter).item()
+    mean, std = 0.478181, 0.268192
     print('mean: %f, std: %f' % (mean, std))
 
     cifar_train = CIFAR100('datasets', train=True, download=True, transform=transforms.Compose([
