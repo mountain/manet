@@ -105,7 +105,7 @@ class Cifar0(CIFARModel):
         self.conv2 = nn.Conv2d(100, 100, kernel_size=1, padding=0)
         self.lnon2 = LNon(groups=10, points=120)
         self.conv3 = nn.Conv2d(100, 200, kernel_size=1, padding=0)
-        self.lnon3 = LNon(groups=100, points=120)
+        self.lnon3 = LNon(groups=10, points=120)
         self.fc = nn.Linear(200 * 16, 100)
 
     def forward(self, x):
