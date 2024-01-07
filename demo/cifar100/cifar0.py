@@ -109,7 +109,7 @@ class Cifar0(MNISTModel):
         self.lnon2 = LNon(steps=1, length=1, points=2)
         self.conv3 = nn.Conv2d(125, 125, kernel_size=1, padding=0)
         self.lnon3 = LNon(steps=1, length=1, points=2)
-        self.fc = nn.Linear(125 * 9, 100)
+        self.fc = nn.Linear(125 * 16, 100)
 
     def forward(self, x):
         x = self.conv0(x)
