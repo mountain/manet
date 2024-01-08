@@ -114,6 +114,8 @@ class Cifar0(CIFARModel):
         self.fc = nn.Linear(45 * 16, 100)
 
     def forward(self, x):
+        self.set_materialize_grads(True)
+
         x = self.conv0(x)
         x = self.lnon0(x)
         x = F.max_pool2d(x, 2)
