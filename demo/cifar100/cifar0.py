@@ -114,7 +114,10 @@ class Cifar0(CIFARModel):
         self.fc = nn.Linear(45 * 16, 100)
 
     def forward(self, x):
-        self.set_materialize_grads(True)
+        self.lnon0.set_materialize_grads(True)
+        self.lnon1.set_materialize_grads(True)
+        self.lnon2.set_materialize_grads(True)
+        self.lnon3.set_materialize_grads(True)
 
         x = self.conv0(x)
         x = self.lnon0(x)
