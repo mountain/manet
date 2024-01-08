@@ -29,8 +29,6 @@ class Interp1d(torch.autograd.Function):
             Tensor for the output. If None: allocated automatically.
 
         """
-        ctx.set_materialize_grads(True)
-
         # making the vectors at least 2D
         is_flat = {}
         require_grad = {}

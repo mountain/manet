@@ -1,6 +1,9 @@
+from typing import Any
+
 import torch as th
 import lightning as ltn
 import torch.nn.functional as F
+from torch import Tensor
 
 from manet.tools.profiler import reset_profiling_stage, is_profiling, ctx
 
@@ -12,6 +15,10 @@ class BaseModel(ltn.LightningModule):
 
     def forward(self, x):
         raise NotImplementedError
+
+    def backward(self, loss: Tensor, *args: Any, **kwargs: Any) -> None:
+        kwargs['materialize_grads'] = True
+        loss.backward(*args, **kwargs)
 
     def configure_optimizers(self):
         return [th.optim.Adam(self.parameters(), lr=self.learning_rate)]
