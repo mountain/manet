@@ -89,30 +89,20 @@ class LNon(nn.Module):
                 data: Tensor
                 ) -> Tensor:
         shape = data.size()
-        data = data.flatten(1)
         data = data.contiguous()
-        data = data.view(-1, 1, 1)
-
-        data = th.permute(data, [0, 2, 1]).reshape(-1, 1)
-        data = th.matmul(data, self.channel_transform)
-        data = data.view(-1, 1, 1)
-
         trunk = []
         for ix in range(self.groups):
             print('shape', shape)
             print('ix', ix)
             print('params', self.params.size())
-            data_slice = data[:, ix::self.groups]
+
+            data_slice = data[:, ix::self.groups].view(-1, 1, 1)
             param_slice = self.params[:, ix:ix+1]
             print('data_slice', data_slice.size())
             print('param_slice', param_slice.size())
             trunk.append(self.step(data_slice, param_slice))
+
         data = th.cat(trunk, dim=1)
-
-        data = th.permute(data, [0, 2, 1]).reshape(-1, 1)
-        data = th.matmul(data, self.spatio_transform)
-        data = data.view(-1, 1, 1)
-
         return data.view(*shape)
 
 
