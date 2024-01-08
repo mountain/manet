@@ -32,7 +32,7 @@ class Foilize(th.autograd.Function):
 
         ctx.save_for_backward(param)
 
-        index = interp.interp1d(grid, accum, data)
+        index = interp.interp1d(grid, accum, data_)
         frame = interp.interp1d(accum, param_, th.arange(points))
         print('forward:index', index.size(), index.min(), index.max())
         print('forward:frame', frame.size(), frame.min(), frame.max())
