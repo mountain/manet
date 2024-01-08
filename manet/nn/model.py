@@ -16,10 +16,6 @@ class BaseModel(ltn.LightningModule):
     def forward(self, x):
         raise NotImplementedError
 
-    def backward(self, loss: Tensor, *args: Any, **kwargs: Any) -> None:
-        kwargs['retain_graph'] = True
-        loss.backward(*args, **kwargs)
-
     def configure_optimizers(self):
         return [th.optim.Adam(self.parameters(), lr=self.learning_rate)]
 
