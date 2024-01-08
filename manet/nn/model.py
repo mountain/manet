@@ -13,6 +13,9 @@ class BaseModel(ltn.LightningModule):
     def forward(self, x):
         raise NotImplementedError
 
+    def backward(self, loss):
+        return loss.backward()
+
     def configure_optimizers(self):
         return [th.optim.Adam(self.parameters(), lr=self.learning_rate)]
 
@@ -29,7 +32,7 @@ class MNISTModel(BaseModel):
 
         x, y = train_batch
         x = x.view(-1, 1, 28, 28)
-        z = self(x)
+        z = self.forward(x)
         loss = F.nll_loss(z, y)
 
         self.log('train_loss', loss, prog_bar=True)
@@ -41,7 +44,7 @@ class MNISTModel(BaseModel):
         x, y = val_batch
         x = x.view(-1, 1, 28, 28)
 
-        z = self(x)
+        z = self.forward(x)
         loss = F.nll_loss(z, y)
         self.log('val_loss', loss, prog_bar=True)
 
