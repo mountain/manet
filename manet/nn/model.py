@@ -13,9 +13,6 @@ class BaseModel(ltn.LightningModule):
     def forward(self, x):
         raise NotImplementedError
 
-    def backward(self, loss):
-        return loss.backward()
-
     def configure_optimizers(self):
         return [th.optim.Adam(self.parameters(), lr=self.learning_rate)]
 
