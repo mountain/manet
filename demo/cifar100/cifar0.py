@@ -103,8 +103,8 @@ class LNon(nn.Module):
             print('ix', ix)
             data_slice = data[:, ix::self.groups]
             param_slice = self.params[:, ix:ix+1]
-            print('data_slice', data_slice.size(), data_slice.min(), data_slice.max())
-            print('param_slice', param_slice.size(), param_slice.min(), param_slice.max())
+            print('data_slice', data_slice.size())
+            print('param_slice', param_slice.size())
             trunk.append(self.step(data_slice, param_slice))
         data = th.cat(trunk, dim=1)
 
