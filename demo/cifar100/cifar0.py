@@ -99,6 +99,8 @@ class LNon(nn.Module):
 
         trunk = []
         for ix in range(self.groups):
+            print('shape', shape)
+            print('ix', ix)
             data_slice = data[:, ix::self.groups]
             param_slice = self.params[:, ix:ix+1]
             print('data_slice', data_slice.size(), data_slice.min(), data_slice.max())
