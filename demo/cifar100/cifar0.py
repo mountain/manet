@@ -101,6 +101,7 @@ class LNon(nn.Module):
         for ix in range(self.groups):
             print('shape', shape)
             print('ix', ix)
+            print('params', self.params.size())
             data_slice = data[:, ix::self.groups]
             param_slice = self.params[:, ix:ix+1]
             print('data_slice', data_slice.size())
