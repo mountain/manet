@@ -26,10 +26,10 @@ class LNon(nn.Module):
         self.params = nn.Parameter(th.cat([theta, velocity], dim=0))
 
         self.channel_transform = nn.Parameter(
-            th.normal(0, 1, (1, 1, 1))
+            th.normal(0, 1, (1, 1, 1, 1))
         )
         self.spatio_transform = nn.Parameter(
-            th.normal(0, 1, (1, 1, 1))
+            th.normal(0, 1, (1, 1, 1, 1))
         )
 
     def accessor(self: U,
@@ -84,13 +84,18 @@ class LNon(nn.Module):
                 ) -> Tensor:
         shape = data.size()
         data = data.contiguous()
+
+        data = data * self.channel_transform
+
         trunk = []
         for ix in range(self.groups):
             data_slice = data[:, ix::self.groups].reshape(-1, 1, 1)
             param_slice = self.params[:, ix:ix+1]
             trunk.append(self.step(data_slice, param_slice))
-
         data = th.cat(trunk, dim=1)
+
+        data = data * self.spatio_transform
+
         return data.view(*shape)
 
 # accuracy: 0.89850
