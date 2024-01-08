@@ -33,10 +33,10 @@ class Foilize(th.autograd.Function):
         print('forward:frame', frame.size(), frame.min(), frame.max())
 
         begin = index.floor().long()
-        begin = begin.clamp(0, frame.size(0) - 1)
+        begin = begin.clamp(0, frame.size(1) - 1)
         pos = index - begin
         end = begin + 1
-        end = end.clamp(0, frame.size(0) - 1)
+        end = end.clamp(0, frame.size(1) - 1)
 
         result = (1 - pos) * frame[:, begin] + pos * frame[:, end]
         print('forward:result', result.size(), result.min(), result.max())
