@@ -17,7 +17,7 @@ class BaseModel(ltn.LightningModule):
         raise NotImplementedError
 
     def backward(self, loss: Tensor, *args: Any, **kwargs: Any) -> None:
-        kwargs['materialize_grads'] = True
+        kwargs['retain_graph'] = True
         loss.backward(*args, **kwargs)
 
     def configure_optimizers(self):
