@@ -77,6 +77,8 @@ class LNon(nn.Module):
         dy = ds * th.sin(theta)
         val = data * (1 + dy) + dx
 
+        print(val, val.grad)
+
         return val
 
     def forward(self: U,
