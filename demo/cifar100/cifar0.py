@@ -10,11 +10,47 @@ from typing import TypeVar, Tuple
 U = TypeVar('U', bound='Unit')
 
 
-class LNon(nn.Module):
-    def __init__(self: U,
-                 groups: int = 1,
-                 points: int = 5,
-                 ) -> None:
+class Foilize(th.autograd.Function):
+    @staticmethod
+    def forward(ctx, param, data):
+        ctx.set_materialize_grads(True)
+
+        points = param.size(-1)
+        shape = data.size()
+        data = data.flatten(0)
+        param = param.flatten(0)
+
+        dmax, dmin = data.max().item(), data.min().item()
+        prob, grid = th.histogram(data, bins=points, range=(dmin, dmax), density=True)
+        prob = prob / prob.sum()
+        accum = th.cumsum(prob, dim=0) * (points - 1)
+        grid = (grid[1:] + grid[:-1]) / 2
+
+        import manet.func.interp as interp
+        index = interp.interp1d(grid, accum, data)
+        frame = interp.interp1d(accum, param, th.arange(points))
+        print('forward:index', index.size(), index.min(), index.max())
+        print('forward:frame', frame.size(), frame.min(), frame.max())
+
+        begin = index.floor().long()
+        begin = begin.clamp(0, frame.size(0) - 1)
+        pos = index - begin
+        end = begin + 1
+        end = end.clamp(0, frame.size(0) - 1)
+
+        result = (1 - pos) * frame[:, :, begin] + pos * frame[:, :, end]
+        print('forward:result', result.size(), result.min(), result.max())
+
+        return result.view(*shape)
+
+    @staticmethod
+    def backward(ctx, g):
+        print('backward:grad', g.size(), g.min(), g.max())
+        return th.zeros_like(g), g
+
+
+class Foil(nn.Module):
+    def __init__(self: U, groups: int = 1, points: int = 120) -> None:
         super().__init__()
 
         self.groups = groups
@@ -31,62 +67,18 @@ class LNon(nn.Module):
             th.normal(0, 1, (1, 1, 1, 1))
         )
 
-        self.set_materialize_grads(True)
-
-    def accessor(self: U,
-                 data: Tensor,
-                 param: Tensor,
-                 ) -> Tuple[Tensor, Tensor]:
-        data = data.flatten(0)
-        param = param.flatten(0)
-
-        dmax, dmin = data.max().item(), data.min().item()
-        prob, grid = th.histogram(data, bins=self.points, range=(dmin, dmax), density=True)
-        prob = prob / prob.sum()
-        accum = th.cumsum(prob, dim=0) * (self.points - 1)
-        grid = (grid[1:] + grid[:-1]) / 2
-
-        import manet.func.interp as interp
-        index = interp.interp1d(grid, accum, data)
-        frame = interp.interp1d(accum, param, th.arange(self.points))
-
-        return frame, index
-
-    @staticmethod
-    def access(accessor: Tuple[Tensor, Tensor]) -> Tensor:
-
-        frame, index = accessor
-        frame = frame.view(1, 1, -1)
-        index = index.view(-1)
-
-        begin = index.floor().long()
-        begin = begin.clamp(0, frame.size(2) - 1)
-        pos = index - begin
-        end = begin + 1
-        end = end.clamp(0, frame.size(2) - 1)
-
-        return (1 - pos) * frame[:, :, begin] + pos * frame[:, :, end]
-
-    def step(self: U, data: Tensor, param: Tensor) -> Tensor:
-
-        accessor = self.accessor(data, param[0:1])
-        theta = self.access(accessor).reshape(*data.size())
-        accessor = self.accessor(data, param[1:2])
-        velo = self.access(accessor).reshape(*data.size())
-
+    def foilize(self: U, data: Tensor, param: Tensor) -> Tensor:
+        theta = Foilize.apply(param[0:1], data)
+        velo = Foilize.apply(param[1:2], data)
         ds = velo * 0.01
         dx = ds * th.cos(theta)
         dy = ds * th.sin(theta)
         val = data * (1 + dy) + dx
-
         return val
 
-    def forward(self: U,
-                data: Tensor
-                ) -> Tensor:
+    def forward(self: U, data: Tensor) -> Tensor:
         shape = data.size()
         data = data.contiguous()
-
         data = data * self.channel_transform
 
         trunk = []
@@ -94,11 +86,10 @@ class LNon(nn.Module):
         for ix in range(self.groups):
             data_slice = data[:, ix::self.groups].reshape(-1, 1, 1)
             param_slice = params[:, ix:ix+1]
-            trunk.append(self.step(data_slice, param_slice))
+            trunk.append(self.foilize(data_slice, param_slice))
         data = th.cat(trunk, dim=1)
 
         data = data * self.spatio_transform
-
         return data.view(*shape)
 
 
