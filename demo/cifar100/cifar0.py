@@ -50,7 +50,7 @@ class Foilize(th.autograd.Function):
 
     @staticmethod
     def backward(ctx, g):
-        param = ctx.saved_tensors
+        param, = ctx.saved_tensors
         print('backward:grad', g.size(), g.min(), g.max())
         return th.zeros_like(param), interp.Interp1d.backward(ctx, g)
 
