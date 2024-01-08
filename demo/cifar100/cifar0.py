@@ -77,7 +77,10 @@ class LNon(nn.Module):
         dy = ds * th.sin(theta)
         val = data * (1 + dy) + dx
 
-        print(val, val.grad)
+        grad_fn = val.grad_fn
+        def aug_grad_fun():
+            return grad_fn()
+        val.grad_fn = aug_grad_fun
 
         return val
 
