@@ -1,6 +1,7 @@
 import torch as th
 import torch.nn.functional as F
 import torch.nn as nn
+import manet.func.interp as interp
 
 from manet.nn.model import CIFARModel
 from torch import Tensor
@@ -17,18 +18,19 @@ class Foilize(th.autograd.Function):
 
         points = param.size(-1)
         shape = data.size()
-        data = data.flatten(0)
-        param = param.flatten(0)
+        data_ = data.flatten(0)
+        param_ = param.flatten(0)
 
-        dmax, dmin = data.max().item(), data.min().item()
-        prob, grid = th.histogram(data, bins=points, range=(dmin, dmax), density=True)
+        dmax, dmin = data_.max().item(), data_.min().item()
+        prob, grid = th.histogram(data_, bins=points, range=(dmin, dmax), density=True)
         prob = prob / prob.sum()
         accum = th.cumsum(prob, dim=0) * (points - 1)
         grid = (grid[1:] + grid[:-1]) / 2
 
-        import manet.func.interp as interp
+        ctx.save_for_backward(param)
+
         index = interp.interp1d(grid, accum, data)
-        frame = interp.interp1d(accum, param, th.arange(points))
+        frame = interp.interp1d(accum, param_, th.arange(points))
         print('forward:index', index.size(), index.min(), index.max())
         print('forward:frame', frame.size(), frame.min(), frame.max())
 
@@ -45,8 +47,9 @@ class Foilize(th.autograd.Function):
 
     @staticmethod
     def backward(ctx, g):
+        param = ctx.saved_tensors
         print('backward:grad', g.size(), g.min(), g.max())
-        return th.zeros_like(g), g
+        return th.zeros_like(param), interp.Interp1d.backward(ctx, g)
 
 
 class Foil(nn.Module):
