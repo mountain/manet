@@ -99,6 +99,7 @@ class CIFARModel(BaseModel):
         self.labeled_correct = 0
 
     def training_step(self, train_batch, batch_idx):
+        print()
         reset_profiling_stage('train')
 
         x, y = train_batch

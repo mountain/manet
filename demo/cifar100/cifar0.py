@@ -26,16 +26,11 @@ class Foilize(th.autograd.Function):
         prob = prob / prob.sum()
         accum = th.cumsum(prob, dim=0) * (points - 1)
         grid = (grid[1:] + grid[:-1]) / 2
-        print('forward:param_', param_.size(), param_.min(), param_.max())
-        print('forward:grid', grid.size(), grid.min(), grid.max())
-        print('forward:accum', accum.size(), accum.min(), accum.max())
 
         ctx.save_for_backward(param)
 
         index = interp.interp1d(grid, accum, data_)
         frame = interp.interp1d(accum, param_, th.arange(points))
-        print('forward:index', index.size(), index.min(), index.max())
-        print('forward:frame', frame.size(), frame.min(), frame.max())
 
         begin = index.floor().long()
         begin = begin.clamp(0, frame.size(1) - 1)
@@ -44,14 +39,12 @@ class Foilize(th.autograd.Function):
         end = end.clamp(0, frame.size(1) - 1)
 
         result = (1 - pos) * frame[:, begin] + pos * frame[:, end]
-        print('forward:result', result.size(), result.min(), result.max())
 
         return result.view(*shape)
 
     @staticmethod
     def backward(ctx, g):
         param, = ctx.saved_tensors
-        print('backward:grad', g.size(), g.min(), g.max())
         return th.zeros_like(param), interp.Interp1d.backward(ctx, g)
 
 
