@@ -83,7 +83,7 @@ class LNon(nn.Module):
         val = data * (1 + dy) + dx
         print('val', val.size(), val.min(), val.max())
 
-        return val
+        return val.view(*data.size())
 
     def forward(self: U,
                 data: Tensor
