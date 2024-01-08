@@ -34,65 +34,63 @@ class LNon(nn.Module):
 
     def accessor(self: U,
                  data: Tensor,
-                 ) -> Tuple[Tensor, Tensor, Tensor]:
+                 param: Tensor,
+                 ) -> Tuple[Tensor, Tensor]:
+        data = data.flatten(0)
+        param = param.flatten(0)
 
-        index = th.sigmoid(data) * self.points
-        bgn = index.floor().long()
-        bgn = bgn * (bgn >= 0)
-        bgn = bgn * (bgn <= self.points - 2) + (bgn - 1) * (bgn > self.points - 2)
-        bgn = bgn * (bgn <= self.points - 2) + (bgn - 1) * (bgn > self.points - 2)
-        end = bgn + 1
+        dmax, dmin = data.max().item(), data.min().item()
+        prob, grid = th.histogram(data, bins=self.points, range=(dmin, dmax), density=True)
+        prob = prob / prob.sum()
+        accum = th.cumsum(prob, dim=0) * (self.points - 1)
+        grid = (grid[1:] + grid[:-1]) / 2
 
-        return index, bgn, end
+        import manet.func.interp as interp
+        index = interp.interp1d(grid, accum, data)
+        frame = interp.interp1d(accum, param, th.arange(self.points))
+
+        return frame, index
 
     @staticmethod
-    def access(param: Tensor,
-               accessor: Tuple[Tensor, Tensor, Tensor]
-               ) -> Tensor:
+    def access(accessor: Tuple[Tensor, Tensor]) -> Tensor:
 
-        index, bgn, end = accessor
-        pos = index - bgn
-        param = param.flatten(0)
-        return (1 - pos) * param[bgn] + pos * param[end]
+        frame, index = accessor
+        frame = frame.view(1, 1, -1)
+        index = index.view(-1)
 
-    def step(self: U,
-             data: Tensor,
-             param: Tensor,
-             ) -> Tensor:
+        begin = index.floor().long()
+        pos = index - begin
+        end = begin + 1
+        end = end.clamp(0, frame.size(2) - 1)
 
-        accessor = self.accessor(data)
-        theta = self.access(param[0:1], accessor)
-        velo = self.access(param[1:2], accessor)
+        return (1 - pos) * frame[:, :, begin] + pos * frame[:, :, end]
 
-        ds = velo
+    def step(self: U, data: Tensor, param: Tensor) -> Tensor:
+
+        accessor = self.accessor(data, param[0:1])
+        theta = self.access(accessor).reshape(*data.size())
+        accessor = self.accessor(data, param[1:2])
+        velo = self.access(accessor).reshape(*data.size())
+
+        ds = velo * 0.01
         dx = ds * th.cos(theta)
         dy = ds * th.sin(theta)
         val = data * (1 + dy) + dx
+
         return val
 
     def forward(self: U,
                 data: Tensor
                 ) -> Tensor:
         shape = data.size()
-        data = data.flatten(1)
         data = data.contiguous()
-        data = data.view(-1, 1, 1)
-
-        data = th.permute(data, [0, 2, 1]).reshape(-1, 1)
-        data = th.matmul(data, self.channel_transform)
-        data = data.view(-1, 1, 1)
-
         trunk = []
         for ix in range(self.groups):
-            data_slice = data[:, ix::self.groups]
-            params_slice = self.params[:, ix:ix+1]
-            trunk.append(self.step(data_slice, params_slice))
+            data_slice = data[:, ix::self.groups].reshape(-1, 1, 1)
+            param_slice = self.params[:, ix:ix+1]
+            trunk.append(self.step(data_slice, param_slice))
+
         data = th.cat(trunk, dim=1)
-
-        data = th.permute(data, [0, 2, 1]).reshape(-1, 1)
-        data = th.matmul(data, self.spatio_transform)
-        data = data.view(-1, 1, 1)
-
         return data.view(*shape)
 
 # accuracy: 0.89850
