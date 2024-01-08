@@ -26,6 +26,9 @@ class Foilize(th.autograd.Function):
         prob = prob / prob.sum()
         accum = th.cumsum(prob, dim=0) * (points - 1)
         grid = (grid[1:] + grid[:-1]) / 2
+        print('forward:param_', param_.size(), param_.min(), param_.max())
+        print('forward:grid', grid.size(), grid.min(), grid.max())
+        print('forward:accum', accum.size(), accum.min(), accum.max())
 
         ctx.save_for_backward(param)
 
