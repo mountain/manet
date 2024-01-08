@@ -88,9 +88,10 @@ class LNon(nn.Module):
         data = data * self.channel_transform
 
         trunk = []
+        params = self.params * th.ones_like(self.params)
         for ix in range(self.groups):
             data_slice = data[:, ix::self.groups].reshape(-1, 1, 1)
-            param_slice = self.params[:, ix:ix+1]
+            param_slice = params[:, ix:ix+1]
             trunk.append(self.step(data_slice, param_slice))
         data = th.cat(trunk, dim=1)
 
