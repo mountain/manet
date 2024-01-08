@@ -96,7 +96,7 @@ class LNon(nn.Module):
             print('ix', ix)
             print('params', self.params.size())
 
-            data_slice = data[:, ix::self.groups].view(-1, 1, 1)
+            data_slice = data[:, ix::self.groups].reshape(-1, 1, 1)
             param_slice = self.params[:, ix:ix+1]
             print('data_slice', data_slice.size())
             print('param_slice', param_slice.size())
