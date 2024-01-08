@@ -83,7 +83,7 @@ class LNon(nn.Module):
         val = data * (1 + dy) + dx
         print('val', val.size(), val.min(), val.max())
 
-        return val.view(*data.size())
+        return val
 
     def forward(self: U,
                 data: Tensor
@@ -101,6 +101,8 @@ class LNon(nn.Module):
         for ix in range(self.groups):
             data_slice = data[:, ix::self.groups]
             param_slice = self.params[:, ix:ix+1]
+            print('data_slice', data_slice.size(), data_slice.min(), data_slice.max())
+            print('param_slice', param_slice.size(), param_slice.min(), param_slice.max())
             trunk.append(self.step(data_slice, param_slice))
         data = th.cat(trunk, dim=1)
 
