@@ -27,8 +27,6 @@ class Foilize(th.autograd.Function):
         accum = th.cumsum(prob, dim=0) * (points - 1)
         grid = (grid[1:] + grid[:-1]) / 2
 
-        ctx.save_for_backward(param)
-
         index = interp.interp1d(grid, accum, data_)
         frame = interp.interp1d(accum, param_, th.arange(points))
 
@@ -44,8 +42,7 @@ class Foilize(th.autograd.Function):
 
     @staticmethod
     def backward(ctx, g):
-        param, = ctx.saved_tensors
-        return th.zeros_like(param), interp.Interp1d.backward(ctx, g)
+        return interp.Interp1d.backward(ctx, g)
 
 
 class Foil(nn.Module):
