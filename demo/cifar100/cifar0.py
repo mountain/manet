@@ -40,10 +40,6 @@ class Foilize(th.autograd.Function):
 
         return result.view(*shape)
 
-    @staticmethod
-    def backward(ctx, g):
-        return interp.Interp1d.backward(ctx, g)
-
 
 class Foil(nn.Module):
     def __init__(self: U, groups: int = 1, points: int = 120) -> None:
