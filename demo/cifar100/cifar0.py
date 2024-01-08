@@ -35,18 +35,19 @@ class LNon(nn.Module):
                  data: Tensor,
                  param: Tensor,
                  ) -> Tuple[Tensor, Tensor]:
-
-        import manet.func.interp as interp
         data = data.flatten(0)
         param = param.flatten(0)
 
-        dmax, dmin = th.max(data, dim=0, keepdim=True)[0].item(), th.min(data, dim=0, keepdim=True)[0].item()
+        dmax, dmin = th.max(data, dim=0, keepdim=True).item(), th.min(data, dim=0, keepdim=True).item()
         prob, grid = th.histogram(data, bins=self.points, range=(dmin, dmax), density=True)
         prob = prob / prob.sum()
         accum = th.cumsum(prob, dim=0) * (self.points - 1)
         grid = (grid[1:] + grid[:-1]) / 2
+
+        import manet.func.interp as interp
         index = interp.interp1d(grid, accum, data)
         frame = interp.interp1d(accum, param, th.arange(self.points))
+
         return frame, index
 
     @staticmethod
@@ -99,7 +100,7 @@ class LNon(nn.Module):
         trunk = []
         for ix in range(self.groups):
             data_slice = data[:, ix::self.groups]
-            param_slice = self.params[:, ix:ix+1]
+            param_slice = self.params[:, ix::self.groups]
             trunk.append(self.step(data_slice, param_slice))
         data = th.cat(trunk, dim=1)
 
