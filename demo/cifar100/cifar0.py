@@ -58,6 +58,7 @@ class LNon(nn.Module):
         index = index.view(-1)
 
         begin = index.floor().long()
+        begin = begin.clamp(0, frame.size(2) - 1)
         pos = index - begin
         end = begin + 1
         end = end.clamp(0, frame.size(2) - 1)
