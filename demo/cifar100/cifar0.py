@@ -71,17 +71,10 @@ class LNon(nn.Module):
         accessor = self.accessor(data, param[1:2])
         velo = self.access(accessor).reshape(*data.size())
 
-        print('data', data.size(), data.min(), data.max())
-        print('theta', theta.size(), theta.min(), theta.max())
-        print('velo', velo.size(), velo.min(), velo.max())
-
         ds = velo * 0.01
         dx = ds * th.cos(theta)
-        print('dx', dx.size(), dx.min(), dx.max())
         dy = ds * th.sin(theta)
-        print('dy', dy.size(), dy.min(), dy.max())
         val = data * (1 + dy) + dx
-        print('val', val.size(), val.min(), val.max())
 
         return val
 
@@ -92,14 +85,8 @@ class LNon(nn.Module):
         data = data.contiguous()
         trunk = []
         for ix in range(self.groups):
-            print('shape', shape)
-            print('ix', ix)
-            print('params', self.params.size())
-
             data_slice = data[:, ix::self.groups].reshape(-1, 1, 1)
             param_slice = self.params[:, ix:ix+1]
-            print('data_slice', data_slice.size())
-            print('param_slice', param_slice.size())
             trunk.append(self.step(data_slice, param_slice))
 
         data = th.cat(trunk, dim=1)
