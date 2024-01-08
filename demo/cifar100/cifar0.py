@@ -38,7 +38,7 @@ class LNon(nn.Module):
         data = data.flatten(0)
         param = param.flatten(0)
 
-        dmax, dmin = th.max(data, dim=0, keepdim=True).item(), th.min(data, dim=0, keepdim=True).item()
+        dmax, dmin = data.max().item(), data.min().item()
         prob, grid = th.histogram(data, bins=self.points, range=(dmin, dmax), density=True)
         prob = prob / prob.sum()
         accum = th.cumsum(prob, dim=0) * (self.points - 1)
