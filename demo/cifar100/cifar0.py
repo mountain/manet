@@ -42,8 +42,7 @@ class Foilize(th.autograd.Function):
 
     @staticmethod
     def backward(ctx, g):
-        g1, g2 = interp.Interp1d.backward(ctx, g), interp.Interp1d.backward(ctx, g)
-        return g2, g1
+        return g
 
 
 class Foil(nn.Module):
