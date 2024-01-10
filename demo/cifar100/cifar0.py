@@ -43,10 +43,10 @@ class Foil(nn.Module):
         frame = param_
 
         begin = index.floor().long()
-        begin = begin.clamp(0, frame.size(1) - 1)
+        begin = begin.clamp(0, param.size(1) - 1)
         pos = index - begin
         end = begin + 1
-        end = end.clamp(0, frame.size(1) - 1)
+        end = end.clamp(0, param.size(1) - 1)
 
         result = (1 - pos) * frame[:, begin] + pos * frame[:, end]
 
