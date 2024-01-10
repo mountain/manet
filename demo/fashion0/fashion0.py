@@ -114,8 +114,8 @@ class LNon(nn.Module):
 
     def foilize(self: U, data: Tensor, param: Tensor) -> Tensor:
 
-        theta = self.by_tanh(param[0:1], data)
-        velo = self.by_tanh(param[1:2], data)
+        theta = self.by_dynamic(param[0:1], data)
+        velo = self.by_dynamic(param[1:2], data)
         ds = velo * 0.01
         dx = ds * th.cos(theta)
         dy = ds * th.sin(theta)
