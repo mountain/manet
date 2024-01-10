@@ -141,13 +141,13 @@ class Cifar0(CIFARModel):
     def __init__(self):
         super().__init__()
         self.conv0 = nn.Conv2d(3, 5, kernel_size=7, padding=3)
-        self.fiol0 = Foil(groups=1, points=60)
+        self.fiol0 = Foil(groups=1, points=3)
         self.conv1 = nn.Conv2d(5, 15, kernel_size=3, padding=1)
-        self.fiol1 = Foil(groups=1, points=60)
+        self.fiol1 = Foil(groups=1, points=3)
         self.conv2 = nn.Conv2d(15, 45, kernel_size=1, padding=0)
-        self.fiol2 = Foil(groups=1, points=60)
+        self.fiol2 = Foil(groups=1, points=3)
         self.conv3 = nn.Conv2d(45, 45, kernel_size=1, padding=0)
-        self.fiol3 = Foil(groups=1, points=60)
+        self.fiol3 = Foil(groups=1, points=3)
         self.fc = nn.Linear(45 * 16, 100)
 
     def forward(self, x):
