@@ -90,6 +90,8 @@ class MNISTModel(BaseModel):
         self.labeled_loss = 0
         self.labeled_correct = 0
 
+        print()
+
 
 class CIFARModel(BaseModel):
     def __init__(self):
