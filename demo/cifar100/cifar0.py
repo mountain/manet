@@ -11,11 +11,49 @@ from typing import TypeVar, Tuple
 U = TypeVar('U', bound='Unit')
 
 
-class Foilize(th.autograd.Function):
-    @staticmethod
-    def forward(ctx, param, data):
-        ctx.set_materialize_grads(True)
+class Foil(nn.Module):
+    def __init__(self: U, groups: int = 1, points: int = 120) -> None:
+        super().__init__()
 
+        self.groups = groups
+        self.points = points
+
+        theta = th.cat([th.linspace(0, 2 * th.pi, points).view(1, 1, points) for _ in range(groups)], dim=1)
+        velocity = th.cat([th.linspace(0, 1, points).view(1, 1, points) for _ in range(groups)], dim=1)
+        self.params = nn.Parameter(th.cat([theta, velocity], dim=0))
+
+        self.channel_transform = nn.Parameter(
+            th.normal(0, 1, (1, 1, 1, 1))
+        )
+        self.spatio_transform = nn.Parameter(
+            th.normal(0, 1, (1, 1, 1, 1))
+        )
+
+    @staticmethod
+    def by_sigmoid(param, data):
+        points = param.size(-1)
+        shape = data.size()
+        data_ = data.flatten(0)
+        param_ = param.flatten(0)
+
+        dmin, dmax = data_.min().item(), data_.max().item()
+        data_ = (data_ - dmin) / (dmax - dmin + 1e-8)
+
+        index = th.sigmoid(data_ * 6 - 3) * (points - 1)
+        frame = param_
+
+        begin = index.floor().long()
+        begin = begin.clamp(0, frame.size(1) - 1)
+        pos = index - begin
+        end = begin + 1
+        end = end.clamp(0, frame.size(1) - 1)
+
+        result = (1 - pos) * frame[:, begin] + pos * frame[:, end]
+
+        return result.view(*shape)
+
+    @staticmethod
+    def by_dynamic(param, data):
         points = param.size(-1)
         shape = data.size()
         data_ = data.flatten(0)
@@ -40,32 +78,10 @@ class Foilize(th.autograd.Function):
 
         return result.view(*shape)
 
-    @staticmethod
-    def backward(ctx, g):
-        return g
-
-
-class Foil(nn.Module):
-    def __init__(self: U, groups: int = 1, points: int = 120) -> None:
-        super().__init__()
-
-        self.groups = groups
-        self.points = points
-
-        theta = th.cat([th.linspace(0, 2 * th.pi, points).view(1, 1, points) for _ in range(groups)], dim=1)
-        velocity = th.cat([th.linspace(0, 1, points).view(1, 1, points) for _ in range(groups)], dim=1)
-        self.params = nn.Parameter(th.cat([theta, velocity], dim=0))
-
-        self.channel_transform = nn.Parameter(
-            th.normal(0, 1, (1, 1, 1, 1))
-        )
-        self.spatio_transform = nn.Parameter(
-            th.normal(0, 1, (1, 1, 1, 1))
-        )
-
     def foilize(self: U, data: Tensor, param: Tensor) -> Tensor:
-        theta = Foilize.apply(param[0:1], data)
-        velo = Foilize.apply(param[1:2], data)
+
+        theta = self.by_sigmoid(param[0:1], data)
+        velo = self.by_sigmoid(param[1:2], data)
         ds = velo * 0.01
         dx = ds * th.cos(theta)
         dy = ds * th.sin(theta)
