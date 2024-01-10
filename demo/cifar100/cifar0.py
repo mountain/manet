@@ -148,7 +148,7 @@ class Cifar0(CIFARModel):
         self.fiol2 = Foil(groups=1, points=3)
         self.conv3 = nn.Conv2d(135, 135, kernel_size=1, padding=0)
         self.fiol3 = Foil(groups=1, points=3)
-        self.fc = nn.Linear(45 * 16, 100)
+        self.fc = nn.Linear(135 * 16, 100)
 
     def forward(self, x):
         x = self.conv0(x)
