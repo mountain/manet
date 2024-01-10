@@ -36,9 +36,6 @@ class Foil(nn.Module):
         data_ = data.flatten(0)
         param_ = param.flatten(0)
 
-        dmin, dmax = data_.min().item(), data_.max().item()
-        data_ = (data_ - dmin) / (dmax - dmin + 1e-8)
-
         index = th.sigmoid(data_) * (points - 1)
         frame = param_
 
