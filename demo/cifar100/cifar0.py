@@ -19,7 +19,7 @@ class Foil(nn.Module):
         self.points = points
 
         theta = th.cat([th.linspace(0, 2 * th.pi, points).view(1, 1, points) for _ in range(groups)], dim=1)
-        velocity = th.cat([th.linspace(0, 1, points).view(1, 1, points) for _ in range(groups)], dim=1)
+        velocity = th.cat([th.linspace(0, 3, points).view(1, 1, points) for _ in range(groups)], dim=1)
         self.params = nn.Parameter(th.cat([theta, velocity], dim=0))
 
         self.channel_transform = nn.Parameter(
@@ -39,7 +39,7 @@ class Foil(nn.Module):
         dmin, dmax = data_.min().item(), data_.max().item()
         data_ = (data_ - dmin) / (dmax - dmin + 1e-8)
 
-        index = th.sigmoid(data_ * 6 - 3) * (points - 1)
+        index = th.sigmoid(data_) * (points - 1)
         frame = param_
 
         begin = index.floor().long()
