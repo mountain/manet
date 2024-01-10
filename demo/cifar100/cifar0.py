@@ -18,16 +18,9 @@ class Foil(nn.Module):
         self.groups = groups
         self.points = points
 
-        theta = th.cat([th.linspace(0, 2 * th.pi, points).view(1, 1, points) for _ in range(groups)], dim=1)
-        velocity = th.cat([th.linspace(0, 3, points).view(1, 1, points) for _ in range(groups)], dim=1)
-        self.params = nn.Parameter(th.cat([theta, velocity], dim=0))
-
-        self.channel_transform = nn.Parameter(
-            th.normal(0, 1, (1, 1, 1, 1))
-        )
-        self.spatio_transform = nn.Parameter(
-            th.normal(0, 1, (1, 1, 1, 1))
-        )
+        theta = th.cat([th.linspace(-th.pi, th.pi, points).view(1, 1, points) for _ in range(groups)], dim=1)
+        velocity = th.cat([th.linspace(-3, 3, points).view(1, 1, points) for _ in range(groups)], dim=1)
+        self.params = th.cat([theta, velocity], dim=0)
 
     @staticmethod
     def by_minmax(param, data):
@@ -72,7 +65,29 @@ class Foil(nn.Module):
         return result.view(*shape)
 
     @staticmethod
+    def by_tanh(param, data):
+        points = param.size(-1)
+        shape = data.size()
+        data_ = data.flatten(0)
+        param_ = param.flatten(0)
+
+        index = th.tanh(data_) * (points - 1)
+        frame = param_
+
+        begin = index.floor().long()
+        begin = begin.clamp(0, param.size(1) - 1)
+        pos = index - begin
+        end = begin + 1
+        end = end.clamp(0, param.size(1) - 1)
+
+        result = (1 - pos) * frame[begin] + pos * frame[end]
+
+        return result.view(*shape)
+
+    @staticmethod
     def by_dynamic(param, data):
+        import manet.func.interp as interp
+
         points = param.size(-1)
         shape = data.size()
         data_ = data.flatten(0)
@@ -99,8 +114,8 @@ class Foil(nn.Module):
 
     def foilize(self: U, data: Tensor, param: Tensor) -> Tensor:
 
-        theta = self.by_minmax(param[0:1], data)
-        velo = self.by_minmax(param[1:2], data)
+        theta = self.by_tanh(param[0:1], data)
+        velo = self.by_tanh(param[1:2], data)
         ds = velo * 0.01
         dx = ds * th.cos(theta)
         dy = ds * th.sin(theta)
@@ -110,7 +125,6 @@ class Foil(nn.Module):
     def forward(self: U, data: Tensor) -> Tensor:
         shape = data.size()
         data = data.contiguous()
-        data = data * self.channel_transform
 
         trunk = []
         params = self.params * th.ones_like(self.params)
@@ -120,7 +134,6 @@ class Foil(nn.Module):
             trunk.append(self.foilize(data_slice, param_slice))
         data = th.cat(trunk, dim=1)
 
-        data = data * self.spatio_transform
         return data.view(*shape)
 
 
