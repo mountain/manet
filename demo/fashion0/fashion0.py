@@ -18,8 +18,8 @@ class LNon(nn.Module):
         self.groups = groups
         self.points = points
 
-        theta = th.cat([th.linspace(0, 2 * th.pi, points).view(1, 1, points) for _ in range(groups)], dim=1)
-        velocity = th.cat([th.linspace(0, 3, points).view(1, 1, points) for _ in range(groups)], dim=1)
+        theta = th.cat([th.linspace(-th.pi, th.pi, points).view(1, 1, points) for _ in range(groups)], dim=1)
+        velocity = th.cat([th.linspace(-3, 3, points).view(1, 1, points) for _ in range(groups)], dim=1)
         self.params = nn.Parameter(th.cat([theta, velocity], dim=0))
 
         self.channel_transform = nn.Parameter(
@@ -72,6 +72,26 @@ class LNon(nn.Module):
         return result.view(*shape)
 
     @staticmethod
+    def by_tanh(param, data):
+        points = param.size(-1)
+        shape = data.size()
+        data_ = data.flatten(0)
+        param_ = param.flatten(0)
+
+        index = th.tanh(data_) * (points - 1)
+        frame = param_
+
+        begin = index.floor().long()
+        begin = begin.clamp(0, param.size(1) - 1)
+        pos = index - begin
+        end = begin + 1
+        end = end.clamp(0, param.size(1) - 1)
+
+        result = (1 - pos) * frame[begin] + pos * frame[end]
+
+        return result.view(*shape)
+
+    @staticmethod
     def by_dynamic(param, data):
         import manet.func.interp as interp
 
@@ -101,8 +121,8 @@ class LNon(nn.Module):
 
     def foilize(self: U, data: Tensor, param: Tensor) -> Tensor:
 
-        theta = self.by_minmax(param[0:1], data)
-        velo = self.by_minmax(param[1:2], data)
+        theta = self.by_tanh(param[0:1], data)
+        velo = self.by_tanh(param[1:2], data)
         ds = velo * 0.01
         dx = ds * th.cos(theta)
         dy = ds * th.sin(theta)
