@@ -30,6 +30,28 @@ class Foil(nn.Module):
         )
 
     @staticmethod
+    def by_minmax(param, data):
+        points = param.size(-1)
+        shape = data.size()
+        data_ = data.flatten(0)
+        param_ = param.flatten(0)
+
+        dmax, dmin = data_.max().item(), data_.min().item()
+        data_ = (data_ - dmin) / (dmax - dmin + 1e-8) * (points - 1)
+        index = data_.floor().long()
+        frame = param_
+
+        begin = index.floor().long()
+        begin = begin.clamp(0, param.size(1) - 1)
+        pos = index - begin
+        end = begin + 1
+        end = end.clamp(0, param.size(1) - 1)
+
+        result = (1 - pos) * frame[begin] + pos * frame[end]
+
+        return result.view(*shape)
+
+    @staticmethod
     def by_sigmoid(param, data):
         points = param.size(-1)
         shape = data.size()
@@ -77,8 +99,8 @@ class Foil(nn.Module):
 
     def foilize(self: U, data: Tensor, param: Tensor) -> Tensor:
 
-        theta = self.by_dynamic(param[0:1], data)
-        velo = self.by_dynamic(param[1:2], data)
+        theta = self.by_minmax(param[0:1], data)
+        velo = self.by_minmax(param[1:2], data)
         ds = velo * 0.01
         dx = ds * th.cos(theta)
         dy = ds * th.sin(theta)
