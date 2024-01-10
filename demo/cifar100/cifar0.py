@@ -48,7 +48,7 @@ class Foil(nn.Module):
         end = begin + 1
         end = end.clamp(0, param.size(1) - 1)
 
-        result = (1 - pos) * frame[:, begin] + pos * frame[:, end]
+        result = (1 - pos) * frame[begin] + pos * frame[end]
 
         return result.view(*shape)
 
