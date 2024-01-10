@@ -27,10 +27,6 @@ class MNISTModel(BaseModel):
         self.labeled_loss = 0
         self.labeled_correct = 0
 
-    def backward(self, loss: Tensor, *args: Any, **kwargs: Any) -> None:
-        kwargs['allow_unused'] = True
-        loss.backward(*args, **kwargs)
-
     def training_step(self, train_batch, batch_idx):
         reset_profiling_stage('train')
 
