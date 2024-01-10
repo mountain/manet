@@ -22,13 +22,6 @@ class LNon(nn.Module):
         velocity = th.cat([th.linspace(-3, 3, points).view(1, 1, points) for _ in range(groups)], dim=1)
         self.params = th.cat([theta, velocity], dim=0)
 
-        self.channel_transform = nn.Parameter(
-            th.normal(0, 1, (1, 1, 1, 1))
-        )
-        self.spatio_transform = nn.Parameter(
-            th.normal(0, 1, (1, 1, 1, 1))
-        )
-
     @staticmethod
     def by_minmax(param, data):
         points = param.size(-1)
@@ -132,7 +125,6 @@ class LNon(nn.Module):
     def forward(self: U, data: Tensor) -> Tensor:
         shape = data.size()
         data = data.contiguous()
-        data = data * self.channel_transform
 
         trunk = []
         params = self.params * th.ones_like(self.params)
@@ -142,7 +134,6 @@ class LNon(nn.Module):
             trunk.append(self.foilize(data_slice, param_slice))
         data = th.cat(trunk, dim=1)
 
-        data = data * self.spatio_transform
         return data.view(*shape)
 
 # accuracy: 0.89850
