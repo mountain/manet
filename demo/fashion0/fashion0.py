@@ -25,13 +25,13 @@ class LNon(nn.Module):
         self.scaleo = nn.Parameter(th.ones(1, groups, 1, 1))
 
     @staticmethod
-    def by_tanh(param, data):
+    def by_sigmoid(param, data):
         points = param.size(-1)
         shape = data.size()
         data_ = data.flatten(0)
         param_ = param.flatten(0)
 
-        index = th.tanh(data_) * (points - 1)
+        index = th.sigmoid(data_) * (points - 1)
         frame = param_
 
         begin = index.floor().long()
@@ -46,9 +46,9 @@ class LNon(nn.Module):
 
     def foilize(self: U, data: Tensor, param: Tensor) -> Tensor:
 
-        theta = self.by_tanh(param[0:1], data)
-        velo = self.by_tanh(param[1:2], data)
-        ds = velo * 0.01
+        theta = self.by_sigmoid(param[0:1], data)
+        velo = self.by_sigmoid(param[1:2], data)
+        ds = velo
         dx = ds * th.cos(theta)
         dy = ds * th.sin(theta)
         val = data * (1 + dy) + dx
@@ -57,8 +57,7 @@ class LNon(nn.Module):
     def forward(self: U, data: Tensor) -> Tensor:
         shape = data.size()
         data = data.contiguous()
-        data = (data - data.mean()) / data.std()
-        data = data * self.scalei
+        data = (data - data.mean()) / data.std() * self.scalei.to(data.device)
 
         trunk = []
         params = self.params
@@ -68,8 +67,7 @@ class LNon(nn.Module):
             trunk.append(self.foilize(data_slice, param_slice))
         data = th.cat(trunk, dim=1)
 
-        data = (data - data.mean()) / data.std()
-        data = data * self.scaleo
+        data = (data - data.mean()) / data.std() * self.scaleo.to(data.device)
 
         return data.view(*shape)
 
