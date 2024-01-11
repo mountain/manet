@@ -21,48 +21,7 @@ class LNon(nn.Module):
         theta = th.cat([th.linspace(-th.pi, th.pi, points).view(1, 1, points) for _ in range(groups)], dim=1)
         velocity = th.cat([th.linspace(-3, 3, points).view(1, 1, points) for _ in range(groups)], dim=1)
         self.params = th.cat([theta, velocity], dim=0)
-
-    @staticmethod
-    def by_minmax(param, data):
-        points = param.size(-1)
-        shape = data.size()
-        data_ = data.flatten(0)
-        param_ = param.flatten(0)
-
-        dmax, dmin = data_.max().item(), data_.min().item()
-        data_ = (data_ - dmin) / (dmax - dmin + 1e-8) * (points - 1)
-        index = data_.floor().long()
-        frame = param_
-
-        begin = index.floor().long()
-        begin = begin.clamp(0, param.size(1) - 1)
-        pos = index - begin
-        end = begin + 1
-        end = end.clamp(0, param.size(1) - 1)
-
-        result = (1 - pos) * frame[begin] + pos * frame[end]
-
-        return result.view(*shape)
-
-    @staticmethod
-    def by_sigmoid(param, data):
-        points = param.size(-1)
-        shape = data.size()
-        data_ = data.flatten(0)
-        param_ = param.flatten(0)
-
-        index = th.sigmoid(data_) * (points - 1)
-        frame = param_
-
-        begin = index.floor().long()
-        begin = begin.clamp(0, param.size(1) - 1)
-        pos = index - begin
-        end = begin + 1
-        end = end.clamp(0, param.size(1) - 1)
-
-        result = (1 - pos) * frame[begin] + pos * frame[end]
-
-        return result.view(*shape)
+        self.scale = nn.Parameter(th.ones(1, groups, 1, 1))
 
     @staticmethod
     def by_tanh(param, data):
@@ -84,34 +43,6 @@ class LNon(nn.Module):
 
         return result.view(*shape)
 
-    @staticmethod
-    def by_dynamic(param, data):
-        import manet.func.interp as interp
-
-        points = param.size(-1)
-        shape = data.size()
-        data_ = data.flatten(0)
-        param_ = param.flatten(0)
-
-        dmax, dmin = data_.max().item(), data_.min().item()
-        prob, grid = th.histogram(data_, bins=points, range=(dmin, dmax), density=True)
-        prob = prob / prob.sum()
-        accum = th.cumsum(prob, dim=0) * (points - 1)
-        grid = (grid[1:] + grid[:-1]) / 2
-
-        index = interp.interp1d(grid, accum, data_)
-        frame = interp.interp1d(accum, param_, th.arange(points))
-
-        begin = index.floor().long()
-        begin = begin.clamp(0, frame.size(1) - 1)
-        pos = index - begin
-        end = begin + 1
-        end = end.clamp(0, frame.size(1) - 1)
-
-        result = (1 - pos) * frame[:, begin] + pos * frame[:, end]
-
-        return result.view(*shape)
-
     def foilize(self: U, data: Tensor, param: Tensor) -> Tensor:
 
         theta = self.by_tanh(param[0:1], data)
@@ -126,9 +57,10 @@ class LNon(nn.Module):
         shape = data.size()
         data = data.contiguous()
         data = (data - data.mean()) / data.std()
+        data = data * self.scale
 
         trunk = []
-        params = self.params * th.ones_like(self.params)
+        params = self.params
         for ix in range(self.groups):
             data_slice = data[:, ix::self.groups].reshape(-1, 1, 1)
             param_slice = params[:, ix:ix+1]
