@@ -140,13 +140,13 @@ class Foil(nn.Module):
 class Cifar0(CIFARModel):
     def __init__(self):
         super().__init__()
-        self.conv0 = nn.Conv2d(3, 45, kernel_size=7, padding=3)
+        self.conv0 = nn.Conv2d(3, 135, kernel_size=7, padding=3)
         self.fiol0 = Foil(groups=1, points=3)
-        self.conv1 = nn.Conv2d(45, 135, kernel_size=3, padding=1)
+        self.conv1 = nn.Conv2d(135, 405, kernel_size=3, padding=1)
         self.fiol1 = Foil(groups=1, points=3)
-        self.conv2 = nn.Conv2d(135, 135, kernel_size=1, padding=0)
+        self.conv2 = nn.Conv2d(405, 405, kernel_size=1, padding=0)
         self.fiol2 = Foil(groups=1, points=3)
-        self.conv3 = nn.Conv2d(135, 135, kernel_size=1, padding=0)
+        self.conv3 = nn.Conv2d(405, 405, kernel_size=1, padding=0)
         self.fiol3 = Foil(groups=1, points=3)
         self.fc = nn.Linear(135 * 16, 100)
 
