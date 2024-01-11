@@ -1,7 +1,6 @@
 import torch as th
 import torch.nn.functional as F
 import torch.nn as nn
-import manet.func.interp as interp
 
 from manet.nn.model import CIFARModel
 from torch import Tensor
@@ -23,48 +22,6 @@ class Foil(nn.Module):
         self.params = th.cat([theta, velocity], dim=0)
 
     @staticmethod
-    def by_minmax(param, data):
-        points = param.size(-1)
-        shape = data.size()
-        data_ = data.flatten(0)
-        param_ = param.flatten(0)
-
-        dmax, dmin = data_.max().item(), data_.min().item()
-        data_ = (data_ - dmin) / (dmax - dmin + 1e-8) * (points - 1)
-        index = data_.floor().long()
-        frame = param_
-
-        begin = index.floor().long()
-        begin = begin.clamp(0, param.size(1) - 1)
-        pos = index - begin
-        end = begin + 1
-        end = end.clamp(0, param.size(1) - 1)
-
-        result = (1 - pos) * frame[begin] + pos * frame[end]
-
-        return result.view(*shape)
-
-    @staticmethod
-    def by_sigmoid(param, data):
-        points = param.size(-1)
-        shape = data.size()
-        data_ = data.flatten(0)
-        param_ = param.flatten(0)
-
-        index = th.sigmoid(data_) * (points - 1)
-        frame = param_
-
-        begin = index.floor().long()
-        begin = begin.clamp(0, param.size(1) - 1)
-        pos = index - begin
-        end = begin + 1
-        end = end.clamp(0, param.size(1) - 1)
-
-        result = (1 - pos) * frame[begin] + pos * frame[end]
-
-        return result.view(*shape)
-
-    @staticmethod
     def by_tanh(param, data):
         points = param.size(-1)
         shape = data.size()
@@ -72,7 +29,7 @@ class Foil(nn.Module):
         param_ = param.flatten(0)
 
         index = th.tanh(data_) * (points - 1)
-        frame = param_
+        frame = param_.to(data_.device())
 
         begin = index.floor().long()
         begin = begin.clamp(0, param.size(1) - 1)
@@ -81,34 +38,6 @@ class Foil(nn.Module):
         end = end.clamp(0, param.size(1) - 1)
 
         result = (1 - pos) * frame[begin] + pos * frame[end]
-
-        return result.view(*shape)
-
-    @staticmethod
-    def by_dynamic(param, data):
-        import manet.func.interp as interp
-
-        points = param.size(-1)
-        shape = data.size()
-        data_ = data.flatten(0)
-        param_ = param.flatten(0)
-
-        dmax, dmin = data_.max().item(), data_.min().item()
-        prob, grid = th.histogram(data_, bins=points, range=(dmin, dmax), density=True)
-        prob = prob / prob.sum()
-        accum = th.cumsum(prob, dim=0) * (points - 1)
-        grid = (grid[1:] + grid[:-1]) / 2
-
-        index = interp.interp1d(grid, accum, data_)
-        frame = interp.interp1d(accum, param_, th.arange(points))
-
-        begin = index.floor().long()
-        begin = begin.clamp(0, frame.size(1) - 1)
-        pos = index - begin
-        end = begin + 1
-        end = end.clamp(0, frame.size(1) - 1)
-
-        result = (1 - pos) * frame[:, begin] + pos * frame[:, end]
 
         return result.view(*shape)
 
@@ -125,6 +54,7 @@ class Foil(nn.Module):
     def forward(self: U, data: Tensor) -> Tensor:
         shape = data.size()
         data = data.contiguous()
+        data = (data - data.mean()) / data.std()
 
         trunk = []
         params = self.params * th.ones_like(self.params)

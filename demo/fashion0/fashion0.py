@@ -125,6 +125,7 @@ class LNon(nn.Module):
     def forward(self: U, data: Tensor) -> Tensor:
         shape = data.size()
         data = data.contiguous()
+        data = (data - data.mean()) / data.std()
 
         trunk = []
         params = self.params * th.ones_like(self.params)
