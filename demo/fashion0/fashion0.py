@@ -21,7 +21,8 @@ class LNon(nn.Module):
         theta = th.cat([th.linspace(-th.pi, th.pi, points).view(1, 1, points) for _ in range(groups)], dim=1)
         velocity = th.cat([th.linspace(-3, 3, points).view(1, 1, points) for _ in range(groups)], dim=1)
         self.params = th.cat([theta, velocity], dim=0)
-        self.scale = nn.Parameter(th.ones(1, groups, 1, 1))
+        self.scalei = nn.Parameter(th.ones(1, groups, 1, 1))
+        self.scaleo = nn.Parameter(th.ones(1, groups, 1, 1))
 
     @staticmethod
     def by_tanh(param, data):
@@ -57,7 +58,7 @@ class LNon(nn.Module):
         shape = data.size()
         data = data.contiguous()
         data = (data - data.mean()) / data.std()
-        data = data * self.scale
+        data = data * self.scalei
 
         trunk = []
         params = self.params
@@ -66,6 +67,9 @@ class LNon(nn.Module):
             param_slice = params[:, ix:ix+1]
             trunk.append(self.foilize(data_slice, param_slice))
         data = th.cat(trunk, dim=1)
+
+        data = (data - data.mean()) / data.std()
+        data = data * self.scaleo
 
         return data.view(*shape)
 
