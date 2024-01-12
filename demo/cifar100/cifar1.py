@@ -32,7 +32,7 @@ class LNon(nn.Module):
         param_ = param.flatten(0)
 
         index = th.sigmoid(data_) * (points - 1)
-        frame = param_
+        frame = param_.to(data.device)
 
         index = index.to(data.device)
         begin = index.floor().long()
@@ -53,7 +53,7 @@ class LNon(nn.Module):
         param_ = param.flatten(0)
 
         index = th.abs(th.tanh(data_) * (points - 1))
-        frame = param_
+        frame = param_.to(data.device)
 
         index = index.to(data.device)
         begin = index.floor().long()
