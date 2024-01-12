@@ -1,9 +1,8 @@
 import torch as th
 import torch.nn.functional as F
 import torch.nn as nn
-import torchvision as tv
 
-from manet.nn.model import MNISTModel
+from manet.nn.model import CIFARModel
 from torch import Tensor
 from typing import TypeVar, Tuple
 
@@ -91,33 +90,36 @@ class LNon(nn.Module):
         return data.view(*shape)
 
 
-class Fashion1(MNISTModel):
+class Cifar0(CIFARModel):
     def __init__(self):
         super().__init__()
-        self.resnet = tv.models.resnet18(pretrained=False)
-        self.resnet.num_classes = 10
-        self.resnet.inplanes = 64
-        self.resnet.relu = LNon(groups=1, points=60)
-        self.resnet.conv1 = nn.Conv2d(1, self.resnet.inplanes, kernel_size=7, stride=2, padding=3, bias=False)
-        self.resnet.bn1 = self.resnet._norm_layer(self.resnet.inplanes)
-        self.resnet.fc = nn.Linear(512 * self.resnet.layer4[1].expansion, self.resnet.num_classes)
-        self.resnet.layer1[0].relu = LNon(groups=1, points=60)
-        self.resnet.layer1[1].relu = LNon(groups=1, points=60)
-        self.resnet.layer2[0].relu = LNon(groups=1, points=60)
-        self.resnet.layer2[1].relu = LNon(groups=1, points=60)
-        self.resnet.layer3[0].relu = LNon(groups=1, points=60)
-        self.resnet.layer3[1].relu = LNon(groups=1, points=60)
-        self.resnet.layer4[0].relu = LNon(groups=1, points=60)
-        self.resnet.layer4[1].relu = LNon(groups=1, points=60)
+        self.conv0 = nn.Conv2d(3, 135, kernel_size=7, padding=3)
+        self.fiol0 = Foil(groups=1, points=3)
+        self.conv1 = nn.Conv2d(135, 405, kernel_size=3, padding=1)
+        self.fiol1 = Foil(groups=1, points=3)
+        self.conv2 = nn.Conv2d(405, 405, kernel_size=1, padding=0)
+        self.fiol2 = Foil(groups=1, points=3)
+        self.conv3 = nn.Conv2d(405, 405, kernel_size=1, padding=0)
+        self.fiol3 = Foil(groups=1, points=3)
+        self.fc = nn.Linear(135 * 16, 100)
 
     def forward(self, x):
-        x = self.resnet(x)
+        x = self.conv0(x)
+        x = self.fiol0(x)
+        x = F.max_pool2d(x, 2)
+        x = self.conv1(x)
+        x = self.fiol1(x)
+        x = F.max_pool2d(x, 2)
+        x = self.conv2(x)
+        x = self.fiol2(x)
+        x = F.max_pool2d(x, 2)
+        x = self.conv3(x)
+        x = self.fiol3(x)
+        x = x.flatten(1)
+        x = self.fc(x)
         x = F.log_softmax(x, dim=1)
         return x
 
-    def configure_optimizers(self):
-        return [th.optim.AdamW(self.parameters(), lr=self.learning_rate)]
-
 
 def _model_():
-    return Fashion1()
+    return Cifar0()
