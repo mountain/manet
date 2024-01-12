@@ -120,7 +120,7 @@ class Fashion1(MNISTModel):
         self.resnet.inplanes = 512
         self.resnet.relu = LNon(groups=1, points=60)
         self.resnet.conv1 = nn.Conv2d(1, self.resnet.inplanes, kernel_size=7, stride=2, padding=3, bias=False)
-        self.resnet.bn1 = self.resnet.norm_layer(self.resnet.inplanes)
+        self.resnet.bn1 = self.resnet._norm_layer(self.resnet.inplanes)
         self.resnet.fc = nn.Linear(512 * self.resnet.layer4[1].expansion, self.resnet.num_classes)
         self.resnet.layer1[0].relu = LNon(groups=1, points=60)
         self.resnet.layer1[1].relu = LNon(groups=1, points=60)
