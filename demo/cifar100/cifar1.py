@@ -13,7 +13,7 @@ U = TypeVar('U', bound='Unit')
 
 class LNon(nn.Module):
 
-    def __init__(self, points=30):
+    def __init__(self, points=120):
         super().__init__()
         self.points = points
         self.iscale = nn.Parameter(th.normal(0, 1, (1, 1, 1, 1)))
