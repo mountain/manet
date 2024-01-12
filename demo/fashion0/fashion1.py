@@ -1,7 +1,7 @@
 import torch as th
 import torch.nn.functional as F
 import torch.nn as nn
-import manet.func.sigmoid as sgmd
+import torchvision as tv
 
 from manet.nn.model import MNISTModel
 from torch import Tensor
@@ -12,89 +12,102 @@ U = TypeVar('U', bound='Unit')
 
 
 class LNon(nn.Module):
-    def __init__(self: U,
-                 steps: int = 3,
-                 length: float = 0.33333,
-                 points: int = 5,
-                 ) -> None:
+    def __init__(self: U, groups: int = 1, points: int = 120) -> None:
         super().__init__()
 
-        self.num_steps = steps
-        self.step_length = length
-        self.num_points = points
+        self.groups = groups
+        self.points = points
 
-        self.theta = nn.Parameter(
-            th.linspace(0, 2 * th.pi, points).view(1, 1, points)
-        )
-        self.velocity = nn.Parameter(
-            th.linspace(0, 1, points).view(1, 1, points)
-        )
-        self.channel_transform = nn.Parameter(
-            th.normal(0, 1, (1, 1, 1))
-        )
-        self.spatio_transform = nn.Parameter(
-            th.normal(0, 1, (1, 1, 1))
-        )
+        theta = th.cat([th.linspace(-th.pi, th.pi, points).view(1, 1, points) for _ in range(groups)], dim=1)
+        velocity = th.cat([th.linspace(0, 3, points).view(1, 1, points) for _ in range(groups)], dim=1)
+        self.params = th.cat([theta, velocity], dim=0)
+        self.scalei = nn.Parameter(th.ones(1, groups, 1, 1))
+        self.scaleo = nn.Parameter(th.ones(1, groups, 1, 1))
 
-    def accessor(self: U,
-                 data: Tensor,
-                 ) -> Tuple[Tensor, Tensor, Tensor]:
+    @staticmethod
+    def by_sigmoid(param, data):
+        points = param.size(-1)
+        shape = data.size()
+        data_ = data.flatten(0)
+        param_ = param.flatten(0)
 
-        index = th.sigmoid(data) * self.num_points
+        index = th.sigmoid(data_) * (points - 1)
+        frame = param_
 
-        bgn = index.floor().long()
-        bgn = bgn * (bgn >= 0)
-        bgn = bgn * (bgn <= self.num_points - 2) + (bgn - 1) * (bgn > self.num_points - 2)
-        bgn = bgn * (bgn <= self.num_points - 2) + (bgn - 1) * (bgn > self.num_points - 2)
-        end = bgn + 1
+        begin = index.floor().long()
+        begin = begin.clamp(0, param.size(1) - 1)
+        pos = index - begin
+        end = begin + 1
+        end = end.clamp(0, param.size(1) - 1)
 
-        return index, bgn, end
+        result = (1 - pos) * frame[begin] + pos * frame[end]
 
-    def access(self: U,
-               memory: Tensor,
-               accessor: Tuple[Tensor, Tensor, Tensor]
-               ) -> Tensor:
+        return result.view(*shape)
 
-        index, bgn, end = accessor
-        pos = index - bgn
-        memory = memory.flatten(0)
-        return (1 - pos) * memory[bgn] + pos * memory[end]
+    @staticmethod
+    def by_tanh(param, data):
+        points = param.size(-1)
+        shape = data.size()
+        data_ = data.flatten(0)
+        param_ = param.flatten(0)
 
-    def step(self: U,
-             data: Tensor
-             ) -> Tensor:
+        index = th.abs(th.tanh(data_) * (points - 1))
+        frame = param_
 
-        accessor = self.accessor(data)
-        theta = self.access(self.theta, accessor)
-        velo = self.access(self.velocity, accessor)
+        begin = index.floor().long()
+        begin = begin.clamp(0, param.size(1) - 1)
+        pos = index - begin
+        end = begin + 1
+        end = end.clamp(0, param.size(1) - 1)
 
-        # by the flow equation of the arithmetic expression geometry
-        ds = velo * self.step_length
+        result = (1 - pos) * frame[begin] + pos * frame[end]
+
+        return result.view(*shape)
+
+    @staticmethod
+    def by_sigmoid(param, data):
+        points = param.size(-1)
+        shape = data.size()
+        data_ = data.flatten(0)
+        param_ = param.flatten(0)
+
+        index = th.sigmoid(data_) * (points - 1)
+        frame = param_
+
+        begin = index.floor().long()
+        begin = begin.clamp(0, param.size(1) - 1)
+        pos = index - begin
+        end = begin + 1
+        end = end.clamp(0, param.size(1) - 1)
+
+        result = (1 - pos) * frame[begin] + pos * frame[end]
+
+        return result.view(*shape)
+
+    def foilize(self: U, data: Tensor, param: Tensor) -> Tensor:
+
+        theta = self.by_sigmoid(param[0:1], data)
+        velo = self.by_tanh(param[1:2], data)
+        ds = velo
         dx = ds * th.cos(theta)
         dy = ds * th.sin(theta)
-        val = data * (1 + dy) + dx
+        val = data * th.exp(dy) + dx
         return val
 
-    def forward(self: U,
-                data: Tensor
-                ) -> Tensor:
+    def forward(self: U, data: Tensor) -> Tensor:
         shape = data.size()
-        data = data.flatten(1)
         data = data.contiguous()
-        data = data.view(-1, 1, 1)
+        data = (data - data.mean()) / data.std() * self.scalei.to(data.device)
 
-        data = th.permute(data, [0, 2, 1]).reshape(-1, 1)
-        data = th.matmul(data, self.channel_transform)
-        # data = data * self.channel_transform
-        data = data.view(-1, 1, 1)
+        trunk = []
+        params = self.params
+        for ix in range(self.groups):
+            data_slice = data[:, ix::self.groups].reshape(-1, 1, 1)
+            param_slice = params[:, ix:ix+1]
+            trunk.append(self.foilize(data_slice, param_slice))
+        data = th.cat(trunk, dim=1)
 
-        for ix in range(self.num_steps):
-            data = self.step(data)
-
-        data = th.permute(data, [0, 2, 1]).reshape(-1, 1)
-        data = th.matmul(data, self.spatio_transform)
-        # data = data * self.spatio_transform
-        data = data.view(-1, 1, 1)
+        data = (data - data.mean()) / data.std() * self.scaleo.to(data.device)
 
         return data.view(*shape)
 
@@ -102,31 +115,22 @@ class LNon(nn.Module):
 class Fashion1(MNISTModel):
     def __init__(self):
         super().__init__()
-        self.conv0 = nn.Conv2d(1, 5, kernel_size=7, padding=3)
-        self.lnon0 = LNon(steps=1, length=1, points=5)
-        self.conv1 = nn.Conv2d(5, 25, kernel_size=3, padding=1)
-        self.lnon1 = LNon(steps=1, length=1, points=5)
-        self.conv2 = nn.Conv2d(25, 25, kernel_size=1, padding=0)
-        self.lnon2 = LNon(steps=1, length=1, points=5)
-        self.conv3 = nn.Conv2d(25, 25, kernel_size=1, padding=0)
-        self.lnon3 = LNon(steps=1, length=1, points=5)
-        self.fc = nn.Linear(25 * 9, 10)
+        self.resnet = tv.models.resnet18(pretrained=False)
+        self.num_classes = 10
+        self.resnet.relu = LNon(groups=1, points=60)
+        self.resnet.conv1 = nn.Conv2d(1, self.inplanes, kernel_size=7, stride=2, padding=3, bias=False)
+        self.resnet.fc = nn.Linear(512 * self.block.expansion, self.num_classes)
+        self.resnet.layer1[0].relu = LNon(groups=1, points=60)
+        self.resnet.layer1[1].relu = LNon(groups=1, points=60)
+        self.resnet.layer2[0].relu = LNon(groups=1, points=60)
+        self.resnet.layer2[1].relu = LNon(groups=1, points=60)
+        self.resnet.layer3[0].relu = LNon(groups=1, points=60)
+        self.resnet.layer3[1].relu = LNon(groups=1, points=60)
+        self.resnet.layer4[0].relu = LNon(groups=1, points=60)
+        self.resnet.layer4[1].relu = LNon(groups=1, points=60)
 
     def forward(self, x):
-        x = self.conv0(x)
-        x = self.lnon0(x)
-        x = F.max_pool2d(x, 2)
-        x = self.conv1(x)
-        x = self.lnon1(x)
-        x = F.max_pool2d(x, 2)
-        x = self.conv2(x)
-        x = self.lnon2(x)
-        x = F.max_pool2d(x, 2)
-        x = self.conv3(x)
-        x = self.lnon3(x)
-        x = F.max_pool2d(x, 2)
-        x = x.flatten(1)
-        x = self.fc(x)
+        x = self.resnet(x)
         x = F.log_softmax(x, dim=1)
         return x
 
