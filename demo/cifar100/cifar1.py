@@ -21,8 +21,8 @@ class LNon(nn.Module):
         theta = th.cat([th.linspace(-th.pi, th.pi, points).view(1, 1, points) for _ in range(groups)], dim=1)
         velocity = th.cat([th.linspace(0, 3, points).view(1, 1, points) for _ in range(groups)], dim=1)
         self.params = th.cat([theta, velocity], dim=0)
-        self.scalei = nn.Parameter(th.ones(1, groups, 1, 1))
-        self.scaleo = nn.Parameter(th.ones(1, groups, 1, 1))
+        self.scalei = th.ones(1, groups, 1, 1)
+        self.scaleo = th.ones(1, groups, 1, 1)
 
     @staticmethod
     def by_sigmoid(param, data):
@@ -97,7 +97,7 @@ class Cifar0(CIFARModel):
     def __init__(self):
         super().__init__()
         self.resnet = tv.models.resnet18(pretrained=False)
-        self.resnet.num_classes = 10
+        self.resnet.num_classes = 100
         self.resnet.inplanes = 64
         self.resnet.relu = LNon(groups=1, points=60)
         self.resnet.conv1 = nn.Conv2d(3, self.resnet.inplanes, kernel_size=7, stride=2, padding=3, bias=False)

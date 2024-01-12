@@ -3,9 +3,9 @@ import torch.nn.functional as F
 import torch.nn as nn
 import torchvision as tv
 
-from manet.nn.model import MNISTModel
+from manet.nn.model import CIFARModel
 from torch import Tensor
-from typing import TypeVar, Tuple
+from typing import TypeVar
 
 
 U = TypeVar('U', bound='Unit')
@@ -21,8 +21,8 @@ class LNon(nn.Module):
         theta = th.cat([th.linspace(-th.pi, th.pi, points).view(1, 1, points) for _ in range(groups)], dim=1)
         velocity = th.cat([th.linspace(0, 3, points).view(1, 1, points) for _ in range(groups)], dim=1)
         self.params = th.cat([theta, velocity], dim=0)
-        self.scalei = nn.Parameter(th.ones(1, groups, 1, 1))
-        self.scaleo = nn.Parameter(th.ones(1, groups, 1, 1))
+        self.scalei = th.ones(1, groups, 1, 1)
+        self.scaleo = th.ones(1, groups, 1, 1)
 
     @staticmethod
     def by_sigmoid(param, data):
@@ -32,7 +32,7 @@ class LNon(nn.Module):
         param_ = param.flatten(0)
 
         index = th.sigmoid(data_) * (points - 1)
-        frame = param_
+        frame = param_.to(data.device)
 
         index = index.to(data.device)
         begin = index.floor().long()
@@ -53,7 +53,7 @@ class LNon(nn.Module):
         param_ = param.flatten(0)
 
         index = th.abs(th.tanh(data_) * (points - 1))
-        frame = param_
+        frame = param_.to(data.device)
 
         index = index.to(data.device)
         begin = index.floor().long()
@@ -93,7 +93,7 @@ class LNon(nn.Module):
         return data.view(*shape)
 
 
-class Fashion1(MNISTModel):
+class Cifar0(CIFARModel):
     def __init__(self):
         super().__init__()
         self.resnet = tv.models.resnet18(pretrained=False)
@@ -117,9 +117,6 @@ class Fashion1(MNISTModel):
         x = F.log_softmax(x, dim=1)
         return x
 
-    def configure_optimizers(self):
-        return [th.optim.AdamW(self.parameters(), lr=self.learning_rate)]
-
 
 def _model_():
-    return Fashion1()
+    return Cifar0()
