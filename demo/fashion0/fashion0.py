@@ -19,10 +19,50 @@ class LNon(nn.Module):
         self.points = points
 
         theta = th.cat([th.linspace(-th.pi, th.pi, points).view(1, 1, points) for _ in range(groups)], dim=1)
-        velocity = th.cat([th.linspace(-3, 3, points).view(1, 1, points) for _ in range(groups)], dim=1)
-        self.params = nn.Parameter(th.cat([theta, velocity], dim=0))
+        velocity = th.cat([th.linspace(0, 3, points).view(1, 1, points) for _ in range(groups)], dim=1)
+        self.params = th.cat([theta, velocity], dim=0)
         self.scalei = nn.Parameter(th.ones(1, groups, 1, 1))
         self.scaleo = nn.Parameter(th.ones(1, groups, 1, 1))
+
+    @staticmethod
+    def by_sigmoid(param, data):
+        points = param.size(-1)
+        shape = data.size()
+        data_ = data.flatten(0)
+        param_ = param.flatten(0)
+
+        index = th.sigmoid(data_) * (points - 1)
+        frame = param_
+
+        begin = index.floor().long()
+        begin = begin.clamp(0, param.size(1) - 1)
+        pos = index - begin
+        end = begin + 1
+        end = end.clamp(0, param.size(1) - 1)
+
+        result = (1 - pos) * frame[begin] + pos * frame[end]
+
+        return result.view(*shape)
+
+    @staticmethod
+    def by_tanh(param, data):
+        points = param.size(-1)
+        shape = data.size()
+        data_ = data.flatten(0)
+        param_ = param.flatten(0)
+
+        index = th.abs(th.tanh(data_) * (points - 1))
+        frame = param_
+
+        begin = index.floor().long()
+        begin = begin.clamp(0, param.size(1) - 1)
+        pos = index - begin
+        end = begin + 1
+        end = end.clamp(0, param.size(1) - 1)
+
+        result = (1 - pos) * frame[begin] + pos * frame[end]
+
+        return result.view(*shape)
 
     @staticmethod
     def by_sigmoid(param, data):
@@ -47,11 +87,11 @@ class LNon(nn.Module):
     def foilize(self: U, data: Tensor, param: Tensor) -> Tensor:
 
         theta = self.by_sigmoid(param[0:1], data)
-        velo = self.by_sigmoid(param[1:2], data)
+        velo = self.by_tanh(param[1:2], data)
         ds = velo
         dx = ds * th.cos(theta)
         dy = ds * th.sin(theta)
-        val = data * (1 + dy) + dx
+        val = data * th.exp(dy) + dx
         return val
 
     def forward(self: U, data: Tensor) -> Tensor:
