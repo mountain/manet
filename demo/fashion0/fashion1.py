@@ -117,6 +117,7 @@ class Fashion1(MNISTModel):
         super().__init__()
         self.resnet = tv.models.resnet18(pretrained=False)
         self.resnet.num_classes = 10
+        self.resnet.inplanes = 512
         self.resnet.relu = LNon(groups=1, points=60)
         self.resnet.conv1 = nn.Conv2d(1, self.resnet.inplanes, kernel_size=7, stride=2, padding=3, bias=False)
         self.resnet.fc = nn.Linear(512 * self.resnet.layer4[1].expansion, self.resnet.num_classes)
