@@ -60,7 +60,7 @@ class LNon(nn.Module):
         return data.view(*shape) * self.oscale
 
 
-class Cifar0(CIFARModel):
+class Cifar2(CIFARModel):
     def __init__(self):
         super().__init__()
         self.conv0 = nn.Conv2d(3, 405, kernel_size=7, padding=3)
@@ -92,4 +92,4 @@ class Cifar0(CIFARModel):
 
 
 def _model_():
-    return Cifar0()
+    return Cifar2()
