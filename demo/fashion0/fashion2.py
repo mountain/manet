@@ -22,11 +22,9 @@ class LNon(nn.Module):
         self.velocity = th.linspace(0, 3, points)
         self.weight = nn.Parameter(th.normal(0, 1, (points, points)))
 
-    @th.compile
     def integral(self, param, index):
         return th.sum(param[index].view(-1, 1) * th.softmax(self.weight, dim=1)[index, :], dim=1)
 
-    @th.compile
     def interplot(self, param, index):
         lmt = param.size(0) - 1
 
@@ -41,7 +39,6 @@ class LNon(nn.Module):
 
         return (1 - pos) * v0 + pos * v1
 
-    @th.compile
     def forward(self: U, data: Tensor) -> Tensor:
         if self.theta.device != data.device:
             self.theta = self.theta.to(data.device)
