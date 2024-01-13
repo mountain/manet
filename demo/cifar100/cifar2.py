@@ -1,11 +1,10 @@
 import torch as th
 import torch.nn.functional as F
 import torch.nn as nn
-import torchvision as tv
 
 from manet.nn.model import CIFARModel
 from torch import Tensor
-from typing import TypeVar
+from typing import TypeVar, Tuple
 
 
 U = TypeVar('U', bound='Unit')
@@ -61,21 +60,36 @@ class LNon(nn.Module):
         return data.view(*shape) * self.oscale
 
 
-class Cifar1(CIFARModel):
+class Cifar0(CIFARModel):
     def __init__(self):
         super().__init__()
-        self.resnet = tv.models.resnet18(pretrained=False)
-        self.resnet.num_classes = 100
-        self.resnet.inplanes = 64
-        self.resnet.conv1 = nn.Conv2d(3, self.resnet.inplanes, kernel_size=7, stride=2, padding=3, bias=False)
-        self.resnet.bn1 = self.resnet._norm_layer(self.resnet.inplanes)
-        self.resnet.fc = nn.Linear(512 * self.resnet.layer4[1].expansion, self.resnet.num_classes)
+        self.conv0 = nn.Conv2d(3, 405, kernel_size=7, padding=3)
+        self.fiol0 = LNon()
+        self.conv1 = nn.Conv2d(405, 1215, kernel_size=3, padding=1)
+        self.fiol1 = LNon()
+        self.conv2 = nn.Conv2d(1215, 1215, kernel_size=3, padding=1)
+        self.fiol2 = LNon()
+        self.conv3 = nn.Conv2d(1215, 1215, kernel_size=3, padding=1)
+        self.fiol3 = LNon()
+        self.fc = nn.Linear(1215 * 16, 100)
 
     def forward(self, x):
-        x = self.resnet(x)
+        x = self.conv0(x)
+        x = self.fiol0(x)
+        x = F.max_pool2d(x, 2)
+        x = self.conv1(x)
+        x = self.fiol1(x)
+        x = F.max_pool2d(x, 2)
+        x = self.conv2(x)
+        x = self.fiol2(x)
+        x = F.max_pool2d(x, 2)
+        x = self.conv3(x)
+        x = self.fiol3(x)
+        x = x.flatten(1)
+        x = self.fc(x)
         x = F.log_softmax(x, dim=1)
         return x
 
 
 def _model_():
-    return Cifar1()
+    return Cifar0()
