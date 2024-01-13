@@ -13,7 +13,7 @@ U = TypeVar('U', bound='Unit')
 
 class LNon(nn.Module):
 
-    def __init__(self, points=120):
+    def __init__(self, points=5):
         super().__init__()
         self.points = points
         self.iscale = nn.Parameter(th.normal(0, 1, (1, 1, 1, 1)))
@@ -22,9 +22,11 @@ class LNon(nn.Module):
         self.velocity = th.linspace(0, 3, points)
         self.weight = nn.Parameter(th.normal(0, 1, (points, points)))
 
+    # @th.compile
     def integral(self, param, index):
         return th.sum(param[index].view(-1, 1) * th.softmax(self.weight, dim=1)[index, :], dim=1)
 
+    # @th.compile
     def interplot(self, param, index):
         lmt = param.size(0) - 1
 
@@ -39,6 +41,7 @@ class LNon(nn.Module):
 
         return (1 - pos) * v0 + pos * v1
 
+    # @th.compile
     def forward(self: U, data: Tensor) -> Tensor:
         if self.theta.device != data.device:
             self.theta = self.theta.to(data.device)
@@ -63,14 +66,14 @@ class LNon(nn.Module):
 class Fashion2(MNISTModel):
     def __init__(self):
         super().__init__()
-        self.conv0 = nn.Conv2d(1, 5, kernel_size=7, padding=3)
-        self.lnon0 = LNon(points=60)
-        self.conv1 = nn.Conv2d(5, 25, kernel_size=3, padding=1)
-        self.lnon1 = LNon(points=60)
+        self.conv0 = nn.Conv2d(1, 25, kernel_size=7, padding=3)
+        self.lnon0 = LNon(points=5)
+        self.conv1 = nn.Conv2d(25, 25, kernel_size=3, padding=1)
+        self.lnon1 = LNon(points=5)
         self.conv2 = nn.Conv2d(25, 25, kernel_size=1, padding=0)
-        self.lnon2 = LNon(points=60)
+        self.lnon2 = LNon(points=5)
         self.conv3 = nn.Conv2d(25, 25, kernel_size=1, padding=0)
-        self.lnon3 = LNon(points=60)
+        self.lnon3 = LNon(points=5)
         self.fc = nn.Linear(25 * 9, 10)
 
     def forward(self, x):
