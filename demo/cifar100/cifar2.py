@@ -12,7 +12,7 @@ U = TypeVar('U', bound='Unit')
 
 class LNon(nn.Module):
 
-    def __init__(self, points=5):
+    def __init__(self, points=12):
         super().__init__()
         self.points = points
         self.iscale = nn.Parameter(th.normal(0, 1, (1, 1, 1, 1)))
@@ -45,6 +45,8 @@ class LNon(nn.Module):
         if self.theta.device != data.device:
             self.theta = self.theta.to(data.device)
             self.velocity = self.velocity.to(data.device)
+            self.weight = self.weight.to(data.device)
+
         shape = data.size()
         data = (data - data.mean()) / data.std() * self.iscale
         data = data.flatten(0)
@@ -63,16 +65,17 @@ class LNon(nn.Module):
 class Cifar2(CIFARModel):
     def __init__(self):
         super().__init__()
-        self.conv0 = nn.Conv2d(3, 405, kernel_size=7, padding=3)
+        self.conv0 = nn.Conv2d(3, 512, kernel_size=7, padding=3, bias=False)
         self.fiol0 = LNon()
-        self.conv1 = nn.Conv2d(405, 1215, kernel_size=3, padding=1)
+        self.conv1 = nn.Conv2d(512, 512, kernel_size=3, padding=1)
         self.fiol1 = LNon()
-        self.conv2 = nn.Conv2d(1215, 1215, kernel_size=3, padding=1)
+        self.conv2 = nn.Conv2d(512, 256, kernel_size=1, padding=0)
         self.fiol2 = LNon()
-        self.conv3 = nn.Conv2d(1215, 1215, kernel_size=3, padding=1)
+        self.conv3 = nn.Conv2d(256, 128, kernel_size=1, padding=0)
         self.fiol3 = LNon()
-        self.fc = nn.Linear(1215 * 16, 100)
+        self.fc = nn.Linear(128 * 16, 100)
 
+    @th.compile
     def forward(self, x):
         x = self.conv0(x)
         x = self.fiol0(x)
