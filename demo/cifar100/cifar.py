@@ -205,7 +205,7 @@ class Cifar7(CIFARModel):
         x = self.fiol1(x)
 
         x = self.conv2(x)
-        x = F.dropout2d(x, 0.30, training=self.training)
+        x = F.dropout2d(x, 0.72, training=self.training)
         x = self.fiol2(x)
 
         x = self.conv3(x)
