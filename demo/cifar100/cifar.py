@@ -186,32 +186,31 @@ class Cifar8(CIFARModel):
 class Cifar7(CIFARModel):
     def __init__(self):
         super().__init__()
-        self.conv0 = nn.Conv2d(3, 512, kernel_size=7, padding=3)
+        self.conv0 = nn.Conv2d(3, 256, kernel_size=7, padding=3, bias=False, stride=2)
         self.fiol0 = LNon()
-        self.conv1 = nn.Conv2d(512, 1024, kernel_size=3, padding=1)
+        self.conv1 = nn.Conv2d(256, 512, kernel_size=3, padding=1, stride=2, bias=False)
         self.fiol1 = LNon()
-        self.conv2 = nn.Conv2d(1024, 1024, kernel_size=3, padding=1)
+        self.conv2 = nn.Conv2d(512, 512, kernel_size=3, padding=1, stride=2, bias=False)
         self.fiol2 = LNon()
-        self.conv3 = nn.Conv2d(1024, 1024, kernel_size=3, padding=1)
+        self.conv3 = nn.Conv2d(512, 128, kernel_size=3, padding=1, stride=2, bias=False)
         self.fiol3 = LNon()
-        self.fc = nn.Linear(1024 * 16, 100)
+        self.fc = nn.Linear(512, 100)
 
     @th.compile
     def forward(self, x):
         x = self.conv0(x)
         x = self.fiol0(x)
-        x = F.max_pool2d(x, 2)
+
         x = self.conv1(x)
-        x = F.dropout2d(x, 0.25, training=self.training)
         x = self.fiol1(x)
-        x = F.max_pool2d(x, 2)
+
         x = self.conv2(x)
-        x = F.dropout2d(x, 0.25, training=self.training)
+        x = F.dropout2d(x, 0.30, training=self.training)
         x = self.fiol2(x)
-        x = F.max_pool2d(x, 2)
+
         x = self.conv3(x)
-        x = F.dropout2d(x, 0.25, training=self.training)
         x = self.fiol3(x)
+
         x = x.flatten(1)
         x = self.fc(x)
         x = F.log_softmax(x, dim=1)
