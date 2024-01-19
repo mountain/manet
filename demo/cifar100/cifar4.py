@@ -75,7 +75,6 @@ class LNon(nn.Module):
             self.weight_sp = self.weight_sp.to(data.device)
 
         shape = data.size()
-        self.shape = shape
         data = (data - data.mean()) / data.std() * self.iscale
         data = data.flatten(0)
 
