@@ -12,13 +12,13 @@ U = TypeVar('U', bound='Unit')
 
 class LNon(nn.Module):
 
-    def __init__(self, channel, spatio, points=12):
+    def __init__(self, channel, spatio, points=29):
         super().__init__()
         self.points = points
         self.iscale = nn.Parameter(th.normal(0, 1, (1, 1, 1, 1)))
         self.oscale = nn.Parameter(th.normal(0, 1, (1, 1, 1, 1)))
         self.theta = th.linspace(-th.pi, th.pi, points)
-        self.velocity = th.linspace(0, 3, points)
+        self.velocity = th.linspace(0, th.e, points)
         self.weight_sp = nn.Parameter(th.normal(0, 1, (1, spatio, points)))
         self.weight_ch = nn.Parameter(th.normal(0, 1, (1, channel, points)))
         self.channel = channel
