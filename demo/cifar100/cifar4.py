@@ -21,8 +21,10 @@ class LNon(nn.Module):
         self.velocity = th.linspace(0, th.e, points)
         self.weight_sp = nn.Parameter(th.normal(0, 1, (1, spatio, points)))
         self.weight_ch = nn.Parameter(th.normal(0, 1, (1, channel, points)))
+        self.conv2d = nn.Conv2d(channel, channel, kernel_size=3, padding=1)
         self.channel = channel
         self.spatio = spatio
+        self.shape = None
 
     @th.compile
     def calculate_channel_weight(self, data: Tensor) -> Tensor:
@@ -44,6 +46,7 @@ class LNon(nn.Module):
     def integral(self, data, param, index):
         ch_weight = self.calculate_channel_weight(data)
         sp_weight = self.calculate_spatio_weight(data)
+        data = self.conv2d(data.view(*self.shape))
         weight = th.bmm(th.bmm(ch_weight, data.view(-1, self.channel, self.spatio)), sp_weight)
         weight = weight.view(-1, self.points)
         return th.sum(param[index].view(-1, 1) * th.softmax(weight, dim=1)[index, :], dim=1)
@@ -72,6 +75,7 @@ class LNon(nn.Module):
             self.weight_sp = self.weight_sp.to(data.device)
 
         shape = data.size()
+        self.shape = shape
         data = (data - data.mean()) / data.std() * self.iscale
         data = data.flatten(0)
 
