@@ -19,18 +19,26 @@ class LNon(nn.Module):
         self.oscale = nn.Parameter(th.normal(0, 1, (1, 1, 1, 1)))
         self.theta = th.linspace(-th.pi, th.pi, points)
         self.velocity = th.linspace(0, 3, points)
-        self.weight_ch = nn.Parameter(th.normal(0, 1, (channel, points)))
-        self.weight_sp = nn.Parameter(th.normal(0, 1, (spatio, points)))
+        self.weight_ch1 = nn.Parameter(th.normal(0, 1, (1, channel, points)))
+        self.weight_sp1 = nn.Parameter(th.normal(0, 1, (1, spatio, points)))
+        self.weight_ch2 = nn.Parameter(th.normal(0, 1, (1, channel, points)))
+        self.weight_sp2 = nn.Parameter(th.normal(0, 1, (1, spatio, points)))
         self.channel = channel
         self.spatio = spatio
 
     @th.compile
     def calculate_weight(self, data: Tensor) -> Tensor:
         data = data.view(-1, self.channel, self.spatio)
-        weight = th.bmm(data, self.weight_sp)
-        weight = weight.permute(0, 2, 1)
-        weight = th.bmm(weight, self.weight_ch)
-        return weight
+        batch = data.size(0)
+        weight1 = th.bmm(data, self.weight_sp1.repeat(batch, 1, 1))
+        weight1 = weight1.permute(0, 2, 1)
+        weight1 = th.bmm(weight1, self.weight_ch1.repeat(batch, 1, 1))
+        data = data.permute(0, 2, 1)
+        weight2 = th.bmm(data, self.weight_ch2.repeat(batch, 1, 1))
+        weight2 = weight2.permute(0, 2, 1)
+        weight2 = th.bmm(weight2, self.weight_sp2.repeat(batch, 1, 1))
+        weight = weight1 + weight2
+        return weight.reshape(-1, 12)
 
     @th.compile
     def integral(self, data, param, index):
@@ -57,7 +65,10 @@ class LNon(nn.Module):
         if self.theta.device != data.device:
             self.theta = self.theta.to(data.device)
             self.velocity = self.velocity.to(data.device)
-            self.weight = self.weight.to(data.device)
+            self.weight_ch1 = self.weight_ch1.to(data.device)
+            self.weight_sp1 = self.weight_sp1.to(data.device)
+            self.weight_ch2 = self.weight_ch2.to(data.device)
+            self.weight_sp2 = self.weight_sp2.to(data.device)
 
         shape = data.size()
         data = (data - data.mean()) / data.std() * self.iscale
