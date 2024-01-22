@@ -4,98 +4,59 @@ import torch.nn as nn
 import lightning as ltn
 
 from torch import Tensor
-from typing import TypeVar, Tuple
-
+from typing import TypeVar
 
 U = TypeVar('U', bound='Unit')
 
 
 class LNon(nn.Module):
-    def __init__(self: U,
-                 steps: int = 3,
-                 length: float = 0.33333,
-                 points: int = 5,
-                 ) -> None:
+
+    def __init__(self, points=11):
         super().__init__()
+        self.points = points
+        self.iscale = nn.Parameter(th.normal(0, 1, (1, 1, 1, 1)))
+        self.oscale = nn.Parameter(th.normal(0, 1, (1, 1, 1, 1)))
+        self.theta = th.linspace(-th.pi, th.pi, points)
+        self.velocity = th.linspace(0, 3, points)
+        self.weight = nn.Parameter(th.normal(0, 1, (points, points)))
 
-        self.num_steps = steps
-        self.step_length = length
-        self.num_points = points
+    @th.compile
+    def integral(self, param, index):
+        return th.sum(param[index].view(-1, 1) * th.softmax(self.weight, dim=1)[index, :], dim=1)
 
-        self.theta = nn.Parameter(
-            th.linspace(0, 2 * th.pi, points).view(1, 1, points)
-        )
-        self.velocity = nn.Parameter(
-            th.linspace(0, 1, points).view(1, 1, points)
-        )
-        self.channel_transform = nn.Parameter(
-            th.normal(0, 1, (1, 1, 1))
-        )
-        self.spatio_transform = nn.Parameter(
-            th.normal(0, 1, (1, 1, 1))
-        )
+    @th.compile
+    def interplot(self, param, index):
+        lmt = param.size(0) - 1
 
-    def accessor(self: U,
-                 data: Tensor,
-                 ) -> Tuple[Tensor, Tensor, Tensor]:
+        p0 = index.floor().long()
+        p1 = p0 + 1
+        pos = index - p0
+        p0 = p0.clamp(0, lmt)
+        p1 = p1.clamp(0, lmt)
 
-        index = th.sigmoid(data) * self.num_points
+        v0 = self.integral(param, p0)
+        v1 = self.integral(param, p1)
 
-        bgn = index.floor().long()
-        bgn = bgn * (bgn >= 0)
-        bgn = bgn * (bgn <= self.num_points - 2) + (bgn - 1) * (bgn > self.num_points - 2)
-        bgn = bgn * (bgn <= self.num_points - 2) + (bgn - 1) * (bgn > self.num_points - 2)
-        end = bgn + 1
+        return (1 - pos) * v0 + pos * v1
 
-        return index, bgn, end
+    @th.compile
+    def forward(self: U, data: Tensor) -> Tensor:
+        if self.theta.device != data.device:
+            self.theta = self.theta.to(data.device)
+            self.velocity = self.velocity.to(data.device)
+        shape = data.size()
+        data = (data - data.mean()) / data.std() * self.iscale
+        data = data.flatten(0)
 
-    def access(self: U,
-               memory: Tensor,
-               accessor: Tuple[Tensor, Tensor, Tensor]
-               ) -> Tensor:
+        theta = self.interplot(self.theta, th.sigmoid(data) * (self.points - 1))
+        ds = self.interplot(self.velocity, th.abs(th.tanh(data) * (self.points - 1)))
 
-        index, bgn, end = accessor
-        pos = index - bgn
-        memory = memory.flatten(0)
-        return (1 - pos) * memory[bgn] + pos * memory[end]
-
-    def step(self: U,
-             data: Tensor
-             ) -> Tensor:
-
-        accessor = self.accessor(data)
-        theta = self.access(self.theta, accessor)
-        velo = self.access(self.velocity, accessor)
-
-        # by the flow equation of the arithmetic expression geometry
-        ds = velo * self.step_length
         dx = ds * th.cos(theta)
         dy = ds * th.sin(theta)
-        val = data * (1 + dy) + dx
-        return val
+        data = data * th.exp(dy) + dx
 
-    def forward(self: U,
-                data: Tensor
-                ) -> Tensor:
-        shape = data.size()
-        data = data.flatten(1)
-        data = data.contiguous()
-        data = data.view(-1, 1, 1)
-
-        data = th.permute(data, [0, 2, 1]).reshape(-1, 1)
-        data = th.matmul(data, self.channel_transform)
-        # data = data * self.channel_transform
-        data = data.view(-1, 1, 1)
-
-        for ix in range(self.num_steps):
-            data = self.step(data)
-
-        data = th.permute(data, [0, 2, 1]).reshape(-1, 1)
-        data = th.matmul(data, self.spatio_transform)
-        # data = data * self.spatio_transform
-        data = data.view(-1, 1, 1)
-
-        return data.view(*shape)
+        data = (data - data.mean()) / data.std()
+        return data.view(*shape) * self.oscale
 
 
 def recover(x):
@@ -109,53 +70,101 @@ class Moving0(ltn.LightningModule):
         self.learning_rate = 1e-3
         self.counter = 0
         self.labeled_loss = 0
+        self.dropout = nn.Dropout2d(0.2)
         self.dnsample = nn.MaxPool2d(2)
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
-        self.upsample1 = nn.Upsample(scale_factor=33/16, mode='nearest')
+        self.upsample1 = nn.Upsample(scale_factor=33 / 16, mode='nearest')
 
-        self.conv0 = nn.Conv2d(10, 20, kernel_size=7, padding=3)
-        self.lnon0 = LNon(steps=1, length=1, points=60)
-        self.conv1 = nn.Conv2d(20, 40, kernel_size=3, padding=1)
-        self.lnon1 = LNon(steps=1, length=1, points=60)
-        self.conv2 = nn.Conv2d(40, 80, kernel_size=3, padding=1)
-        self.lnon2 = LNon(steps=1, length=1, points=60)
-        self.conv3 = nn.Conv2d(80, 160, kernel_size=3, padding=1)
-        self.lnon3 = LNon(steps=1, length=1, points=60)
-        self.conv4 = nn.Conv2d(160, 160, kernel_size=1, padding=0)
-        self.lnon4 = LNon(steps=1, length=1, points=60)
-        self.conv5 = nn.Conv2d(160, 160, kernel_size=1, padding=0)
-        self.lnon5 = LNon(steps=1, length=1, points=60)
-        self.conv6 = nn.Conv2d(160, 160, kernel_size=1, padding=0)
-        self.lnon6 = LNon(steps=1, length=1, points=60)
+        self.conv0 = nn.Conv2d(10, 40, kernel_size=3, padding=1)
+        self.conv01 = nn.Conv2d(10, 40, kernel_size=3, padding=1)
+        self.lnon01 = LNon()
+        self.conv02 = nn.Conv2d(10, 40, kernel_size=3, padding=1)
+        self.lnon02 = LNon()
+        self.lnon0 = LNon()
 
-        self.conv7 = nn.Conv2d(320, 160, kernel_size=1, padding=0)
-        self.lnon7 = LNon(steps=1, length=1, points=60)
-        self.conv8 = nn.Conv2d(320, 160, kernel_size=1, padding=0)
-        self.lnon8 = LNon(steps=1, length=1, points=60)
-        self.conv9 = nn.Conv2d(320, 80, kernel_size=3, padding=1)
-        self.conv91 = nn.Conv2d(320, 80, kernel_size=3, padding=1)
-        self.lnon91 = LNon(steps=1, length=1, points=60)
-        self.conv92 = nn.Conv2d(320, 80, kernel_size=3, padding=1)
-        self.lnon92 = LNon(steps=1, length=1, points=60)
-        self.lnon9 = LNon(steps=1, length=1, points=60)
-        self.conva = nn.Conv2d(160, 40, kernel_size=3, padding=1)
-        self.conva1 = nn.Conv2d(160, 40, kernel_size=3, padding=1)
-        self.lnona1 = LNon(steps=1, length=1, points=60)
-        self.conva2 = nn.Conv2d(160, 40, kernel_size=3, padding=1)
-        self.lnona2 = LNon(steps=1, length=1, points=60)
-        self.lnona = LNon(steps=1, length=1, points=60)
-        self.convb = nn.Conv2d(80, 20, kernel_size=3, padding=1)
-        self.convb1 = nn.Conv2d(80, 20, kernel_size=3, padding=1)
-        self.lnonb1 = LNon(steps=1, length=1, points=60)
-        self.convb2 = nn.Conv2d(80, 20, kernel_size=3, padding=1)
-        self.lnonb2 = LNon(steps=1, length=1, points=60)
-        self.lnonb = LNon(steps=1, length=1, points=60)
-        self.convc = nn.Conv2d(40, 20, kernel_size=3, padding=1)
-        self.convc1 = nn.Conv2d(40, 20, kernel_size=3, padding=1)
-        self.lnonc1 = LNon(steps=1, length=1, points=60)
-        self.convc2 = nn.Conv2d(40, 20, kernel_size=3, padding=1)
-        self.lnonc2 = LNon(steps=1, length=1, points=60)
-        self.lnonc = LNon(steps=1, length=1, points=60)
+        self.conv1 = nn.Conv2d(40, 80, kernel_size=3, padding=1)
+        self.conv11 = nn.Conv2d(40, 80, kernel_size=3, padding=1)
+        self.lnon11 = LNon()
+        self.conv12 = nn.Conv2d(40, 80, kernel_size=3, padding=1)
+        self.lnon12 = LNon()
+        self.lnon1 = LNon()
+
+        self.conv2 = nn.Conv2d(80, 160, kernel_size=3, padding=1)
+        self.conv21 = nn.Conv2d(80, 160, kernel_size=3, padding=1)
+        self.lnon21 = LNon()
+        self.conv22 = nn.Conv2d(80, 160, kernel_size=3, padding=1)
+        self.lnon22 = LNon()
+        self.lnon2 = LNon()
+
+        self.conv3 = nn.Conv2d(160, 320, kernel_size=3, padding=1)
+        self.conv31 = nn.Conv2d(160, 320, kernel_size=3, padding=1)
+        self.lnon31 = LNon()
+        self.conv32 = nn.Conv2d(160, 320, kernel_size=3, padding=1)
+        self.lnon32 = LNon()
+        self.lnon3 = LNon()
+
+        self.conv4 = nn.Conv2d(320, 320, kernel_size=1, padding=0)
+        self.conv41 = nn.Conv2d(320, 320, kernel_size=1, padding=0)
+        self.lnon41 = LNon()
+        self.conv42 = nn.Conv2d(320, 320, kernel_size=1, padding=0)
+        self.lnon42 = LNon()
+        self.lnon4 = LNon()
+
+        self.conv5 = nn.Conv2d(320, 320, kernel_size=1, padding=0)
+        self.conv51 = nn.Conv2d(320, 320, kernel_size=1, padding=0)
+        self.lnon51 = LNon()
+        self.conv52 = nn.Conv2d(320, 320, kernel_size=1, padding=0)
+        self.lnon52 = LNon()
+        self.lnon5 = LNon()
+
+        self.conv6 = nn.Conv2d(320, 320, kernel_size=1, padding=0)
+        self.conv61 = nn.Conv2d(320, 320, kernel_size=1, padding=0)
+        self.lnon61 = LNon()
+        self.conv62 = nn.Conv2d(320, 320, kernel_size=1, padding=0)
+        self.lnon62 = LNon()
+        self.lnon6 = LNon()
+
+        self.conv7 = nn.Conv2d(640, 320, kernel_size=1, padding=0)
+        self.conv71 = nn.Conv2d(640, 320, kernel_size=1, padding=0)
+        self.lnon71 = LNon()
+        self.conv72 = nn.Conv2d(640, 320, kernel_size=1, padding=0)
+        self.lnon72 = LNon()
+        self.lnon7 = LNon()
+
+        self.conv8 = nn.Conv2d(640, 320, kernel_size=1, padding=0)
+        self.conv81 = nn.Conv2d(640, 320, kernel_size=1, padding=0)
+        self.lnon81 = LNon()
+        self.conv82 = nn.Conv2d(640, 320, kernel_size=1, padding=0)
+        self.lnon82 = LNon()
+        self.lnon8 = LNon()
+
+        self.conv9 = nn.Conv2d(640, 160, kernel_size=3, padding=1)
+        self.conv91 = nn.Conv2d(640, 160, kernel_size=3, padding=1)
+        self.lnon91 = LNon()
+        self.conv92 = nn.Conv2d(640, 160, kernel_size=3, padding=1)
+        self.lnon92 = LNon()
+        self.lnon9 = LNon()
+
+        self.conva = nn.Conv2d(320, 80, kernel_size=3, padding=1)
+        self.conva1 = nn.Conv2d(320, 80, kernel_size=3, padding=1)
+        self.lnona1 = LNon()
+        self.conva2 = nn.Conv2d(320, 80, kernel_size=3, padding=1)
+        self.lnona2 = LNon()
+        self.lnona = LNon()
+
+        self.convb = nn.Conv2d(160, 40, kernel_size=3, padding=1)
+        self.convb1 = nn.Conv2d(160, 40, kernel_size=3, padding=1)
+        self.lnonb1 = LNon()
+        self.convb2 = nn.Conv2d(160, 40, kernel_size=3, padding=1)
+        self.lnonb2 = LNon()
+        self.lnonb = LNon()
+
+        self.convc = nn.Conv2d(80, 20, kernel_size=3, padding=1)
+        self.convc1 = nn.Conv2d(80, 20, kernel_size=3, padding=1)
+        self.lnonc1 = LNon()
+        self.convc2 = nn.Conv2d(80, 20, kernel_size=3, padding=1)
+        self.lnonc2 = LNon()
+        self.lnonc = LNon()
 
     def training_step(self, train_batch, batch_idx):
         w = train_batch.view(-1, 20, 64, 64)
@@ -203,9 +212,36 @@ class Moving0(ltn.LightningModule):
                 os.unlink(ckpt)
         self.counter = 0
         self.labeled_loss = 0
+        print()
 
     def configure_optimizers(self):
-        return [th.optim.Adam(self.parameters(), lr=self.learning_rate)]
+        optimizer = th.optim.Adam(self.parameters(), lr=self.learning_rate)
+        scheduler = th.optim.lr_scheduler.CosineAnnealingLR(optimizer, 53)
+        return [optimizer], [scheduler]
+
+    @th.compile
+    def downward_calc(self, dnsample, dropout, conv0, conv1, lnon1, conv2, lnon2, lnon0, x):
+        y = dnsample(x)
+        y = dropout(y)
+        x = conv0(y)
+        a = conv1(y)
+        a = lnon1(a)
+        b = conv2(y)
+        b = lnon2(b)
+        x = lnon0(a * x + b)
+        return x
+
+    @th.compile
+    def upward_calc(self, upsample, conv0, conv1, lnon1, conv2, lnon2, lnon0, x, y):
+        z = upsample(y)
+        w = th.cat([z, x], dim=1)
+        x = conv0(w)
+        a = conv1(w)
+        a = lnon1(a)
+        b = conv2(w)
+        b = lnon2(b)
+        x = lnon0(a * x + b)
+        return x
 
     def forward(self, x):
         x = x.view(-1, 10, 64, 64)
@@ -218,71 +254,49 @@ class Moving0(ltn.LightningModule):
         x = x.view(-1, 10, 66, 66)
 
         x0 = self.conv0(x)
-        x0 = self.lnon0(x0)
-        x1 = self.dnsample(x0)  # 66 -> 33
-        x1 = self.conv1(x1)
-        x1 = self.lnon1(x1)
-        x2 = self.dnsample(x1)  # 33 -> 16
-        x2 = self.conv2(x2)
-        x2 = self.lnon2(x2)
-        x3 = self.dnsample(x2)  # 16 -> 8
-        x3 = self.conv3(x3)
-        x3 = self.lnon3(x3)
-        x4 = self.dnsample(x3)  # 8 -> 4
-        x4 = self.conv4(x4)
-        x4 = self.lnon4(x4)
-        x5 = self.dnsample(x4)  # 4 -> 2
-        x5 = self.conv5(x5)
-        x5 = self.lnon5(x5)
-        x6 = self.dnsample(x5)  # 2 -> 1
-        x6 = self.conv6(x6)
-        x6 = self.lnon6(x6)
+        a0 = self.conv01(x)
+        a0 = self.lnon01(a0)
+        b0 = self.conv02(x)
+        b0 = self.lnon02(b0)
+        x0 = self.lnon0(a0 * x0 + b0)
 
-        x7 = self.upsample(x6)  # 1 -> 2
-        x7 = th.cat([x7, x5], dim=1)
-        x7 = self.conv7(x7)
-        x7 = self.lnon7(x7)
+        # 66 -> 33
+        x1 = self.downward_calc(self.dnsample, self.dropout, self.conv1, self.conv11, self.lnon11, self.conv12,
+                                self.lnon12, self.lnon1, x0)
+        # 33 -> 16
+        x2 = self.downward_calc(self.dnsample, self.dropout, self.conv2, self.conv21, self.lnon21, self.conv22,
+                                self.lnon22, self.lnon2, x1)
+        # 16 -> 8
+        x3 = self.downward_calc(self.dnsample, self.dropout, self.conv3, self.conv31, self.lnon31, self.conv32,
+                                self.lnon32, self.lnon3, x2)
+        # 8 -> 4
+        x4 = self.downward_calc(self.dnsample, self.dropout, self.conv4, self.conv41, self.lnon41, self.conv42,
+                                self.lnon42, self.lnon4, x3)
+        # 4 -> 2
+        x5 = self.downward_calc(self.dnsample, self.dropout, self.conv5, self.conv51, self.lnon51, self.conv52,
+                                self.lnon52, self.lnon5, x4)
+        # 2 -> 1
+        x6 = self.downward_calc(self.dnsample, self.dropout, self.conv6, self.conv61, self.lnon61, self.conv62,
+                                self.lnon62, self.lnon6, x5)
 
-        x8 = self.upsample(x7)  # 2 -> 4
-        x8 = th.cat([x8, x4], dim=1)
-        x8 = self.conv8(x8)
-        x8 = self.lnon8(x8)
-
-        x9 = self.upsample(x8)  # 4 -> 8
-        y9 = th.cat([x9, x3], dim=1)
-        x9 = self.conv9(y9)
-        a9 = self.conv91(y9)
-        a9 = self.lnon91(a9)
-        b9 = self.conv92(y9)
-        b9 = self.lnon92(b9)
-        x9 = self.lnon9(a9 * x9 + b9)
-
-        xa = self.upsample(x9)  # 8 -> 16
-        ya = th.cat([xa, x2], dim=1)
-        xa = self.conva(ya)
-        aa = self.conva1(ya)
-        aa = self.lnona1(aa)
-        ba = self.conva2(ya)
-        ba = self.lnona2(ba)
-        xa = self.lnona(aa * xa + ba)
-
-        xb = self.upsample1(xa)  # 16 -> 33
-        yb = th.cat([xb, x1], dim=1)
-        xb = self.convb(yb)
-        ab = self.convb1(yb)
-        ab = self.lnonb1(ab)
-        bb = self.convb2(yb)
-        bb = self.lnonb2(bb)
-        xb = self.lnonb(ab * xb + bb)
-
-        xc = self.upsample(xb)  # 33 -> 66
-        yc = th.cat([xc, x0], dim=1)
-        xc = self.convc(yc)
-        ac = self.convc1(yc)
-        ac = self.lnonc1(ac)
-        bc = self.convc2(yc)
-        bc = self.lnonc2(bc)
-        xc = self.lnonc(ac * xc + bc)
+        # 1 -> 2
+        x7 = self.upward_calc(self.upsample, self.conv7, self.conv71, self.lnon71, self.conv72, self.lnon72, self.lnon7,
+                              x5, x6)
+        # 2 -> 4
+        x8 = self.upward_calc(self.upsample, self.conv8, self.conv81, self.lnon81, self.conv82, self.lnon82, self.lnon8,
+                              x4, x7)
+        # 4 -> 8
+        x9 = self.upward_calc(self.upsample, self.conv9, self.conv91, self.lnon91, self.conv92, self.lnon92, self.lnon9,
+                              x3, x8)
+        # 8 -> 16
+        xa = self.upward_calc(self.upsample, self.conva, self.conva1, self.lnona1, self.conva2, self.lnona2, self.lnona,
+                              x2, x9)
+        # 16 -> 33
+        xb = self.upward_calc(self.upsample1, self.convb, self.convb1, self.lnonb1, self.convb2, self.lnonb2,
+                              self.lnonb, x1, xa)
+        # 33 -> 66
+        xc = self.upward_calc(self.upsample, self.convc, self.convc1, self.lnonc1, self.convc2, self.lnonc2, self.lnonc,
+                              x0, xb)
 
         x = xc[:, :, 1:-1, 1:-1]
         return x
