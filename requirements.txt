@@ -9,3 +9,5 @@ revtok
 transformers
 
 aspectlib
+
+fastprogress
