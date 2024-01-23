@@ -4,9 +4,6 @@ import torch.nn as nn
 import lightning as ltn
 
 from torch import Tensor
-from typing import TypeVar
-
-U = TypeVar('U', bound='Unit')
 
 
 class LNon(nn.Module):
@@ -17,7 +14,7 @@ class LNon(nn.Module):
         self.iscale = nn.Parameter(th.normal(0, 1, (1, 1, 1, 1)))
         self.oscale = nn.Parameter(th.normal(0, 1, (1, 1, 1, 1)))
         self.theta = th.linspace(-th.pi, th.pi, points)
-        self.velocity = th.linspace(0, 3, points)
+        self.velocity = th.linspace(0, th.e, points)
         self.weight = nn.Parameter(th.normal(0, 1, (points, points)))
 
     @th.compile
@@ -40,7 +37,7 @@ class LNon(nn.Module):
         return (1 - pos) * v0 + pos * v1
 
     @th.compile
-    def forward(self: U, data: Tensor) -> Tensor:
+    def forward(self, data: Tensor) -> Tensor:
         if self.theta.device != data.device:
             self.theta = self.theta.to(data.device)
             self.velocity = self.velocity.to(data.device)
@@ -63,80 +60,139 @@ def recover(x):
     return x * 51.070168 + 12.562058
 
 
-class Moving0(ltn.LightningModule):
+class Moving1(ltn.LightningModule):
     def __init__(self):
         super().__init__()
 
         self.learning_rate = 1e-3
-        self.counter = 0
-        self.labeled_loss = 0
-        self.dropout = nn.Dropout2d(0.2)
+        self.labeled_counter = 0
+        self.labeled_mse = 0
+        self.refered_counter = 0
+        self.refered_mse = 0
 
-        self.conv0 = nn.Conv3d(1, 20, kernel_size=(1, 3, 3), padding=(0, 1, 1))
-        self.conv01 = nn.Conv3d(1, 20, kernel_size=(1, 3, 3), padding=(0, 1, 1))
-        self.lnon01 = LNon()
-        self.conv02 = nn.Conv3d(1, 20, kernel_size=(1, 3, 3), padding=(0, 1, 1))
-        self.lnon02 = LNon()
-        self.lnon0 = LNon()
+        self.dnsample = nn.MaxPool2d(2)
+        self.upsample = nn.Upsample(scale_factor=2, mode='bilinear')
+        self.ch = [4, 8, 16, 32, 64, 128]
 
-        self.conv1 = nn.Conv3d(20, 20, kernel_size=(1, 3, 3), padding=(0, 1, 1))
-        self.conv11 = nn.Conv3d(20, 20, kernel_size=(1, 3, 3), padding=(0, 1, 1))
-        self.lnon11 = LNon()
-        self.conv12 = nn.Conv3d(20, 20, kernel_size=(1, 3, 3), padding=(0, 1, 1))
-        self.lnon12 = LNon()
-        self.lnon1 = LNon()
+        self.conv0 = nn.Conv2d(2, self.ch[0], kernel_size=7, padding=3, bias=False)  # 64
+        self.lnon0 = nn.LeakyReLU(0.2)
 
-        self.conv2 = nn.Conv3d(20, 1, kernel_size=(1, 3, 3), padding=(0, 1, 1))
-        self.conv21 = nn.Conv3d(20, 1, kernel_size=(1, 3, 3), padding=(0, 1, 1))
-        self.lnon21 = LNon()
-        self.conv22 = nn.Conv3d(20, 1, kernel_size=(1, 3, 3), padding=(0, 1, 1))
-        self.lnon22 = LNon()
-        self.lnon2 = LNon()
+        self.conv1 = nn.Conv2d(self.ch[0], self.ch[1], kernel_size=3, padding=1, bias=False)  # 32
+        self.lnon1 = nn.LeakyReLU(0.2)
 
+        self.conv2 = nn.Conv2d(self.ch[1], self.ch[2], kernel_size=3, padding=1, bias=False)  # 16
+        self.lnon2 = nn.LeakyReLU(0.2)
+
+        self.conv3 = nn.Conv2d(self.ch[2], self.ch[3], kernel_size=3, padding=1, bias=False)  # 8
+        self.lnon3 = nn.LeakyReLU(0.2)
+
+        self.conv4 = nn.Conv2d(self.ch[3], self.ch[4], kernel_size=3, padding=1, bias=False)  # 4
+        self.lnon4 = nn.LeakyReLU(0.2)
+
+        self.conv5 = nn.Conv2d(self.ch[4], self.ch[5], kernel_size=1, padding=0, bias=False)  # 2
+        self.lnon5 = nn.LeakyReLU(0.2)
+
+        self.conv6 = nn.Conv2d(self.ch[5], self.ch[5], kernel_size=1, padding=0, bias=False)  # 1
+        self.lnon6 = nn.LeakyReLU(0.2)
+
+        self.conv7 = nn.Conv2d(self.ch[5] + self.ch[5], self.ch[5], kernel_size=1, padding=0, bias=False)  # 2
+        self.lnon7 = nn.LeakyReLU(0.2)
+
+        self.conv8 = nn.Conv2d(self.ch[5] + self.ch[4], self.ch[4], kernel_size=3, padding=1, bias=False)  # 4
+        self.lnon8 = nn.LeakyReLU(0.2)
+
+        self.conv9 = nn.Conv2d(self.ch[4] + self.ch[3], self.ch[3], kernel_size=3, padding=1, bias=False)  # 8
+        self.lnon9 = nn.LeakyReLU(0.2)
+
+        self.conva = nn.Conv2d(self.ch[3] + self.ch[2], self.ch[2], kernel_size=3, padding=1, bias=False)  # 16
+        self.lnona = nn.LeakyReLU(0.2)
+
+        self.convb = nn.Conv2d(self.ch[2] + self.ch[1], self.ch[1], kernel_size=3, padding=1, bias=False)  # 32
+        self.lnonb = nn.LeakyReLU(0.2)
+
+        self.convc = nn.Conv2d(self.ch[1] + self.ch[0], 2, kernel_size=3, padding=1, bias=False)  # 64
+        self.lnonc = nn.LeakyReLU(0.2)
+
+        self.conv_1_0 = nn.Conv2d(self.ch[5] * 9, 2 * self.ch[5] * 9, bias=False, kernel_size=1, padding=0)
+        self.lnonz6 = LNon()
+        self.conv_1_1 = nn.Conv2d(2 * self.ch[5] * 9, self.ch[5] * 9, kernel_size=1, padding=0)
+
+        self.conv_2_0 = nn.Conv2d(self.ch[5] * 9, 2 * self.ch[5] * 9, bias=False, kernel_size=1, padding=0)
+        self.lnonz5 = LNon()
+        self.conv_2_1 = nn.Conv2d(2 * self.ch[5] * 9, self.ch[5] * 9, kernel_size=1, padding=0)
+
+        self.conv_4_0 = nn.Conv2d(self.ch[4] * 9, 2 * self.ch[4] * 9, bias=False, kernel_size=3, padding=1)
+        self.lnonz4 = LNon()
+        self.conv_4_1 = nn.Conv2d(2 * self.ch[4] * 9, self.ch[4] * 9, kernel_size=3, padding=1)
+
+        self.conv_8_0 = nn.Conv2d(self.ch[3] * 9, 2 * self.ch[3] * 9, bias=False, kernel_size=3, padding=1)
+        self.lnonz3 = LNon()
+        self.conv_8_1 = nn.Conv2d(2 * self.ch[3] * 9, self.ch[3] * 9, kernel_size=3, padding=1)
+
+        self.conv_16_0 = nn.Conv2d(self.ch[2] * 9, 2 * self.ch[2] * 9, bias=False, kernel_size=3, padding=1)
+        self.lnonz2 = LNon()
+        self.conv_16_1 = nn.Conv2d(2 * self.ch[2] * 9, self.ch[2] * 9, kernel_size=3, padding=1)
+
+        self.conv_32_0 = nn.Conv2d(self.ch[1] * 9, 2 * self.ch[1] * 9, bias=False, kernel_size=3, padding=1)
+        self.lnonz1 = LNon()
+        self.conv_32_1 = nn.Conv2d(2 * self.ch[1] * 9, self.ch[1] * 9, kernel_size=3, padding=1)
+
+        self.conv_64_0 = nn.Conv2d(self.ch[0] * 9, 2 * self.ch[0] * 9, bias=False, kernel_size=3, padding=1)
+        self.lnonz0 = LNon()
+        self.conv_64_1 = nn.Conv2d(2 * self.ch[0] * 9, self.ch[0] * 9, kernel_size=3, padding=1)
 
     def training_step(self, train_batch, batch_idx):
-        w = train_batch.view(-1, 1, 20, 64, 64)
-        x, y = w[:, :, :10], w[:, :, 10:]
+        w = train_batch.view(-1, 20, 64, 64)
+        x, y = w[:, :10], w[:, 10:]
         z = self.forward(x)
         loss = F.mse_loss(z, w)
         self.log('train_loss', loss, prog_bar=True)
 
-        mse = F.mse_loss(recover(z[:, :, 10:]), recover(y))
+        mse = F.mse_loss(recover(z[:, 10:]), recover(y))
         self.log('train_mse', mse, prog_bar=True)
+
+        self.refered_mse += mse.item() * y.size()[0]
+        self.refered_counter += y.size()[0]
 
         return loss
 
     def validation_step(self, val_batch, batch_idx):
-        w = val_batch.view(-1, 1, 20, 64, 64)
-        x, y = w[:, :, :10], w[:, :, 10:]
+        w = val_batch.view(-1, 20, 64, 64)
+        x, y = w[:, :10], w[:, 10:]
         z = self.forward(x)
         loss = F.mse_loss(z, w)
         self.log('val_loss', loss, prog_bar=True)
 
-        mse = F.mse_loss(recover(z[:, :, 10:]), recover(y))
+        mse = F.mse_loss(recover(z[:, 10:]), recover(y))
         self.log('val_mse', mse, prog_bar=True)
+
+        self.labeled_mse += mse.item() * y.size()[0]
+        self.labeled_counter += y.size()[0]
 
     def test_step(self, test_batch, batch_idx):
         w = test_batch.view(-1, 20, 64, 64)
-        x, y = w[:, :, :10], w[:, :, 10:]
-        x = x.view(-1, 1, 10, 64, 64)
+        x, y = w[:, :10], w[:, 10:]
+        x = x.view(-1, 10, 64, 64)
         z = self.forward(x)
-        mse = F.mse_loss(recover(z[:, :, 10:]), recover(y))
+        mse = F.mse_loss(recover(z[:, 10:]), recover(y))
         self.log('test_mse', mse, prog_bar=True)
 
     def on_save_checkpoint(self, checkpoint) -> None:
         import glob, os
 
-        loss = self.labeled_loss / self.counter
-        record = '%2.5f-%03d.ckpt' % (loss, checkpoint['epoch'])
+        labeled_loss = self.labeled_mse / self.labeled_counter
+        refered_loss = self.refered_mse / self.refered_counter
+        record = '%03.5f-%03.5f-%03d.ckpt' % (labeled_loss, refered_loss, checkpoint['epoch'])
         fname = 'best-%s' % record
         with open(fname, 'bw') as f:
             th.save(checkpoint, f)
         for ix, ckpt in enumerate(sorted(glob.glob('best-*.ckpt'))):
             if ix > 5:
                 os.unlink(ckpt)
-        self.counter = 0
-        self.labeled_loss = 0
+        self.labeled_counter = 0
+        self.labeled_mse = 0
+        self.refered_counter = 0
+        self.refered_mse = 0
         print()
 
     def configure_optimizers(self):
@@ -145,21 +201,192 @@ class Moving0(ltn.LightningModule):
         return [optimizer], [scheduler]
 
     @th.compile
-    def block_calc(self, conv0, conv1, lnon1, conv2, lnon2, lnon0, x):
-        y = conv0(x)
-        a = conv1(x)
-        a = lnon1(a)
-        b = conv2(x)
-        b = lnon2(b)
-        return lnon0(a * y + b)
-
-    def forward(self, x):
-        x = x.view(-1, 1, 10, 64, 64)
-        x = self.block_calc(self.conv0, self.conv01, self.lnon01, self.conv02, self.lnon02, self.lnon0, x)
-        x = self.block_calc(self.conv1, self.conv11, self.lnon11, self.conv12, self.lnon12, self.lnon1, x)
-        x = self.block_calc(self.conv2, self.conv21, self.lnon21, self.conv22, self.lnon22, self.lnon2, x)
+    def downward_calc(self, dnsample, conv0, lnon0, x):
+        y = dnsample(x)
+        x = conv0(y)
+        x = lnon0(x)
         return x
+
+    @th.compile
+    def upward_calc(self, upsample, conv0, lnon0, x, y):
+        z = upsample(y)
+        w = th.cat([z, x], dim=1)
+        x = conv0(w)
+        x = lnon0(x)
+        return x
+
+    @th.compile
+    def downward(self, x):
+        x = x.view(-1, 2, 64, 64)
+        x0 = self.conv0(x)
+        x0 = self.lnon0(x0)
+        x1 = self.downward_calc(self.dnsample, self.conv1, self.lnon1, x0)  # 32
+        x2 = self.downward_calc(self.dnsample, self.conv2, self.lnon2, x1)  # 16
+        x3 = self.downward_calc(self.dnsample, self.conv3, self.lnon3, x2)  # 8
+        x4 = self.downward_calc(self.dnsample, self.conv4, self.lnon4, x3)  # 4
+        x5 = self.downward_calc(self.dnsample, self.conv5, self.lnon5, x4)  # 2
+        x6 = self.downward_calc(self.dnsample, self.conv6, self.lnon6, x5)  # 1
+        return x0, x1, x2, x3, x4, x5, x6
+
+    @th.compile
+    def upward(self, x0, x1, x2, x3, x4, x5, x6):
+        x7 = self.upward_calc(self.upsample, self.conv7, self.lnon7, x5, x6)
+        x8 = self.upward_calc(self.upsample, self.conv8, self.lnon8, x4, x7)
+        x9 = self.upward_calc(self.upsample, self.conv9, self.lnon9, x3, x8)
+        xa = self.upward_calc(self.upsample, self.conva, self.lnona, x2, x9)
+        xb = self.upward_calc(self.upsample, self.convb, self.lnonb, x1, xa)
+        xc = self.upward_calc(self.upsample, self.convc, self.lnonc, x0, xb)
+        return xc
+
+    @th.compile
+    def evolve6(self, rep0, rep1, rep2, rep3, rep4, rep5, rep6, rep7, rep8):
+        rep = th.cat([rep0, rep1, rep2, rep3, rep4, rep5, rep6, rep7, rep8], dim=1).view(-1, self.ch[5] * 9, 1, 1)
+        pred = self.conv_1_1(self.lnonz6(self.conv_1_0(rep))).view(-1, self.ch[5] * 9, 1, 1)
+        return (pred[:, self.ch[5] * i:self.ch[5] * (i + 1)] for i in range(9))
+
+    @th.compile
+    def evolve5(self, rep0, rep1, rep2, rep3, rep4, rep5, rep6, rep7, rep8):
+        rep = th.cat([rep0, rep1, rep2, rep3, rep4, rep5, rep6, rep7, rep8], dim=1).view(-1, self.ch[5] * 9, 2, 2)
+        pred = self.conv_2_1(self.lnonz5(self.conv_2_0(rep))).view(-1, self.ch[5] * 9, 2, 2)
+        return (pred[:, self.ch[5] * i:self.ch[5] * (i + 1)] for i in range(9))
+
+    @th.compile
+    def evolve4(self, rep0, rep1, rep2, rep3, rep4, rep5, rep6, rep7, rep8):
+        rep = th.cat([rep0, rep1, rep2, rep3, rep4, rep5, rep6, rep7, rep8], dim=1).view(-1, self.ch[4] * 9, 4, 4)
+        pred = self.conv_4_1(self.lnonz4(self.conv_4_0(rep))).view(-1, self.ch[4] * 9, 4, 4)
+        return (pred[:, self.ch[4] * i:self.ch[4] * (i + 1)] for i in range(9))
+
+    @th.compile
+    def evolve3(self, rep0, rep1, rep2, rep3, rep4, rep5, rep6, rep7, rep8):
+        rep = th.cat([rep0, rep1, rep2, rep3, rep4, rep5, rep6, rep7, rep8], dim=1).view(-1, self.ch[3] * 9, 8, 8)
+        pred = self.conv_8_1(self.lnonz3(self.conv_8_0(rep))).view(-1, self.ch[3] * 9, 8, 8)
+        return (pred[:, self.ch[3] * i:self.ch[3] * (i + 1)] for i in range(9))
+
+    @th.compile
+    def evolve2(self, rep0, rep1, rep2, rep3, rep4, rep5, rep6, rep7, rep8):
+        rep = th.cat([rep0, rep1, rep2, rep3, rep4, rep5, rep6, rep7, rep8], dim=1).view(-1, self.ch[2] * 9, 16, 16)
+        pred = self.conv_16_1(self.lnonz2(self.conv_16_0(rep))).view(-1, self.ch[2] * 9, 16, 16)
+        return (pred[:, self.ch[2] * i:self.ch[2] * (i + 1)] for i in range(9))
+
+    @th.compile
+    def evolve1(self, rep0, rep1, rep2, rep3, rep4, rep5, rep6, rep7, rep8):
+        rep = th.cat([rep0, rep1, rep2, rep3, rep4, rep5, rep6, rep7, rep8], dim=1).view(-1, self.ch[1] * 9, 32, 32)
+        pred = self.conv_32_1(self.lnonz1(self.conv_32_0(rep))).view(-1, self.ch[1] * 9, 32, 32)
+        return (pred[:, self.ch[1] * i:self.ch[1] * (i + 1)] for i in range(9))
+
+    @th.compile
+    def evolve0(self, rep0, rep1, rep2, rep3, rep4, rep5, rep6, rep7, rep8):
+        rep = th.cat([rep0, rep1, rep2, rep3, rep4, rep5, rep6, rep7, rep8], dim=1).view(-1, self.ch[0] * 9, 64, 64)
+        pred = self.conv_64_1(self.lnonz0(self.conv_64_0(rep))).view(-1, self.ch[0] * 9, 64, 64)
+        return (pred[:, self.ch[0] * i:self.ch[0] * (i + 1)] for i in range(9))
+
+    @th.compile
+    def merge(self, rep0, rep1):
+        return (rep0 + rep1) / 2
+
+    @th.compile
+    def forward(self, x):
+        x0 = x[:, 0:1]
+        x1 = x[:, 1:2]
+        x2 = x[:, 2:3]
+        x3 = x[:, 3:4]
+        x4 = x[:, 4:5]
+        x5 = x[:, 5:6]
+        x6 = x[:, 6:7]
+        x7 = x[:, 7:8]
+        x8 = x[:, 8:9]
+        x9 = x[:, 9:10]
+        x01 = x[:, 0:2]
+        x12 = x[:, 1:3]
+        x23 = x[:, 2:4]
+        x34 = x[:, 3:5]
+        x45 = x[:, 4:6]
+        x56 = x[:, 5:7]
+        x67 = x[:, 6:8]
+        x78 = x[:, 7:9]
+        x89 = x[:, 8:10]
+
+        a0, a1, a2, a3, a4, a5, a6 = self.downward(x01)
+        y12 = self.upward(a0, a1, a2, a3, a4, a5, a6)
+
+        b0, b1, b2, b3, b4, b5, b6 = self.downward(x12)
+        y23 = self.upward(b0, b1, b2, b3, b4, b5, b6)
+
+        c0, c1, c2, c3, c4, c5, c6 = self.downward(x23)
+        y34 = self.upward(c0, c1, c2, c3, c4, c5, c6)
+
+        d0, d1, d2, d3, d4, d5, d6 = self.downward(x34)
+        y45 = self.upward(d0, d1, d2, d3, d4, d5, d6)
+
+        e0, e1, e2, e3, e4, e5, e6 = self.downward(x45)
+        y56 = self.upward(e0, e1, e2, e3, e4, e5, e6)
+
+        f0, f1, f2, f3, f4, f5, f6 = self.downward(x56)
+        y67 = self.upward(f0, f1, f2, f3, f4, f5, f6)
+
+        g0, g1, g2, g3, g4, g5, g6 = self.downward(x67)
+        y78 = self.upward(g0, g1, g2, g3, g4, g5, g6)
+
+        h0, h1, h2, h3, h4, h5, h6 = self.downward(x78)
+        y89 = self.upward(h0, h1, h2, h3, h4, h5, h6)
+
+        i0, i1, i2, i3, i4, i5, i6 = self.downward(x89)
+        y9a = self.upward(i0, i1, i2, i3, i4, i5, i6)
+
+        jp6, kp6, lp6, mp6, np6, op6, pp6, qp6, rp6 = self.evolve6(a6, b6, c6, d6, e6, f6, g6, h6, i6)
+        jp5, kp5, lp5, mp5, np5, op5, pp5, qp5, rp5 = self.evolve5(a5, b5, c5, d5, e5, f5, g5, h5, i5)
+        jp4, kp4, lp4, mp4, np4, op4, pp4, qp4, rp4 = self.evolve4(a4, b4, c4, d4, e4, f4, g4, h4, i4)
+        jp3, kp3, lp3, mp3, np3, op3, pp3, qp3, rp3 = self.evolve3(a3, b3, c3, d3, e3, f3, g3, h3, i3)
+        jp2, kp2, lp2, mp2, np2, op2, pp2, qp2, rp2 = self.evolve2(a2, b2, c2, d2, e2, f2, g2, h2, i2)
+        jp1, kp1, lp1, mp1, np1, op1, pp1, qp1, rp1 = self.evolve1(a1, b1, c1, d1, e1, f1, g1, h1, i1)
+        jp0, kp0, lp0, mp0, np0, op0, pp0, qp0, rp0 = self.evolve0(a0, b0, c0, d0, e0, f0, g0, h0, i0)
+
+        j0, j1, j2, j3, j4, j5, j6 = self.downward(y9a)
+        yab = self.upward(self.merge(j0, jp0), self.merge(j1, jp1), self.merge(j2, jp2), self.merge(j3, jp3),
+                          self.merge(j4, jp4), self.merge(j5, jp5), self.merge(j6, jp6))
+
+        k0, k1, k2, k3, k4, k5, k6 = self.downward(yab)
+        ybc = self.upward(self.merge(k0, kp0), self.merge(k1, kp1), self.merge(k2, kp2), self.merge(k3, kp3),
+                          self.merge(k4, kp4), self.merge(k5, kp5), self.merge(k6, kp6))
+
+        l0, l1, l2, l3, l4, l5, l6 = self.downward(ybc)
+        ycd = self.upward(self.merge(l0, lp0), self.merge(l1, lp1), self.merge(l2, lp2), self.merge(l3, lp3),
+                          self.merge(l4, lp4), self.merge(l5, lp5), self.merge(l6, lp6))
+
+        m0, m1, m2, m3, m4, m5, m6 = self.downward(ycd)
+        yde = self.upward(self.merge(m0, mp0), self.merge(m1, mp1), self.merge(m2, mp2), self.merge(m3, mp3),
+                          self.merge(m4, mp4), self.merge(m5, mp5), self.merge(m6, mp6))
+
+        n0, n1, n2, n3, n4, n5, n6 = self.downward(yde)
+        yef = self.upward(self.merge(n0, np0), self.merge(n1, np1), self.merge(n2, np2), self.merge(n3, np3),
+                          self.merge(n4, np4), self.merge(n5, np5), self.merge(n6, np6))
+
+        o0, o1, o2, o3, o4, o5, o6 = self.downward(yef)
+        yfg = self.upward(self.merge(o0, op0), self.merge(o1, op1), self.merge(o2, op2), self.merge(o3, op3),
+                          self.merge(o4, op4), self.merge(o5, op5), self.merge(o6, op6))
+
+        p0, p1, p2, p3, p4, p5, p6 = self.downward(yfg)
+        ygh = self.upward(self.merge(p0, pp0), self.merge(p1, pp1), self.merge(p2, pp2), self.merge(p3, pp3),
+                          self.merge(p4, pp4), self.merge(p5, pp5), self.merge(p6, pp6))
+
+        q0, q1, q2, q3, q4, q5, q6 = self.downward(ygh)
+        yhi = self.upward(self.merge(q0, qp0), self.merge(q1, qp1), self.merge(q2, qp2), self.merge(q3, qp3),
+                          self.merge(q4, qp4), self.merge(q5, qp5), self.merge(q6, qp6))
+
+        r0, r1, r2, r3, r4, r5, r6 = self.downward(yhi)
+        yij = self.upward(self.merge(r0, rp0), self.merge(r1, rp1), self.merge(r2, rp2), self.merge(r3, rp3),
+                          self.merge(r4, rp4), self.merge(r5, rp5), self.merge(r6, rp6))
+
+        s0, s1, s2, s3, s4, s5, s6 = self.downward(yij)
+        yjk = self.upward(s0, s1, s2, s3, s4, s5, s6)
+
+        return th.cat([
+            x0, y12[:, 0:1], y23[:, 0:1], y34[:, 0:1], y45[:, 0:1], y56[:, 0:1], y67[:, 0:1], y78[:, 0:1], y89[:, 0:1],
+            y9a[:, 0:1],
+            yab[:, 0:1], ybc[:, 0:1], ycd[:, 0:1], yde[:, 0:1], yef[:, 0:1], yfg[:, 0:1], ygh[:, 0:1], yhi[:, 0:1],
+            yij[:, 0:1], yjk[:, 0:1]
+        ], dim=1)
 
 
 def _model_():
-    return Moving0()
+    return Moving1()
