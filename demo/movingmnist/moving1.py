@@ -114,32 +114,60 @@ class Moving1(ltn.LightningModule):
         self.lnonc = nn.LeakyReLU(0.2)
 
         self.conv_1_0 = nn.Conv2d(self.ch[5] * 9, 2 * self.ch[5] * 9, bias=False, kernel_size=1, padding=0)
-        self.lnonz6 = LNon()
+        self.lnonz6_0 = LNon()
         self.conv_1_1 = nn.Conv2d(2 * self.ch[5] * 9, self.ch[5] * 9, kernel_size=1, padding=0)
 
+        self.conv_1_2 = nn.Conv2d(self.ch[5] * 2, self.ch[5] * 4, bias=False, kernel_size=1, padding=0)
+        self.lnonz6_1 = LNon()
+        self.conv_1_3 = nn.Conv2d(self.ch[5] * 4, self.ch[5] * 1, kernel_size=1, padding=0)
+
         self.conv_2_0 = nn.Conv2d(self.ch[5] * 9, 2 * self.ch[5] * 9, bias=False, kernel_size=1, padding=0)
-        self.lnonz5 = LNon()
+        self.lnonz5_0 = LNon()
         self.conv_2_1 = nn.Conv2d(2 * self.ch[5] * 9, self.ch[5] * 9, kernel_size=1, padding=0)
 
+        self.conv_2_2 = nn.Conv2d(self.ch[5] * 2, self.ch[5] * 4, bias=False, kernel_size=1, padding=0)
+        self.lnonz5_1 = LNon()
+        self.conv_2_3 = nn.Conv2d(self.ch[5] * 4, self.ch[5] * 1, kernel_size=1, padding=0)
+
         self.conv_4_0 = nn.Conv2d(self.ch[4] * 9, 2 * self.ch[4] * 9, bias=False, kernel_size=3, padding=1)
-        self.lnonz4 = LNon()
+        self.lnonz4_0 = LNon()
         self.conv_4_1 = nn.Conv2d(2 * self.ch[4] * 9, self.ch[4] * 9, kernel_size=3, padding=1)
 
+        self.conv_4_2 = nn.Conv2d(self.ch[4] * 2, self.ch[4] * 4, bias=False, kernel_size=3, padding=1)
+        self.lnonz4_1 = LNon()
+        self.conv_4_3 = nn.Conv2d(self.ch[4] * 4, self.ch[4] * 1, kernel_size=3, padding=1)
+
         self.conv_8_0 = nn.Conv2d(self.ch[3] * 9, 2 * self.ch[3] * 9, bias=False, kernel_size=3, padding=1)
-        self.lnonz3 = LNon()
+        self.lnonz3_0 = LNon()
         self.conv_8_1 = nn.Conv2d(2 * self.ch[3] * 9, self.ch[3] * 9, kernel_size=3, padding=1)
 
+        self.conv_8_2 = nn.Conv2d(self.ch[3] * 2, self.ch[3] * 4, bias=False, kernel_size=3, padding=1)
+        self.lnonz3_1 = LNon()
+        self.conv_8_3 = nn.Conv2d(self.ch[3] * 4, self.ch[3] * 1, kernel_size=3, padding=1)
+
         self.conv_16_0 = nn.Conv2d(self.ch[2] * 9, 2 * self.ch[2] * 9, bias=False, kernel_size=3, padding=1)
-        self.lnonz2 = LNon()
+        self.lnonz2_0 = LNon()
         self.conv_16_1 = nn.Conv2d(2 * self.ch[2] * 9, self.ch[2] * 9, kernel_size=3, padding=1)
 
+        self.conv_16_2 = nn.Conv2d(self.ch[2] * 2, self.ch[2] * 4, bias=False, kernel_size=3, padding=1)
+        self.lnonz2_1 = LNon()
+        self.conv_16_3 = nn.Conv2d(self.ch[2] * 4, self.ch[2] * 1, kernel_size=3, padding=1)
+
         self.conv_32_0 = nn.Conv2d(self.ch[1] * 9, 2 * self.ch[1] * 9, bias=False, kernel_size=3, padding=1)
-        self.lnonz1 = LNon()
+        self.lnonz1_0 = LNon()
         self.conv_32_1 = nn.Conv2d(2 * self.ch[1] * 9, self.ch[1] * 9, kernel_size=3, padding=1)
 
+        self.conv_32_2 = nn.Conv2d(self.ch[1] * 2, self.ch[1] * 4, bias=False, kernel_size=3, padding=1)
+        self.lnonz1_1 = LNon()
+        self.conv_32_3 = nn.Conv2d(self.ch[1] * 4, self.ch[1] * 1, kernel_size=3, padding=1)
+
         self.conv_64_0 = nn.Conv2d(self.ch[0] * 9, 2 * self.ch[0] * 9, bias=False, kernel_size=3, padding=1)
-        self.lnonz0 = LNon()
+        self.lnonz0_0 = LNon()
         self.conv_64_1 = nn.Conv2d(2 * self.ch[0] * 9, self.ch[0] * 9, kernel_size=3, padding=1)
+
+        self.conv_64_2 = nn.Conv2d(self.ch[0] * 2, self.ch[0] * 4, bias=False, kernel_size=3, padding=1)
+        self.lnonz0_1 = LNon()
+        self.conv_64_3 = nn.Conv2d(self.ch[0] * 4, self.ch[0] * 1, kernel_size=3, padding=1)
 
     def training_step(self, train_batch, batch_idx):
         w = train_batch.view(-1, 20, 64, 64)
@@ -241,44 +269,86 @@ class Moving1(ltn.LightningModule):
     @th.compile
     def evolve6(self, rep0, rep1, rep2, rep3, rep4, rep5, rep6, rep7, rep8):
         rep = th.cat([rep0, rep1, rep2, rep3, rep4, rep5, rep6, rep7, rep8], dim=1).view(-1, self.ch[5] * 9, 1, 1)
-        pred = self.conv_1_1(self.lnonz6(self.conv_1_0(rep))).view(-1, self.ch[5] * 9, 1, 1)
+        pred = self.conv_1_1(self.lnonz6_0(self.conv_1_0(rep))).view(-1, self.ch[5] * 9, 1, 1)
         return (pred[:, self.ch[5] * i:self.ch[5] * (i + 1)] for i in range(9))
 
     @th.compile
     def evolve5(self, rep0, rep1, rep2, rep3, rep4, rep5, rep6, rep7, rep8):
         rep = th.cat([rep0, rep1, rep2, rep3, rep4, rep5, rep6, rep7, rep8], dim=1).view(-1, self.ch[5] * 9, 2, 2)
-        pred = self.conv_2_1(self.lnonz5(self.conv_2_0(rep))).view(-1, self.ch[5] * 9, 2, 2)
+        pred = self.conv_2_1(self.lnonz5_0(self.conv_2_0(rep))).view(-1, self.ch[5] * 9, 2, 2)
         return (pred[:, self.ch[5] * i:self.ch[5] * (i + 1)] for i in range(9))
 
     @th.compile
     def evolve4(self, rep0, rep1, rep2, rep3, rep4, rep5, rep6, rep7, rep8):
         rep = th.cat([rep0, rep1, rep2, rep3, rep4, rep5, rep6, rep7, rep8], dim=1).view(-1, self.ch[4] * 9, 4, 4)
-        pred = self.conv_4_1(self.lnonz4(self.conv_4_0(rep))).view(-1, self.ch[4] * 9, 4, 4)
+        pred = self.conv_4_1(self.lnonz4_0(self.conv_4_0(rep))).view(-1, self.ch[4] * 9, 4, 4)
         return (pred[:, self.ch[4] * i:self.ch[4] * (i + 1)] for i in range(9))
 
     @th.compile
     def evolve3(self, rep0, rep1, rep2, rep3, rep4, rep5, rep6, rep7, rep8):
         rep = th.cat([rep0, rep1, rep2, rep3, rep4, rep5, rep6, rep7, rep8], dim=1).view(-1, self.ch[3] * 9, 8, 8)
-        pred = self.conv_8_1(self.lnonz3(self.conv_8_0(rep))).view(-1, self.ch[3] * 9, 8, 8)
+        pred = self.conv_8_1(self.lnonz3_0(self.conv_8_0(rep))).view(-1, self.ch[3] * 9, 8, 8)
         return (pred[:, self.ch[3] * i:self.ch[3] * (i + 1)] for i in range(9))
 
     @th.compile
     def evolve2(self, rep0, rep1, rep2, rep3, rep4, rep5, rep6, rep7, rep8):
         rep = th.cat([rep0, rep1, rep2, rep3, rep4, rep5, rep6, rep7, rep8], dim=1).view(-1, self.ch[2] * 9, 16, 16)
-        pred = self.conv_16_1(self.lnonz2(self.conv_16_0(rep))).view(-1, self.ch[2] * 9, 16, 16)
+        pred = self.conv_16_1(self.lnonz2_0(self.conv_16_0(rep))).view(-1, self.ch[2] * 9, 16, 16)
         return (pred[:, self.ch[2] * i:self.ch[2] * (i + 1)] for i in range(9))
 
     @th.compile
     def evolve1(self, rep0, rep1, rep2, rep3, rep4, rep5, rep6, rep7, rep8):
         rep = th.cat([rep0, rep1, rep2, rep3, rep4, rep5, rep6, rep7, rep8], dim=1).view(-1, self.ch[1] * 9, 32, 32)
-        pred = self.conv_32_1(self.lnonz1(self.conv_32_0(rep))).view(-1, self.ch[1] * 9, 32, 32)
+        pred = self.conv_32_1(self.lnonz1_0(self.conv_32_0(rep))).view(-1, self.ch[1] * 9, 32, 32)
         return (pred[:, self.ch[1] * i:self.ch[1] * (i + 1)] for i in range(9))
 
     @th.compile
     def evolve0(self, rep0, rep1, rep2, rep3, rep4, rep5, rep6, rep7, rep8):
         rep = th.cat([rep0, rep1, rep2, rep3, rep4, rep5, rep6, rep7, rep8], dim=1).view(-1, self.ch[0] * 9, 64, 64)
-        pred = self.conv_64_1(self.lnonz0(self.conv_64_0(rep))).view(-1, self.ch[0] * 9, 64, 64)
+        pred = self.conv_64_1(self.lnonz0_0(self.conv_64_0(rep))).view(-1, self.ch[0] * 9, 64, 64)
         return (pred[:, self.ch[0] * i:self.ch[0] * (i + 1)] for i in range(9))
+
+    @th.compile
+    def merge6(self, rep0, rep1):
+        rep = th.cat([rep0, rep1], dim=1).view(-1, self.ch[5] * 2, 1, 1)
+        pred = self.conv_1_3(self.lnonz6_1(self.conv_1_2(rep))).view(-1, self.ch[5], 1, 1)
+        return pred
+
+    @th.compile
+    def merge5(self, rep0, rep1):
+        rep = th.cat([rep0, rep1], dim=1).view(-1, self.ch[5] * 2, 2, 2)
+        pred = self.conv_2_3(self.lnonz5_1(self.conv_2_2(rep))).view(-1, self.ch[5], 2, 2)
+        return pred
+
+    @th.compile
+    def merge4(self, rep0, rep1):
+        rep = th.cat([rep0, rep1], dim=1).view(-1, self.ch[4] * 2, 4, 4)
+        pred = self.conv_4_3(self.lnonz4_1(self.conv_4_2(rep))).view(-1, self.ch[4], 4, 4)
+        return pred
+
+    @th.compile
+    def merge3(self, rep0, rep1):
+        rep = th.cat([rep0, rep1], dim=1).view(-1, self.ch[3] * 2, 8, 8)
+        pred = self.conv_8_3(self.lnonz3_1(self.conv_8_2(rep))).view(-1, self.ch[3], 8, 8)
+        return pred
+
+    @th.compile
+    def merge2(self, rep0, rep1):
+        rep = th.cat([rep0, rep1], dim=1).view(-1, self.ch[2] * 2, 16, 16)
+        pred = self.conv_16_3(self.lnonz2_1(self.conv_16_2(rep))).view(-1, self.ch[2], 16, 16)
+        return pred
+
+    @th.compile
+    def merge1(self, rep0, rep1):
+        rep = th.cat([rep0, rep1], dim=1).view(-1, self.ch[1] * 2, 32, 32)
+        pred = self.conv_32_3(self.lnonz1_1(self.conv_32_2(rep))).view(-1, self.ch[1], 32, 32)
+        return pred
+
+    @th.compile
+    def merge0(self, rep0, rep1):
+        rep = th.cat([rep0, rep1], dim=1).view(-1, self.ch[0] * 2, 64, 64)
+        pred = self.conv_64_3(self.lnonz0_1(self.conv_64_2(rep))).view(-1, self.ch[0], 64, 64)
+        return pred
 
     @th.compile
     def merge(self, rep0, rep1):
@@ -342,40 +412,40 @@ class Moving1(ltn.LightningModule):
         jp0, kp0, lp0, mp0, np0, op0, pp0, qp0, rp0 = self.evolve0(a0, b0, c0, d0, e0, f0, g0, h0, i0)
 
         j0, j1, j2, j3, j4, j5, j6 = self.downward(y9a)
-        yab = self.upward(self.merge(j0, jp0), self.merge(j1, jp1), self.merge(j2, jp2), self.merge(j3, jp3),
-                          self.merge(j4, jp4), self.merge(j5, jp5), self.merge(j6, jp6))
+        yab = self.upward(self.merge0(j0, jp0), self.merge1(j1, jp1), self.merge2(j2, jp2), self.merge3(j3, jp3),
+                          self.merge4(j4, jp4), self.merge5(j5, jp5), self.merge6(j6, jp6))
 
         k0, k1, k2, k3, k4, k5, k6 = self.downward(yab)
-        ybc = self.upward(self.merge(k0, kp0), self.merge(k1, kp1), self.merge(k2, kp2), self.merge(k3, kp3),
-                          self.merge(k4, kp4), self.merge(k5, kp5), self.merge(k6, kp6))
+        ybc = self.upward(self.merge0(k0, kp0), self.merge1(k1, kp1), self.merge2(k2, kp2), self.merge3(k3, kp3),
+                          self.merge4(k4, kp4), self.merge5(k5, kp5), self.merge6(k6, kp6))
 
         l0, l1, l2, l3, l4, l5, l6 = self.downward(ybc)
-        ycd = self.upward(self.merge(l0, lp0), self.merge(l1, lp1), self.merge(l2, lp2), self.merge(l3, lp3),
-                          self.merge(l4, lp4), self.merge(l5, lp5), self.merge(l6, lp6))
+        ycd = self.upward(self.merge0(l0, lp0), self.merge1(l1, lp1), self.merge2(l2, lp2), self.merge3(l3, lp3),
+                          self.merge4(l4, lp4), self.merge5(l5, lp5), self.merge6(l6, lp6))
 
         m0, m1, m2, m3, m4, m5, m6 = self.downward(ycd)
-        yde = self.upward(self.merge(m0, mp0), self.merge(m1, mp1), self.merge(m2, mp2), self.merge(m3, mp3),
-                          self.merge(m4, mp4), self.merge(m5, mp5), self.merge(m6, mp6))
+        yde = self.upward(self.merge0(m0, mp0), self.merge1(m1, mp1), self.merge2(m2, mp2), self.merge3(m3, mp3),
+                          self.merge4(m4, mp4), self.merge5(m5, mp5), self.merge6(m6, mp6))
 
         n0, n1, n2, n3, n4, n5, n6 = self.downward(yde)
-        yef = self.upward(self.merge(n0, np0), self.merge(n1, np1), self.merge(n2, np2), self.merge(n3, np3),
-                          self.merge(n4, np4), self.merge(n5, np5), self.merge(n6, np6))
+        yef = self.upward(self.merge0(n0, np0), self.merge1(n1, np1), self.merge2(n2, np2), self.merge3(n3, np3),
+                          self.merge4(n4, np4), self.merge5(n5, np5), self.merge6(n6, np6))
 
         o0, o1, o2, o3, o4, o5, o6 = self.downward(yef)
-        yfg = self.upward(self.merge(o0, op0), self.merge(o1, op1), self.merge(o2, op2), self.merge(o3, op3),
-                          self.merge(o4, op4), self.merge(o5, op5), self.merge(o6, op6))
+        yfg = self.upward(self.merge0(o0, op0), self.merge1(o1, op1), self.merge2(o2, op2), self.merge3(o3, op3),
+                          self.merge4(o4, op4), self.merge5(o5, op5), self.merge6(o6, op6))
 
         p0, p1, p2, p3, p4, p5, p6 = self.downward(yfg)
-        ygh = self.upward(self.merge(p0, pp0), self.merge(p1, pp1), self.merge(p2, pp2), self.merge(p3, pp3),
-                          self.merge(p4, pp4), self.merge(p5, pp5), self.merge(p6, pp6))
+        ygh = self.upward(self.merge0(p0, pp0), self.merge1(p1, pp1), self.merge2(p2, pp2), self.merge3(p3, pp3),
+                          self.merge4(p4, pp4), self.merge5(p5, pp5), self.merge6(p6, pp6))
 
         q0, q1, q2, q3, q4, q5, q6 = self.downward(ygh)
-        yhi = self.upward(self.merge(q0, qp0), self.merge(q1, qp1), self.merge(q2, qp2), self.merge(q3, qp3),
-                          self.merge(q4, qp4), self.merge(q5, qp5), self.merge(q6, qp6))
+        yhi = self.upward(self.merge0(q0, qp0), self.merge1(q1, qp1), self.merge2(q2, qp2), self.merge3(q3, qp3),
+                          self.merge4(q4, qp4), self.merge5(q5, qp5), self.merge6(q6, qp6))
 
         r0, r1, r2, r3, r4, r5, r6 = self.downward(yhi)
-        yij = self.upward(self.merge(r0, rp0), self.merge(r1, rp1), self.merge(r2, rp2), self.merge(r3, rp3),
-                          self.merge(r4, rp4), self.merge(r5, rp5), self.merge(r6, rp6))
+        yij = self.upward(self.merge0(r0, rp0), self.merge1(r1, rp1), self.merge2(r2, rp2), self.merge3(r3, rp3),
+                          self.merge4(r4, rp4), self.merge5(r5, rp5), self.merge6(r6, rp6))
 
         s0, s1, s2, s3, s4, s5, s6 = self.downward(yij)
         yjk = self.upward(s0, s1, s2, s3, s4, s5, s6)
